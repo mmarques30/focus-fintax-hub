@@ -58,7 +58,6 @@ export type Database = {
           id: string
           nome: string
           origem: string
-          pagou_irpj: boolean
           regime_tributario: string
           score_lead: number | null
           segmento: string
@@ -75,7 +74,6 @@ export type Database = {
           id?: string
           nome?: string
           origem?: string
-          pagou_irpj?: boolean
           regime_tributario?: string
           score_lead?: number | null
           segmento?: string
@@ -92,7 +90,6 @@ export type Database = {
           id?: string
           nome?: string
           origem?: string
-          pagou_irpj?: boolean
           regime_tributario?: string
           score_lead?: number | null
           segmento?: string
