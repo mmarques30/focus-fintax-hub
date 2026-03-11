@@ -17,13 +17,8 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Leads", url: "/leads", icon: UserPlus, roles: ["admin", "comercial"] },
-  { title: "Empresas", url: "/empresas", icon: Building2, roles: ["admin", "pmo", "gestor_tributario", "comercial"] },
-  { title: "Obrigações", url: "/obrigacoes", icon: FileText, roles: ["admin", "gestor_tributario"] },
-  { title: "Fiscal", url: "/fiscal", icon: Receipt, roles: ["admin", "gestor_tributario"] },
-  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
   { title: "Benchmarks", url: "/benchmarks", icon: Database, roles: ["admin"] },
-  { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
 ];
 
 export function AppSidebar() {
