@@ -26,9 +26,11 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Allow service role key as bearer for bootstrap/seed operations
+    // Allow service role key as bearer or via x-seed-key header for bootstrap
     const bearerToken = authHeader.replace("Bearer ", "");
-    const isServiceRole = bearerToken === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const seedKey = req.headers.get("x-seed-key");
+    const isServiceRole = bearerToken === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || 
+                          seedKey === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!isServiceRole) {
       // Normal auth flow: verify JWT and check admin role
