@@ -45,22 +45,6 @@ export default function Login() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: email.split("@")[0] } },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao cadastrar", { description: error.message });
-    } else {
-      toast.success("Cadastro realizado!", { description: "Verifique seu e-mail para confirmar a conta." });
-      setMode("login");
-    }
-  };
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
