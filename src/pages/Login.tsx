@@ -84,7 +84,7 @@ export default function Login() {
         <Spotlight />
 
         <div className="relative z-10 max-w-lg space-y-10 animate-[fade-in_0.8s_ease-out]">
-          <img src={logoWhite} alt="Focus FinTax" className="h-14" />
+          <img src={logoWhite} alt="Focus FinTax" className="h-20" />
 
           <div className="space-y-4">
             <h2 className="text-4xl font-extrabold leading-tight">
