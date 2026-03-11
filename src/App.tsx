@@ -33,6 +33,10 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/leads" element={<LeadQueue />} />
+                      <Route path="/leads/novo" element={<LeadForm />} />
+                      <Route path="/leads/:id/relatorio" element={<LeadReport />} />
+                      <Route path="/benchmarks" element={<Benchmarks />} />
                       <Route path="/usuarios" element={<UserManagement />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
