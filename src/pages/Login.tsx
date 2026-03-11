@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, LogIn, Mail, Lock, Shield, FileText, BarChart3 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import logoWhite from "@/assets/logo-focus-fintax-white.png";
 import logo from "@/assets/logo-focus-fintax.png";
@@ -12,18 +12,11 @@ import logo from "@/assets/logo-focus-fintax.png";
 function Spotlight() {
   return (
     <>
-      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-secondary/20 blur-[120px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary-foreground/5 blur-[100px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-secondary/10 blur-[150px] animate-[glow-pulse_10s_ease-in-out_infinite_2s]" />
+      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/5 blur-[120px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary-foreground/3 blur-[100px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
     </>
   );
 }
-
-const features = [
-  { icon: Shield, label: "Obrigações Fiscais", desc: "Controle total de prazos e entregas" },
-  { icon: BarChart3, label: "Relatórios", desc: "Dashboards e análises em tempo real" },
-  { icon: FileText, label: "Auditoria", desc: "Rastreabilidade completa de operações" },
-];
 
 export default function Login() {
   const navigate = useNavigate();
