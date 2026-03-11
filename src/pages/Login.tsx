@@ -127,7 +127,7 @@ export default function Login() {
           </div>
 
           <form
-            onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgot}
+            onSubmit={mode === "login" ? handleLogin : handleForgot}
             className="space-y-5"
           >
             <div className="space-y-2">
