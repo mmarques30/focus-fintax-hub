@@ -38,9 +38,9 @@ export function AppSidebar() {
       onMouseLeave={() => setOpen(false)}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-3 shrink-0">
+      <div className="flex items-center h-20 px-3 shrink-0">
         {open ? (
-          <img src={logoWhite} alt="Focus FinTax" className="h-8 object-contain ml-1" />
+          <img src={logoWhite} alt="Focus FinTax" className="h-12 object-contain ml-1" />
         ) : (
           <div className="h-8 w-8 rounded-md bg-sidebar-accent flex items-center justify-center mx-auto">
             <span className="text-sidebar-primary font-extrabold text-sm">F</span>
