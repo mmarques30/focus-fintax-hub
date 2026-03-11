@@ -99,7 +99,7 @@ export default function UserManagement() {
     setFormName("");
     setFormEmail("");
     setFormCargo("");
-    setFormRole("visualizador");
+    setFormRole("cliente");
     setFormPassword("");
     setDialogOpen(true);
   };
