@@ -23,16 +23,18 @@ interface UserRow {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  gestor: "Gestor",
-  operador: "Operador",
-  visualizador: "Visualizador",
+  pmo: "PMO",
+  gestor_tributario: "Gestor Tributário",
+  comercial: "Comercial",
+  cliente: "Cliente",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-secondary/10 text-secondary border-secondary/20",
-  gestor: "bg-primary/10 text-primary border-primary/20",
-  operador: "bg-accent text-accent-foreground",
-  visualizador: "bg-muted text-muted-foreground",
+  pmo: "bg-primary/10 text-primary border-primary/20",
+  gestor_tributario: "bg-accent text-accent-foreground",
+  comercial: "bg-muted text-muted-foreground border-muted-foreground/20",
+  cliente: "bg-muted text-muted-foreground",
 };
 
 export default function UserManagement() {
