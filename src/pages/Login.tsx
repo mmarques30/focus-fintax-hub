@@ -122,7 +122,6 @@ export default function Login() {
             </h1>
             <p className="text-muted-foreground text-sm">
               {mode === "login" && "Entre com suas credenciais para continuar"}
-              {mode === "signup" && "Preencha os dados para criar sua conta"}
               {mode === "forgot" && "Informe seu e-mail para redefinir a senha"}
             </p>
           </div>
