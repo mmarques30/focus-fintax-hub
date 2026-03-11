@@ -33,7 +33,7 @@ function BackgroundChart() {
       />
 
       {/* Bar chart group */}
-      <div className="absolute bottom-[28%] right-[12%] flex items-end gap-3 opacity-[0.12]">
+      <div className="absolute bottom-[28%] right-[12%] flex items-end gap-3 opacity-[0.35]">
         {barHeights.map((h, i) => (
           <div
             key={i}
