@@ -196,19 +196,21 @@ export default function Login() {
 
           <div className="text-center text-sm">
             {mode === "login" ? (
-              <p className="text-muted-foreground">
-                Não tem conta?{" "}
-                <button onClick={() => setMode("signup")} className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                  Cadastre-se
-                </button>
-              </p>
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Esqueceu a senha?
+              </button>
             ) : (
-              <p className="text-muted-foreground">
-                Já tem conta?{" "}
-                <button onClick={() => setMode("login")} className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                  Fazer login
-                </button>
-              </p>
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className="font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Voltar ao login
+              </button>
             )}
           </div>
         </div>
