@@ -27,7 +27,11 @@ const menuItems: MenuItem[] = [
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, userRole, signOut } = useAuth();
+
+  const visibleItems = menuItems.filter(
+    (item) => !item.roles || userRole === "admin" || (userRole && item.roles.includes(userRole))
+  );
   const navigate = useNavigate();
 
   const handleLogout = async () => {
