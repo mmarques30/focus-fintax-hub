@@ -63,8 +63,8 @@ function BackgroundChart() {
       </svg>
 
       {/* Floating metric circles */}
-      <div className="absolute top-[18%] left-[12%] w-20 h-20 rounded-full border border-primary-foreground/8 opacity-[0.10]" />
-      <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/10 bg-primary-foreground/3 opacity-[0.12]" />
+      <div className="absolute top-[18%] left-[12%] w-20 h-20 rounded-full border border-primary-foreground/20 opacity-[0.25]" />
+      <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 opacity-[0.28]" />
 
       {/* Horizontal data lines */}
       <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.07]">
