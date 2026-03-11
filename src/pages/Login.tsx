@@ -67,10 +67,10 @@ function BackgroundChart() {
       <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 opacity-[0.28]" />
 
       {/* Horizontal data lines */}
-      <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.07]">
-        <div className="h-px bg-gradient-to-r from-primary-foreground/40 to-transparent" />
-        <div className="h-px bg-gradient-to-r from-primary-foreground/25 to-transparent w-[80%]" />
-        <div className="h-px bg-gradient-to-r from-primary-foreground/15 to-transparent w-[60%]" />
+      <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.20]">
+        <div className="h-px bg-gradient-to-r from-primary-foreground/60 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/40 to-transparent w-[80%]" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/25 to-transparent w-[60%]" />
       </div>
     </div>
   );
