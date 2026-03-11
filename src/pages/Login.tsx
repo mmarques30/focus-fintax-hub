@@ -37,7 +37,7 @@ function BackgroundChart() {
         {barHeights.map((h, i) => (
           <div
             key={i}
-            className="w-4 rounded-t-sm border border-primary-foreground/30 bg-primary-foreground/5"
+            className="w-4 rounded-t-sm border border-primary-foreground/50 bg-primary-foreground/15"
             style={{ height: `${h}px` }}
           />
         ))}
