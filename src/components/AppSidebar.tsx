@@ -61,7 +61,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.url;
           return (
             <NavLink

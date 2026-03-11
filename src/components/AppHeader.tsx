@@ -7,9 +7,10 @@ export function AppHeader() {
 
   const ROLE_LABELS: Record<string, string> = {
     admin: "Administrador",
-    gestor: "Gestor",
-    operador: "Operador",
-    visualizador: "Visualizador",
+    pmo: "PMO",
+    gestor_tributario: "Gestor Tributário",
+    comercial: "Comercial",
+    cliente: "Cliente",
   };
 
   return (

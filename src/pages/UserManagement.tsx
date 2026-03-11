@@ -239,9 +239,10 @@ export default function UserManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="gestor">Gestor</SelectItem>
-                    <SelectItem value="operador">Operador</SelectItem>
-                    <SelectItem value="visualizador">Visualizador</SelectItem>
+                    <SelectItem value="pmo">PMO</SelectItem>
+                    <SelectItem value="gestor_tributario">Gestor Tributário</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                    <SelectItem value="cliente">Cliente</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
