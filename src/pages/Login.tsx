@@ -12,10 +12,67 @@ import logo from "@/assets/logo-focus-fintax.png";
 function Spotlight() {
   return (
     <>
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-primary-foreground/8 blur-[150px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-1/3 right-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/5 blur-[120px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
-      <div className="absolute top-2/3 left-1/2 w-[400px] h-[400px] rounded-full bg-primary-foreground/4 blur-[100px] animate-[glow-pulse_10s_ease-in-out_infinite_2s]" />
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-primary-foreground/6 blur-[150px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
+      <div className="absolute bottom-1/3 right-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/4 blur-[120px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
     </>
+  );
+}
+
+function BackgroundChart() {
+  const barHeights = [40, 55, 45, 70, 60, 85, 75, 95];
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Perspective grid floor */}
+      <div
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[140%] h-[45%] opacity-[0.06]"
+        style={{
+          transform: 'translateX(-50%) perspective(400px) rotateX(65deg)',
+          backgroundImage:
+            'repeating-linear-gradient(90deg, hsl(0 0% 100% / 0.5) 0px, transparent 1px, transparent 60px), repeating-linear-gradient(0deg, hsl(0 0% 100% / 0.3) 0px, transparent 1px, transparent 60px)',
+        }}
+      />
+
+      {/* Bar chart group */}
+      <div className="absolute bottom-[28%] right-[12%] flex items-end gap-3 opacity-[0.12]">
+        {barHeights.map((h, i) => (
+          <div
+            key={i}
+            className="w-4 rounded-t-sm border border-primary-foreground/30 bg-primary-foreground/5"
+            style={{ height: `${h}px` }}
+          />
+        ))}
+      </div>
+
+      {/* Ascending trend line */}
+      <svg
+        className="absolute bottom-[28%] right-[8%] opacity-[0.10]"
+        width="220"
+        height="110"
+        viewBox="0 0 220 110"
+        fill="none"
+      >
+        <path
+          d="M10 100 Q 50 90, 80 70 T 140 40 T 210 10"
+          stroke="hsl(0 0% 100%)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Arrow tip */}
+        <polygon points="210,10 200,18 205,8" fill="hsl(0 0% 100% / 0.6)" />
+      </svg>
+
+      {/* Floating metric circles */}
+      <div className="absolute top-[18%] left-[12%] w-20 h-20 rounded-full border border-primary-foreground/8 opacity-[0.10]" />
+      <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/10 bg-primary-foreground/3 opacity-[0.12]" />
+
+      {/* Horizontal data lines */}
+      <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.07]">
+        <div className="h-px bg-gradient-to-r from-primary-foreground/40 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/25 to-transparent w-[80%]" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/15 to-transparent w-[60%]" />
+      </div>
+    </div>
   );
 }
 
@@ -57,9 +114,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel — branding with spotlight */}
+      {/* Left panel — branding with charts */}
       <div className="hidden lg:flex lg:w-[55%] bg-primary relative overflow-hidden flex-col items-center justify-center p-16">
         <Spotlight />
+        <BackgroundChart />
 
         {/* Decorative line accents */}
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent" />
@@ -73,9 +131,6 @@ export default function Login() {
               Gestão Financeira e Tributária
             </h2>
             <div className="w-16 h-0.5 mx-auto bg-gradient-to-r from-transparent via-secondary to-transparent rounded-full" />
-            <p className="text-lg font-medium text-primary-foreground/40 tracking-widest uppercase">
-              do Varejo
-            </p>
           </div>
         </div>
       </div>
