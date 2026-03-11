@@ -12,8 +12,9 @@ import logo from "@/assets/logo-focus-fintax.png";
 function Spotlight() {
   return (
     <>
-      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/5 blur-[120px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary-foreground/3 blur-[100px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full bg-primary-foreground/8 blur-[150px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
+      <div className="absolute bottom-1/3 right-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/5 blur-[120px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
+      <div className="absolute top-2/3 left-1/2 w-[400px] h-[400px] rounded-full bg-primary-foreground/4 blur-[100px] animate-[glow-pulse_10s_ease-in-out_infinite_2s]" />
     </>
   );
 }
@@ -60,12 +61,22 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-[55%] bg-primary relative overflow-hidden flex-col items-center justify-center p-16">
         <Spotlight />
 
-        <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-[fade-in_0.8s_ease-out]">
-          <img src={logoWhite} alt="Focus FinTax" className="h-28" />
+        {/* Decorative line accents */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent" />
 
-          <p className="text-primary-foreground/40 text-sm leading-relaxed max-w-xs">
-            Gestão Financeira e Tributária do Varejo
-          </p>
+        <div className="relative z-10 flex flex-col items-center text-center space-y-10 animate-[fade-in_0.8s_ease-out]">
+          <img src={logoWhite} alt="Focus FinTax" className="h-44 drop-shadow-[0_0_60px_hsl(var(--primary-foreground)/0.15)]" />
+
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold tracking-wide text-primary-foreground/80 uppercase">
+              Gestão Financeira e Tributária
+            </h2>
+            <div className="w-16 h-0.5 mx-auto bg-gradient-to-r from-transparent via-secondary to-transparent rounded-full" />
+            <p className="text-lg font-medium text-primary-foreground/40 tracking-widest uppercase">
+              do Varejo
+            </p>
+          </div>
         </div>
       </div>
 
