@@ -54,7 +54,7 @@ function BackgroundChart() {
         <path
           d="M10 100 Q 50 90, 80 70 T 140 40 T 210 10"
           stroke="hsl(0 0% 100%)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           fill="none"
         />
