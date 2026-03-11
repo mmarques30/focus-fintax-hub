@@ -115,7 +115,6 @@ export default function LeadReport() {
           { label: "Segmento", value: lead.segmento },
           { label: "Regime", value: lead.regime_tributario },
           { label: "Faturamento", value: lead.faturamento_faixa },
-          { label: "Pagou IRPJ", value: lead.pagou_irpj ? "Sim" : "Não" },
         ].map((item) => (
           <Card key={item.label} className="border-card-border">
             <CardContent className="p-4">
