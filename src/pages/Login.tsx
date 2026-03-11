@@ -45,7 +45,7 @@ function BackgroundChart() {
 
       {/* Ascending trend line */}
       <svg
-        className="absolute bottom-[28%] right-[8%] opacity-[0.10]"
+        className="absolute bottom-[28%] right-[8%] opacity-[0.30]"
         width="220"
         height="110"
         viewBox="0 0 220 110"
