@@ -109,51 +109,49 @@ export default function UserManagement() {
     setSaving(true);
 
     if (editUser) {
-      // Update profile
-      await supabase
-        .from("profiles")
-        .update({ full_name: formName, cargo: formCargo })
-        .eq("user_id", editUser.user_id);
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: {
+          action: "update",
+          user_id: editUser.user_id,
+          full_name: formName,
+          cargo: formCargo,
+          role: formRole,
+          current_role: editUser.role,
+        },
+      });
 
-      // Update role
-      if (formRole !== editUser.role) {
-        await supabase.from("user_roles").delete().eq("user_id", editUser.user_id);
-        await supabase.from("user_roles").insert({ user_id: editUser.user_id, role: formRole as any });
+      if (error || data?.error) {
+        toast.error("Erro ao atualizar usuário", { description: data?.error || error?.message });
+        setSaving(false);
+        return;
       }
 
       toast.success("Usuário atualizado!");
     } else {
-      // Create new user via signup
       if (!formEmail || !formPassword || formPassword.length < 6) {
         toast.error("E-mail e senha (mín. 6 caracteres) são obrigatórios");
         setSaving(false);
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email: formEmail,
-        password: formPassword,
-        options: { data: { full_name: formName } },
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: {
+          action: "create",
+          email: formEmail,
+          password: formPassword,
+          full_name: formName,
+          cargo: formCargo,
+          role: formRole,
+        },
       });
 
-      if (error || !data.user) {
-        toast.error("Erro ao criar usuário", { description: error?.message });
+      if (error || data?.error) {
+        toast.error("Erro ao criar usuário", { description: data?.error || error?.message });
         setSaving(false);
         return;
       }
 
-      // Update profile with cargo
-      if (formCargo) {
-        await supabase.from("profiles").update({ cargo: formCargo }).eq("user_id", data.user.id);
-      }
-
-      // Update role if not default
-      if (formRole !== "cliente") {
-        await supabase.from("user_roles").delete().eq("user_id", data.user.id);
-        await supabase.from("user_roles").insert({ user_id: data.user.id, role: formRole as any });
-      }
-
-      toast.success("Usuário criado!", { description: "Um e-mail de confirmação foi enviado." });
+      toast.success("Usuário criado com sucesso!");
     }
 
     setSaving(false);
