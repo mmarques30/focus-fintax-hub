@@ -23,16 +23,18 @@ interface UserRow {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
-  gestor: "Gestor",
-  operador: "Operador",
-  visualizador: "Visualizador",
+  pmo: "PMO",
+  gestor_tributario: "Gestor Tributário",
+  comercial: "Comercial",
+  cliente: "Cliente",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-secondary/10 text-secondary border-secondary/20",
-  gestor: "bg-primary/10 text-primary border-primary/20",
-  operador: "bg-accent text-accent-foreground",
-  visualizador: "bg-muted text-muted-foreground",
+  pmo: "bg-primary/10 text-primary border-primary/20",
+  gestor_tributario: "bg-accent text-accent-foreground",
+  comercial: "bg-muted text-muted-foreground border-muted-foreground/20",
+  cliente: "bg-muted text-muted-foreground",
 };
 
 export default function UserManagement() {
@@ -48,7 +50,7 @@ export default function UserManagement() {
   const [formEmail, setFormEmail] = useState("");
   const [formName, setFormName] = useState("");
   const [formCargo, setFormCargo] = useState("");
-  const [formRole, setFormRole] = useState("visualizador");
+  const [formRole, setFormRole] = useState("cliente");
   const [formPassword, setFormPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -97,7 +99,7 @@ export default function UserManagement() {
     setFormName("");
     setFormEmail("");
     setFormCargo("");
-    setFormRole("visualizador");
+    setFormRole("cliente");
     setFormPassword("");
     setDialogOpen(true);
   };
@@ -146,7 +148,7 @@ export default function UserManagement() {
       }
 
       // Update role if not default
-      if (formRole !== "visualizador") {
+      if (formRole !== "cliente") {
         await supabase.from("user_roles").delete().eq("user_id", data.user.id);
         await supabase.from("user_roles").insert({ user_id: data.user.id, role: formRole as any });
       }
@@ -237,9 +239,10 @@ export default function UserManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="gestor">Gestor</SelectItem>
-                    <SelectItem value="operador">Operador</SelectItem>
-                    <SelectItem value="visualizador">Visualizador</SelectItem>
+                    <SelectItem value="pmo">PMO</SelectItem>
+                    <SelectItem value="gestor_tributario">Gestor Tributário</SelectItem>
+                    <SelectItem value="comercial">Comercial</SelectItem>
+                    <SelectItem value="cliente">Cliente</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

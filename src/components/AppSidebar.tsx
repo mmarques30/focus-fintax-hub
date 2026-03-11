@@ -7,20 +7,31 @@ import { useNavigate } from "react-router-dom";
 import logoWhite from "@/assets/logo-focus-fintax-white.png";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  roles?: string[]; // if undefined, visible to all
+}
+
+const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Empresas", url: "/empresas", icon: Building2 },
-  { title: "Obrigações", url: "/obrigacoes", icon: FileText },
-  { title: "Fiscal", url: "/fiscal", icon: Receipt },
+  { title: "Empresas", url: "/empresas", icon: Building2, roles: ["admin", "pmo", "gestor_tributario", "comercial"] },
+  { title: "Obrigações", url: "/obrigacoes", icon: FileText, roles: ["admin", "gestor_tributario"] },
+  { title: "Fiscal", url: "/fiscal", icon: Receipt, roles: ["admin", "gestor_tributario"] },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
-  { title: "Usuários", url: "/usuarios", icon: Users },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
 ];
 
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, userRole, signOut } = useAuth();
+
+  const visibleItems = menuItems.filter(
+    (item) => !item.roles || userRole === "admin" || (userRole && item.roles.includes(userRole))
+  );
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -50,7 +61,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.url;
           return (
             <NavLink
