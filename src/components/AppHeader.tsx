@@ -1,17 +1,9 @@
-import { LogOut, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 
 export function AppHeader() {
-  const { profile, userRole, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
+  const { profile, userRole } = useAuth();
 
   const ROLE_LABELS: Record<string, string> = {
     admin: "Administrador",
@@ -21,11 +13,7 @@ export function AppHeader() {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-      <div className="flex items-center gap-3">
-        <SidebarTrigger className="text-muted-foreground" />
-      </div>
-
+    <header className="h-16 border-b border-border bg-card flex items-center justify-end px-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <Bell className="h-5 w-5" />
@@ -42,10 +30,6 @@ export function AppHeader() {
             </span>
           </div>
         </div>
-
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-secondary" onClick={handleLogout}>
-          <LogOut className="h-5 w-5" />
-        </Button>
       </div>
     </header>
   );
