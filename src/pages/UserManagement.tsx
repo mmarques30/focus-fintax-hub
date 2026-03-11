@@ -148,7 +148,7 @@ export default function UserManagement() {
       }
 
       // Update role if not default
-      if (formRole !== "visualizador") {
+      if (formRole !== "cliente") {
         await supabase.from("user_roles").delete().eq("user_id", data.user.id);
         await supabase.from("user_roles").insert({ user_id: data.user.id, role: formRole as any });
       }
