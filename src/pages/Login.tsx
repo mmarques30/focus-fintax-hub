@@ -118,7 +118,6 @@ export default function Login() {
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
               {mode === "login" && "Bem-vindo de volta"}
-              {mode === "signup" && "Criar conta"}
               {mode === "forgot" && "Recuperar senha"}
             </h1>
             <p className="text-muted-foreground text-sm">
