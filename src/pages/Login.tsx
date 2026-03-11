@@ -188,7 +188,6 @@ export default function Login() {
                 <>
                   <LogIn className="h-4 w-4 mr-2" />
                   {mode === "login" && "Entrar"}
-                  {mode === "signup" && "Criar conta"}
                   {mode === "forgot" && "Enviar e-mail"}
                 </>
               )}
