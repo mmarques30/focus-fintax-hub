@@ -60,40 +60,12 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-[55%] bg-primary relative overflow-hidden flex-col items-center justify-center p-16">
         <Spotlight />
 
-        <div className="relative z-10 max-w-lg space-y-10 animate-[fade-in_0.8s_ease-out]">
-          <img src={logoWhite} alt="Focus FinTax" className="h-20" />
+        <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-[fade-in_0.8s_ease-out]">
+          <img src={logoWhite} alt="Focus FinTax" className="h-28" />
 
-          <div className="space-y-4">
-            <h2 className="text-4xl font-extrabold leading-tight">
-              <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                Gestão Tributária
-              </span>
-              <br />
-              <span className="text-secondary">Inteligente</span>
-            </h2>
-            <p className="text-white/50 text-sm leading-relaxed max-w-sm">
-              Plataforma centralizada para gestão tributária e comercial.
-              Controle total das obrigações fiscais da sua empresa.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {features.map((f, i) => (
-              <div
-                key={f.label}
-                className="flex items-center gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 transition-all duration-300 hover:bg-white/10"
-                style={{ animationDelay: `${0.2 + i * 0.15}s` }}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/20">
-                  <f.icon className="h-5 w-5 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{f.label}</p>
-                  <p className="text-xs text-white/40">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-primary-foreground/40 text-sm leading-relaxed max-w-xs">
+            Gestão Financeira e Tributária do Varejo
+          </p>
         </div>
       </div>
 
