@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      benchmarks_teses: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          faturamento_faixa: string
+          id: string
+          percentual_maximo: number
+          percentual_minimo: number
+          segmento: string
+          tese_nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          faturamento_faixa?: string
+          id?: string
+          percentual_maximo?: number
+          percentual_minimo?: number
+          segmento?: string
+          tese_nome?: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          faturamento_faixa?: string
+          id?: string
+          percentual_maximo?: number
+          percentual_minimo?: number
+          segmento?: string
+          tese_nome?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          cnpj: string
+          created_by: string | null
+          criado_em: string
+          email: string
+          empresa: string
+          faturamento_faixa: string
+          id: string
+          nome: string
+          origem: string
+          pagou_irpj: boolean
+          regime_tributario: string
+          score_lead: number | null
+          segmento: string
+          status: string
+          whatsapp: string
+        }
+        Insert: {
+          cnpj?: string
+          created_by?: string | null
+          criado_em?: string
+          email?: string
+          empresa?: string
+          faturamento_faixa?: string
+          id?: string
+          nome?: string
+          origem?: string
+          pagou_irpj?: boolean
+          regime_tributario?: string
+          score_lead?: number | null
+          segmento?: string
+          status?: string
+          whatsapp?: string
+        }
+        Update: {
+          cnpj?: string
+          created_by?: string | null
+          criado_em?: string
+          email?: string
+          empresa?: string
+          faturamento_faixa?: string
+          id?: string
+          nome?: string
+          origem?: string
+          pagou_irpj?: boolean
+          regime_tributario?: string
+          score_lead?: number | null
+          segmento?: string
+          status?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cargo: string
@@ -46,6 +133,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      relatorios_leads: {
+        Row: {
+          conteudo_html: string
+          criado_em: string
+          enviado_em: string | null
+          enviado_whatsapp: boolean
+          estimativa_total_maxima: number
+          estimativa_total_minima: number
+          id: string
+          lead_id: string
+          score: number
+          teses_identificadas: Json
+        }
+        Insert: {
+          conteudo_html?: string
+          criado_em?: string
+          enviado_em?: string | null
+          enviado_whatsapp?: boolean
+          estimativa_total_maxima?: number
+          estimativa_total_minima?: number
+          id?: string
+          lead_id: string
+          score?: number
+          teses_identificadas?: Json
+        }
+        Update: {
+          conteudo_html?: string
+          criado_em?: string
+          enviado_em?: string | null
+          enviado_whatsapp?: boolean
+          estimativa_total_maxima?: number
+          estimativa_total_minima?: number
+          id?: string
+          lead_id?: string
+          score?: number
+          teses_identificadas?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

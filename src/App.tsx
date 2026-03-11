@@ -9,6 +9,10 @@ import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import UserManagement from "@/pages/UserManagement";
+import LeadQueue from "@/pages/LeadQueue";
+import LeadForm from "@/pages/LeadForm";
+import LeadReport from "@/pages/LeadReport";
+import Benchmarks from "@/pages/Benchmarks";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +33,10 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/leads" element={<LeadQueue />} />
+                      <Route path="/leads/novo" element={<LeadForm />} />
+                      <Route path="/leads/:id/relatorio" element={<LeadReport />} />
+                      <Route path="/benchmarks" element={<Benchmarks />} />
                       <Route path="/usuarios" element={<UserManagement />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
