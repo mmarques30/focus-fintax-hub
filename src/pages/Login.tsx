@@ -24,7 +24,7 @@ function BackgroundChart() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Perspective grid floor */}
       <div
-        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[140%] h-[45%] opacity-[0.06]"
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[140%] h-[45%] opacity-[0.18]"
         style={{
           transform: 'translateX(-50%) perspective(400px) rotateX(65deg)',
           backgroundImage:
@@ -33,11 +33,11 @@ function BackgroundChart() {
       />
 
       {/* Bar chart group */}
-      <div className="absolute bottom-[28%] right-[12%] flex items-end gap-3 opacity-[0.12]">
+      <div className="absolute bottom-[28%] right-[12%] flex items-end gap-3 opacity-[0.35]">
         {barHeights.map((h, i) => (
           <div
             key={i}
-            className="w-4 rounded-t-sm border border-primary-foreground/30 bg-primary-foreground/5"
+            className="w-4 rounded-t-sm border border-primary-foreground/50 bg-primary-foreground/15"
             style={{ height: `${h}px` }}
           />
         ))}
@@ -45,7 +45,7 @@ function BackgroundChart() {
 
       {/* Ascending trend line */}
       <svg
-        className="absolute bottom-[28%] right-[8%] opacity-[0.10]"
+        className="absolute bottom-[28%] right-[8%] opacity-[0.30]"
         width="220"
         height="110"
         viewBox="0 0 220 110"
@@ -54,7 +54,7 @@ function BackgroundChart() {
         <path
           d="M10 100 Q 50 90, 80 70 T 140 40 T 210 10"
           stroke="hsl(0 0% 100%)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           fill="none"
         />
@@ -63,14 +63,14 @@ function BackgroundChart() {
       </svg>
 
       {/* Floating metric circles */}
-      <div className="absolute top-[18%] left-[12%] w-20 h-20 rounded-full border border-primary-foreground/8 opacity-[0.10]" />
-      <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/10 bg-primary-foreground/3 opacity-[0.12]" />
+      <div className="absolute top-[18%] left-[12%] w-20 h-20 rounded-full border border-primary-foreground/20 opacity-[0.25]" />
+      <div className="absolute top-[14%] left-[18%] w-10 h-10 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 opacity-[0.28]" />
 
       {/* Horizontal data lines */}
-      <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.07]">
-        <div className="h-px bg-gradient-to-r from-primary-foreground/40 to-transparent" />
-        <div className="h-px bg-gradient-to-r from-primary-foreground/25 to-transparent w-[80%]" />
-        <div className="h-px bg-gradient-to-r from-primary-foreground/15 to-transparent w-[60%]" />
+      <div className="absolute top-[35%] left-[8%] w-[35%] space-y-6 opacity-[0.20]">
+        <div className="h-px bg-gradient-to-r from-primary-foreground/60 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/40 to-transparent w-[80%]" />
+        <div className="h-px bg-gradient-to-r from-primary-foreground/25 to-transparent w-[60%]" />
       </div>
     </div>
   );
