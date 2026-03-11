@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { ArrowLeft, Send } from "lucide-react";
 import { FATURAMENTO_FAIXAS, REGIMES, SEGMENTOS } from "@/lib/lead-constants";
@@ -37,7 +36,6 @@ export default function LeadForm() {
   const [faturamentoFaixa, setFaturamentoFaixa] = useState("");
   const [regimeTributario, setRegimeTributario] = useState("");
   const [segmento, setSegmento] = useState("");
-  const [pagouIrpj, setPagouIrpj] = useState(false);
 
   const handleSubmit = async () => {
     const parsed = leadSchema.safeParse({
@@ -63,7 +61,6 @@ export default function LeadForm() {
       faturamento_faixa: parsed.data.faturamento_faixa,
       regime_tributario: parsed.data.regime_tributario,
       segmento: parsed.data.segmento,
-      pagou_irpj: pagouIrpj,
       status: "novo",
       origem: "manual",
       created_by: user?.id,
@@ -77,7 +74,6 @@ export default function LeadForm() {
 
     toast.success("Lead cadastrado! Iniciando análise...");
 
-    // Trigger analysis
     try {
       const { error: fnErr } = await supabase.functions.invoke("analyze-lead", {
         body: { lead_id: lead.id },
@@ -139,7 +135,7 @@ export default function LeadForm() {
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {FATURAMENTO_FAIXAS.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -161,16 +157,11 @@ export default function LeadForm() {
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {SEGMENTOS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3 pt-2">
-            <Switch checked={pagouIrpj} onCheckedChange={setPagouIrpj} />
-            <Label className="font-semibold">Pagou IRPJ nos últimos 5 anos?</Label>
           </div>
 
           <div className="pt-4">
