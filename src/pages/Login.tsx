@@ -176,17 +176,6 @@ export default function Login() {
               </div>
             )}
 
-            {mode === "login" && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setMode("forgot")}
-                  className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                >
-                  Esqueceu a senha?
-                </button>
-              </div>
-            )}
 
             <Button
               type="submit"
