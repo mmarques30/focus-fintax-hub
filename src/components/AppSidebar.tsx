@@ -1,17 +1,11 @@
-import { LayoutDashboard, FileText, Users, Settings, Building2, Receipt, BarChart3 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { useState } from "react";
+import { LayoutDashboard, FileText, Users, Settings, Building2, Receipt, BarChart3, LogOut } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import logoWhite from "@/assets/logo-focus-fintax-white.png";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -24,54 +18,93 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0">
-      <div className="flex items-center justify-center px-4 py-6">
-        {collapsed ? (
-          <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+    <div
+      className={cn(
+        "h-screen bg-sidebar flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
+        open ? "w-[250px]" : "w-[60px]"
+      )}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      {/* Logo */}
+      <div className="flex items-center h-16 px-3 shrink-0">
+        {open ? (
+          <img src={logoWhite} alt="Focus FinTax" className="h-8 object-contain ml-1" />
+        ) : (
+          <div className="h-8 w-8 rounded-md bg-sidebar-accent flex items-center justify-center mx-auto">
             <span className="text-sidebar-primary font-extrabold text-sm">F</span>
           </div>
-        ) : (
-          <img src={logoWhite} alt="Focus FinTax" className="h-10 object-contain" />
         )}
       </div>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                    >
-                      <NavLink
-                        to={item.url}
-                        end
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                      >
-                        <item.icon className="h-5 w-5 shrink-0" />
-                        {!collapsed && (
-                          <span className="text-sm font-medium">{item.title}</span>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+      {/* Navigation */}
+      <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.url;
+          return (
+            <NavLink
+              key={item.title}
+              to={item.url}
+              className={cn(
+                "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                  : "hover:bg-sidebar-accent/50"
+              )}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span
+                className={cn(
+                  "text-sm transition-opacity duration-200",
+                  open ? "opacity-100" : "opacity-0"
+                )}
+              >
+                {item.title}
+              </span>
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Footer — User */}
+      <div className="px-2 pb-4 mt-auto shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-md">
+          <div className="h-7 w-7 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
+            <span className="text-sidebar-accent-foreground text-xs font-bold">
+              {(profile?.full_name || "U")[0].toUpperCase()}
+            </span>
+          </div>
+          {open && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">
+                {profile?.full_name || "Usuário"}
+              </p>
+              <p className="text-[10px] text-sidebar-foreground/60 truncate">
+                {profile?.email || ""}
+              </p>
+            </div>
+          )}
+          {open && (
+            <button
+              onClick={handleLogout}
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
