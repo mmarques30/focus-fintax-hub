@@ -17,7 +17,6 @@ interface Lead {
   segmento: string;
   regime_tributario: string;
   faturamento_faixa: string;
-  pagou_irpj: boolean;
   score_lead: number | null;
   status: string;
 }
