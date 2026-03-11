@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, FileText, Users, Settings, Building2, Receipt, BarChart3, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Users, Settings, Building2, Receipt, BarChart3, LogOut, UserPlus, Database } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
