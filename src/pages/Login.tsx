@@ -31,7 +31,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "forgot">("login");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,22 +45,6 @@ export default function Login() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: email.split("@")[0] } },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao cadastrar", { description: error.message });
-    } else {
-      toast.success("Cadastro realizado!", { description: "Verifique seu e-mail para confirmar a conta." });
-      setMode("login");
-    }
-  };
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,18 +118,16 @@ export default function Login() {
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
               {mode === "login" && "Bem-vindo de volta"}
-              {mode === "signup" && "Criar conta"}
               {mode === "forgot" && "Recuperar senha"}
             </h1>
             <p className="text-muted-foreground text-sm">
               {mode === "login" && "Entre com suas credenciais para continuar"}
-              {mode === "signup" && "Preencha os dados para criar sua conta"}
               {mode === "forgot" && "Informe seu e-mail para redefinir a senha"}
             </p>
           </div>
 
           <form
-            onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgot}
+            onSubmit={mode === "login" ? handleLogin : handleForgot}
             className="space-y-5"
           >
             <div className="space-y-2">
@@ -194,17 +176,6 @@ export default function Login() {
               </div>
             )}
 
-            {mode === "login" && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setMode("forgot")}
-                  className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                >
-                  Esqueceu a senha?
-                </button>
-              </div>
-            )}
 
             <Button
               type="submit"
@@ -217,7 +188,6 @@ export default function Login() {
                 <>
                   <LogIn className="h-4 w-4 mr-2" />
                   {mode === "login" && "Entrar"}
-                  {mode === "signup" && "Criar conta"}
                   {mode === "forgot" && "Enviar e-mail"}
                 </>
               )}
@@ -226,19 +196,21 @@ export default function Login() {
 
           <div className="text-center text-sm">
             {mode === "login" ? (
-              <p className="text-muted-foreground">
-                Não tem conta?{" "}
-                <button onClick={() => setMode("signup")} className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                  Cadastre-se
-                </button>
-              </p>
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Esqueceu a senha?
+              </button>
             ) : (
-              <p className="text-muted-foreground">
-                Já tem conta?{" "}
-                <button onClick={() => setMode("login")} className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                  Fazer login
-                </button>
-              </p>
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className="font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Voltar ao login
+              </button>
             )}
           </div>
         </div>
