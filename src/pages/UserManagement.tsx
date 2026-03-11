@@ -50,7 +50,7 @@ export default function UserManagement() {
   const [formEmail, setFormEmail] = useState("");
   const [formName, setFormName] = useState("");
   const [formCargo, setFormCargo] = useState("");
-  const [formRole, setFormRole] = useState("visualizador");
+  const [formRole, setFormRole] = useState("cliente");
   const [formPassword, setFormPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
