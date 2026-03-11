@@ -25,7 +25,7 @@ interface Lead {
 interface Report {
   id: string;
   conteudo_html: string;
-  teses_identificadas: any[];
+  teses_identificadas: unknown;
   estimativa_total_minima: number;
   estimativa_total_maxima: number;
   score: number;
