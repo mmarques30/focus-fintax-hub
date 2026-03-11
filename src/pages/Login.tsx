@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, LogIn, Mail, Lock, Shield, FileText, BarChart3 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import logoWhite from "@/assets/logo-focus-fintax-white.png";
 import logo from "@/assets/logo-focus-fintax.png";
@@ -12,18 +12,11 @@ import logo from "@/assets/logo-focus-fintax.png";
 function Spotlight() {
   return (
     <>
-      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-secondary/20 blur-[120px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary-foreground/5 blur-[100px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-secondary/10 blur-[150px] animate-[glow-pulse_10s_ease-in-out_infinite_2s]" />
+      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-primary-foreground/5 blur-[120px] animate-[glow-pulse_6s_ease-in-out_infinite]" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary-foreground/3 blur-[100px] animate-[glow-pulse_8s_ease-in-out_infinite_1s]" />
     </>
   );
 }
-
-const features = [
-  { icon: Shield, label: "Obrigações Fiscais", desc: "Controle total de prazos e entregas" },
-  { icon: BarChart3, label: "Relatórios", desc: "Dashboards e análises em tempo real" },
-  { icon: FileText, label: "Auditoria", desc: "Rastreabilidade completa de operações" },
-];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -67,40 +60,12 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-[55%] bg-primary relative overflow-hidden flex-col items-center justify-center p-16">
         <Spotlight />
 
-        <div className="relative z-10 max-w-lg space-y-10 animate-[fade-in_0.8s_ease-out]">
-          <img src={logoWhite} alt="Focus FinTax" className="h-20" />
+        <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-[fade-in_0.8s_ease-out]">
+          <img src={logoWhite} alt="Focus FinTax" className="h-28" />
 
-          <div className="space-y-4">
-            <h2 className="text-4xl font-extrabold leading-tight">
-              <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                Gestão Tributária
-              </span>
-              <br />
-              <span className="text-secondary">Inteligente</span>
-            </h2>
-            <p className="text-white/50 text-sm leading-relaxed max-w-sm">
-              Plataforma centralizada para gestão tributária e comercial.
-              Controle total das obrigações fiscais da sua empresa.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {features.map((f, i) => (
-              <div
-                key={f.label}
-                className="flex items-center gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-4 transition-all duration-300 hover:bg-white/10"
-                style={{ animationDelay: `${0.2 + i * 0.15}s` }}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/20">
-                  <f.icon className="h-5 w-5 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{f.label}</p>
-                  <p className="text-xs text-white/40">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-primary-foreground/40 text-sm leading-relaxed max-w-xs">
+            Gestão Financeira e Tributária do Varejo
+          </p>
         </div>
       </div>
 
@@ -179,7 +144,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl font-bold text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+              className="w-full h-12 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
               disabled={loading}
             >
               {loading ? (
