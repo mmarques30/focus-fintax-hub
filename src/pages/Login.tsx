@@ -128,7 +128,7 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8 relative z-10 animate-[fade-in_0.6s_ease-out]">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center">
-            <img src={logo} alt="Focus FinTax" className="h-10" />
+            <img src={logo} alt="Focus FinTax" className="h-14" />
           </div>
 
           <div className="space-y-2">
