@@ -24,7 +24,7 @@ function BackgroundChart() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Perspective grid floor */}
       <div
-        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[140%] h-[45%] opacity-[0.06]"
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[140%] h-[45%] opacity-[0.18]"
         style={{
           transform: 'translateX(-50%) perspective(400px) rotateX(65deg)',
           backgroundImage:
