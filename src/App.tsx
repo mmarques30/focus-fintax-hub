@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import UserManagement from "@/pages/UserManagement";
@@ -25,14 +26,15 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Login />} />
             <Route
               path="/*"
               element={
                 <ProtectedRoute>
                   <AppLayout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/leads" element={<LeadQueue />} />
                       <Route path="/leads/novo" element={<LeadForm />} />
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />

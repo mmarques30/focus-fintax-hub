@@ -15,7 +15,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Leads", url: "/leads", icon: UserPlus, roles: ["admin", "comercial"] },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
   { title: "Benchmarks", url: "/benchmarks", icon: Database, roles: ["admin"] },
@@ -33,7 +33,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/login");
+    navigate("/auth");
   };
 
   return (

@@ -92,7 +92,7 @@ export default function Login() {
     if (error) {
       toast.error("Erro ao entrar", { description: error.message });
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 
