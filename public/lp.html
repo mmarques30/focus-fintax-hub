@@ -139,10 +139,10 @@ ul{list-style:none}
 .btn-next svg{width:16px}
 
 /* ── TRUST BAR ── */
-.trust-bar{background:var(--bg-light);padding:32px 0}
+.trust-bar{background:var(--bg-light);padding:32px 0;margin-top:-32px;position:relative;z-index:3;border-radius:var(--radius-xl) var(--radius-xl) 0 0}
 .trust-bar .container{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:12px}
-.trust-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-dark);background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius-pill);padding:10px 20px;box-shadow:var(--shadow-sm);transition:all var(--duration) var(--ease)}
-.trust-item:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:rgba(1,15,105,.12)}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text-dark);background:var(--white);border:none;border-radius:var(--radius-pill);padding:10px 20px;box-shadow:var(--shadow);transition:all var(--duration) var(--ease)}
+.trust-item:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .trust-item svg{width:17px;height:17px;color:var(--navy);flex-shrink:0}
 
 /* ── SECTION COMMON ── */
