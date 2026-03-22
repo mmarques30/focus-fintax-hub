@@ -72,7 +72,8 @@ ul{list-style:none}
 .badge.red{background:var(--red);border-color:transparent}
 
 /* ── HERO (dark immersive) ── */
-.hero{padding:80px 0 48px;background:var(--navy);position:relative;overflow:hidden}
+.hero{padding:100px 0 64px;background:var(--navy);position:relative;overflow:hidden}
+.hero-watermark{position:absolute;top:50%;left:28%;transform:translate(-50%,-50%);width:550px;height:550px;opacity:.04;filter:blur(2px);pointer-events:none;z-index:1}
 .hero::before{content:'';position:absolute;top:-300px;right:-200px;width:800px;height:800px;background:radial-gradient(circle,rgba(208,69,69,.08) 0%,transparent 60%);pointer-events:none;animation:heroGlow 8s ease-in-out infinite alternate}
 .hero::after{content:'';position:absolute;bottom:-200px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(26,45,138,.25) 0%,transparent 60%);pointer-events:none;animation:heroGlow 10s ease-in-out infinite alternate-reverse}
 @keyframes heroGlow{0%{opacity:.5;transform:scale(1)}100%{opacity:.85;transform:scale(1.1)}}
@@ -355,27 +356,13 @@ ul{list-style:none}
 <!-- HERO -->
 <section class="hero" id="inicio">
   <div class="hero-grid-pattern"></div>
+  <img src="/images/logo-focus-fintax.png" alt="" class="hero-watermark">
   <div class="container">
     <div class="hero-inner">
       <!-- esquerda -->
       <div>
-        <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> Especialistas em Varejo &middot; 15 anos</div>
         <h1>Seu negócio está deixando <em>R$ milhões</em> na mesa todo ano</h1>
         <p class="hero-desc">Supermercados, farmácias, PET shops, materiais de construção — todo varejista paga muito mais imposto do que deveria. Preencha o formulário e descubra em 1 minuto o potencial de recuperação da sua operação.</p>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="hero-stat-num">3<sup>x</sup></div>
-            <div class="hero-stat-label">Faturamento mensal<br>recuperado em 5 anos</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hero-stat-num">43</div>
-            <div class="hero-stat-label">Teses tributárias<br>aplicadas</div>
-          </div>
-          <div class="hero-stat">
-            <div class="hero-stat-num">15<sup>+</sup></div>
-            <div class="hero-stat-label">Anos exclusivos<br>no varejo</div>
-          </div>
-        </div>
       </div>
       <!-- direita: form card -->
       <div class="form-card" id="formCard">
