@@ -1,29 +1,20 @@
 
 
-## Simplificar Dobra 1 (Hero) — mais clean + logo decorativa no fundo
+## Corrigir botoes CTA — remover caixas azuis
 
-### Problema atual
-A dobra 1 tem muitos elementos competindo por atencao: eyebrow badge, titulo, subtitulo, paragrafo longo, 3 stats cards e o form card grande. Visualmente pesado.
+### Problema
+Os `div.inline-cta` estao posicionados dentro das sections (que tem backgrounds navy/light com padding grande), criando o efeito de "caixa azul" ao redor do botao. Na secao "Para quem" (linha 470), o div esta fora do `.container`, agravando o problema.
 
-### Mudancas propostas em `public/lp.html`
+### Correcoes em `public/lp.html`
 
-**1. Remover elementos excessivos do hero**
-- Remover o `.hero-eyebrow` (linha 362) — informacao redundante
-- Remover os `.hero-stats` (linhas 365-378) — os numeros ja aparecem na secao "Plataforma" mais abaixo
-- Manter apenas: titulo (h1), subtitulo curto (hero-desc) e form card
+**1. Mover os `inline-cta` para dentro dos `.container`**
+- Linha 470: mover o `<div class="inline-cta">` para antes do `</div>` do container (linha 469), nao depois
 
-**2. Adicionar logo grande decorativa no fundo**
-- Inserir a logo (`/images/logo-focus-fintax.png`) como elemento de background no hero
-- CSS: `position:absolute`, centralizada ou levemente a esquerda, tamanho grande (~500-600px), `opacity:0.04`, `filter:blur(2px)`, `pointer-events:none`
-- Efeito sutil de marca d'agua que reforca branding sem competir com o conteudo
+**2. Reduzir padding do `.inline-cta`**
+- Linha 64: trocar `padding:32px 0 0` por `padding:24px 0 0` — so um respiro acima do botao, sem criar area vazia grande
 
-**3. Ajustar espacamento**
-- Com menos elementos, aumentar `padding` do hero para respirar mais
-- Centralizar melhor o titulo verticalmente em relacao ao form
+**3. Nas secoes dark (Casos, linha 588)**: o botao ja esta dentro do container, so precisa do ajuste de padding
 
-### Resultado esperado
-Hero limpo com apenas titulo impactante, uma linha de subtitulo e o formulario. A logo grande e desfocada ao fundo adiciona personalidade sem poluir.
-
-### Arquivo alterado
-- `public/lp.html` (unico arquivo)
+### Resultado
+Botoes aparecem como elementos inline discretos dentro das secoes, sem criar blocos visuais separados.
 
