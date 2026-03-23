@@ -1,21 +1,25 @@
 
 
-## Melhorar Hero: imagem de fundo IA + logo no header
+## Diferenciar footer da ultima dobra (CTA final)
 
-### Mudancas
+### Problema
+A secao CTA final (`.section-cta`) e o footer (`.footer`) usam backgrounds muito similares (navy/navy-dark), sem separacao visual clara entre eles.
 
-**1. Gerar imagem de fundo para o hero via IA**
-- Gerar uma imagem atmosferica no estilo dark/navy que remeta ao nicho tributario/financeiro do varejo (graficos, numeros, documentos fiscais em composicao abstrata)
-- Salvar em `public/images/hero-bg.png`
-- Aplicar como background da secao `.hero` com `opacity` baixa (~0.15) para nao competir com o texto
-- Remover a logo watermark atual (`hero-watermark`) que nao ficou boa
+### Correcoes em `public/lp.html`
 
-**2. Trocar logo no header pelo arquivo enviado**
-- Copiar a logo do anexo (`32-3.png` — logo branca Focus FinTax) para `public/images/logo-focus-fintax-white.png`
-- No header (linha 341), trocar o texto "Focus FinTax" por `<img>` com a nova logo, altura ~36px
+**1. Adicionar separador visual entre CTA e footer**
+- Inserir uma linha fina `border-top` no footer: `border-top: 1px solid rgba(255,255,255,0.08)`
 
-### Arquivos alterados
-- `public/lp.html` — CSS do hero + HTML do header
-- `public/images/hero-bg.png` — nova imagem gerada por IA
-- `public/images/logo-focus-fintax-white.png` — logo do anexo
+**2. Mudar background do footer para mais escuro/diferente**
+- Footer: `background: #040e3a` (mais escuro que o navy-dark) para criar contraste sutil
+
+**3. Adicionar a logo no footer**
+- Substituir o texto "Focus FinTax" por `<img src="/images/logo-focus-fintax-white.png" height="28">` para consistencia com o header
+
+**4. Adicionar rodape inferior (copyright bar)**
+- Apos o `.footer-grid`, adicionar uma barra inferior com copyright e "Grupo Focus" em texto pequeno, separada por `border-top` sutil
+- Padding menor (`20px 0`), texto centralizado, `font-size:12px`, `color:rgba(255,255,255,.3)`
+
+### Resultado
+Footer visualmente distinto da CTA final, com logo da marca, separadores sutis e barra de copyright clean.
 
