@@ -1,10 +1,10 @@
 
 
-## Igualar cor do header a cor do footer
+## Header mais transparente + logo maior
 
-### Mudanca em `public/lp.html`
+### Mudancas em `public/lp.html`
 
-**Linha 50**: Trocar o background do `.header` de `rgba(1,15,105,.97)` para `#040e3a` (mesma cor do footer), mantendo o `backdrop-filter` e demais propriedades.
+**1. Linha 50**: Trocar `background:#040e3a` por `background:rgba(4,14,58,0.75)` — mantém a cor mas com transparência, deixando o blur do backdrop-filter criar o efeito glass
 
-Apenas 1 valor CSS alterado.
+**2. Linha 342**: Trocar `height:48px` por `height:56px` na logo do header
 
