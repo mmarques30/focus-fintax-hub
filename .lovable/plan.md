@@ -1,13 +1,17 @@
 
 
-## Ajustar cor do header para combinar com a marca
+## Ajustar copy do hero para ser mais agressiva
 
-### Analise
-O header esta com `rgba(4,14,58,0.75)` — um azul muito escuro/quase preto que destoa da identidade visual. A cor primaria da marca e `#010f69` (azul marinho).
+### Mudancas em `public/lp.html`
 
-### Correcao em `public/lp.html`
+**Linha 363 — Titulo H1:**
+De: `Seu negócio está deixando <em>R$ milhões</em> na mesa todo ano`
+Para: `Seu varejo perde em média <em>R$ 2 milhões por ano</em> em impostos pagos a mais`
 
-**Linha 50**: Trocar `background:rgba(4,14,58,0.75)` por `background:rgba(1,15,105,0.85)` — usa a cor primaria da marca (`#010f69` = rgb 1,15,105) com leve transparencia para manter o efeito glass, mas visualmente distinta das secoes escuras do corpo da pagina.
+**Linha 364 — Subtitulo:**
+De: `Supermercados, farmácias, PET shops, materiais de construção — todo varejista paga muito mais imposto do que deveria. Preencha o formulário e descubra em 1 minuto o potencial de recuperação da sua operação.`
+Para: `Supermercados, farmácias e PETs perdem fortunas por não fazer um diagnóstico tributário. É dinheiro seu, parado nos cofres do governo. Descubra em 30 segundos quanto você pode recuperar — gratuitamente.`
 
-Apenas 1 valor CSS alterado.
+### Resultado
+Copy mais direta, com valor concreto (R$ 2 milhões) e tom urgente.
 
