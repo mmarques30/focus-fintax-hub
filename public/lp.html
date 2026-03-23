@@ -73,7 +73,7 @@ ul{list-style:none}
 
 /* ── HERO (dark immersive) ── */
 .hero{padding:100px 0 64px;background:var(--navy);position:relative;overflow:hidden}
-.hero-watermark{position:absolute;top:50%;left:28%;transform:translate(-50%,-50%);width:550px;height:550px;opacity:.04;filter:blur(2px);pointer-events:none;z-index:1}
+.hero-bg-image{position:absolute;inset:0;background:url('/images/hero-bg.png') center/cover no-repeat;opacity:.15;pointer-events:none;z-index:1}
 .hero::before{content:'';position:absolute;top:-300px;right:-200px;width:800px;height:800px;background:radial-gradient(circle,rgba(208,69,69,.08) 0%,transparent 60%);pointer-events:none;animation:heroGlow 8s ease-in-out infinite alternate}
 .hero::after{content:'';position:absolute;bottom:-200px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(26,45,138,.25) 0%,transparent 60%);pointer-events:none;animation:heroGlow 10s ease-in-out infinite alternate-reverse}
 @keyframes heroGlow{0%{opacity:.5;transform:scale(1)}100%{opacity:.85;transform:scale(1.1)}}
@@ -338,7 +338,7 @@ ul{list-style:none}
 <!-- HEADER -->
 <header class="header" id="mainHeader">
   <div class="container">
-    <a href="#inicio" class="logo">Focus FinTax</a>
+    <a href="#inicio" class="logo"><img src="/images/logo-focus-fintax-white.png" alt="Focus FinTax" style="height:36px;width:auto"></a>
     <nav class="nav" id="nav">
       <a href="#inicio" class="active">Início</a>
       <a href="#oportunidades">Oportunidades</a>
@@ -354,7 +354,7 @@ ul{list-style:none}
 <!-- HERO -->
 <section class="hero" id="inicio">
   <div class="hero-grid-pattern"></div>
-  <img src="/images/logo-focus-fintax.png" alt="" class="hero-watermark">
+  <div class="hero-bg-image"></div>
   <div class="container">
     <div class="hero-inner">
       <!-- esquerda -->
