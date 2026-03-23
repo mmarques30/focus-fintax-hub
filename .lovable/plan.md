@@ -1,16 +1,15 @@
 
 
-## Corrigir numeros cortados nos cards de oportunidades
+## Ajustar tags do Alcir — todos lado a lado sem quebra de linha
 
 ### Problema
-Os numeros (01–05, +38) nos cards da secao de oportunidades estao sendo cortados. A classe `.opp-num` tem `font-size:40px`, `line-height:1` e `width:44px` — largura insuficiente para numeros de 2+ digitos, e line-height:1 corta o topo dos caracteres.
+Os 4 tags (Contador CRC, Estrategista Tributário, Analista Financeiro, Especialista em Varejo) estao quebrando em 2 linhas por causa do `flex-wrap:wrap`, e ha muito espaco vazio abaixo.
 
-### Correcao em `public/lp.html` (linha 182)
+### Correcao em `public/lp.html`
 
-Ajustar `.opp-num`:
-- `width:44px` → `width:56px` (mais espaco horizontal)
-- `line-height:1` → `line-height:1.1` (evita corte vertical)
-- Adicionar `min-width:56px` para garantir que "+38" tambem caiba
+**1. CSS (linha 229)**: Alterar `.alcir-tags` para `flex-wrap:nowrap` para manter todos na mesma linha
 
-Apenas uma linha de CSS alterada. Nenhuma mudanca estrutural.
+**2. CSS (linha 230)**: Reduzir levemente o padding dos tags para `padding:6px 14px` e `font-size:12px` para caberem em uma unica linha
+
+Apenas ajuste de CSS. Nenhuma mudanca estrutural.
 
