@@ -1,8 +1,11 @@
 
-## Igualar cor do footer à cor do header
 
-### Mudança em `public/lp.html`
+## Ajustar subtitulo do hero
 
-**Linha 281**: Trocar `background:#040e3a` por `background:rgba(1,15,105,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)` no `.footer`, igualando ao header.
+### Mudanca em `public/lp.html`
 
-Apenas 1 linha CSS alterada.
+**Linha 364**: Remover o travessao antes de "gratuitamente" e colocar a palavra em negrito com `<strong>`.
+
+De: `Descubra em 30 segundos quanto você pode recuperar — gratuitamente.`
+Para: `Descubra em 30 segundos quanto você pode recuperar <strong>gratuitamente</strong>.`
+
