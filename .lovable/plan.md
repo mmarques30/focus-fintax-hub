@@ -1,16 +1,10 @@
 
 
-## Ajustar logo do header + alinhamento do hero
+## Igualar cor do header a cor do footer
 
-### Mudancas em `public/lp.html`
+### Mudanca em `public/lp.html`
 
-**1. Aumentar logo no header (linha 342)**
-- Trocar `height:36px` por `height:48px` para a logo ficar mais visivel
+**Linha 50**: Trocar o background do `.header` de `rgba(1,15,105,.97)` para `#040e3a` (mesma cor do footer), mantendo o `backdrop-filter` e demais propriedades.
 
-**2. Centralizar titulo/subtitulo verticalmente com o formulario (linha 81)**
-- Mudar `align-items:flex-start` para `align-items:center` no `.hero-inner`
-- Isso alinha verticalmente o bloco de texto (titulo + subtitulo) ao centro do form card ao lado
-
-### Arquivos alterados
-- `public/lp.html` (2 linhas de CSS/HTML)
+Apenas 1 valor CSS alterado.
 
