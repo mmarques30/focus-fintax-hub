@@ -1,13 +1,14 @@
 
 
-## Igualar visualmente o footer ao header
+## Adicionar botao "Focus" no header da landing page
 
-### Problema
-Ambos usam `rgba(1,15,105,0.85)` com transparencia, mas o conteudo atras de cada um e diferente — o header tem o hero (mais claro) por tras, e o footer tem secoes escuras. Isso faz o footer parecer mais escuro.
+### Mudanca em `public/lp.html`
 
-### Correcao em `public/lp.html`
+**Linha 348 (apos o link "Sobre")**: Adicionar um botao/link estilizado "Focus" que aponta para `/auth`.
 
-**Linha 281**: Trocar `background:rgba(1,15,105,0.85)` por `background:#0a1a6e` — uma cor solida que corresponde a aparencia visual do header (o azul marinho da marca ligeiramente mais claro). Remover o backdrop-filter do footer ja que nao e mais necessario com cor solida.
+```html
+<a href="/auth" style="background:#fff;color:#010f69;padding:8px 20px;border-radius:6px;font-weight:700;font-size:14px;text-decoration:none;margin-left:8px">Focus</a>
+```
 
-Apenas 1 linha alterada.
+O botao tera fundo branco com texto na cor da marca, destacando-se dos links de navegacao. Ao clicar, o usuario sera direcionado para a pagina de login (`/auth`) onde fara autenticacao com email e senha.
 
