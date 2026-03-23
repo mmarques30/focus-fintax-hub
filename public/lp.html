@@ -78,7 +78,7 @@ ul{list-style:none}
 .hero::after{content:'';position:absolute;bottom:-200px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(26,45,138,.25) 0%,transparent 60%);pointer-events:none;animation:heroGlow 10s ease-in-out infinite alternate-reverse}
 @keyframes heroGlow{0%{opacity:.5;transform:scale(1)}100%{opacity:.85;transform:scale(1.1)}}
 .hero-grid-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px;pointer-events:none}
-.hero-inner{display:grid;grid-template-columns:1fr 480px;gap:64px;align-items:flex-start;position:relative;z-index:2}
+.hero-inner{display:grid;grid-template-columns:1fr 480px;gap:64px;align-items:center;position:relative;z-index:2}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:8px 18px;border-radius:var(--radius-pill);margin-bottom:24px}
 .hero-eyebrow-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;animation:pulse 2.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
