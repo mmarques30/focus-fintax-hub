@@ -1,14 +1,17 @@
 
 
-## Ajustar botao Focus para estilo de link na cor vermelha
+## Unificar e melhorar subtitulo do hero
 
-### Mudanca em `public/lp.html`
+### Problema
+A linha 365 tem texto duplicado (dois `<p class="hero-desc">` aninhados) com a mesma frase repetida.
 
-**Linha 348**: Remover fundo branco e estilizar como os outros links de navegacao, mas na cor vermelha da marca (`#d04545`).
+### Correcao em `public/lp.html`
 
-De: `<a href="/auth" style="background:#fff;color:#010f69;padding:8px 20px;border-radius:6px;font-weight:700;font-size:14px;text-decoration:none;margin-left:8px">Focus</a>`
+**Linha 365**: Substituir por um unico paragrafo unificado:
 
-Para: `<a href="/auth" style="color:#d04545;font-weight:700">Focus</a>`
+```html
+<p class="hero-desc">Supermercados, farmácias e PETs perdem fortunas por não fazer um diagnóstico tributário. É dinheiro seu, parado nos cofres do governo. Descubra em 30 segundos quanto você pode recuperar <strong>gratuitamente</strong>.</p>
+```
 
-Apenas 1 linha alterada.
+Apenas 1 linha corrigida — remove a duplicacao e mantem a copy completa em um unico paragrafo.
 
