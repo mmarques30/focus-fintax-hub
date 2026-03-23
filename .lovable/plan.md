@@ -1,20 +1,16 @@
 
 
-## Corrigir botoes CTA — remover caixas azuis
+## Corrigir numeros cortados nos cards de oportunidades
 
 ### Problema
-Os `div.inline-cta` estao posicionados dentro das sections (que tem backgrounds navy/light com padding grande), criando o efeito de "caixa azul" ao redor do botao. Na secao "Para quem" (linha 470), o div esta fora do `.container`, agravando o problema.
+Os numeros (01–05, +38) nos cards da secao de oportunidades estao sendo cortados. A classe `.opp-num` tem `font-size:40px`, `line-height:1` e `width:44px` — largura insuficiente para numeros de 2+ digitos, e line-height:1 corta o topo dos caracteres.
 
-### Correcoes em `public/lp.html`
+### Correcao em `public/lp.html` (linha 182)
 
-**1. Mover os `inline-cta` para dentro dos `.container`**
-- Linha 470: mover o `<div class="inline-cta">` para antes do `</div>` do container (linha 469), nao depois
+Ajustar `.opp-num`:
+- `width:44px` → `width:56px` (mais espaco horizontal)
+- `line-height:1` → `line-height:1.1` (evita corte vertical)
+- Adicionar `min-width:56px` para garantir que "+38" tambem caiba
 
-**2. Reduzir padding do `.inline-cta`**
-- Linha 64: trocar `padding:32px 0 0` por `padding:24px 0 0` — so um respiro acima do botao, sem criar area vazia grande
-
-**3. Nas secoes dark (Casos, linha 588)**: o botao ja esta dentro do container, so precisa do ajuste de padding
-
-### Resultado
-Botoes aparecem como elementos inline discretos dentro das secoes, sem criar blocos visuais separados.
+Apenas uma linha de CSS alterada. Nenhuma mudanca estrutural.
 
