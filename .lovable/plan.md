@@ -1,17 +1,24 @@
 
 
-## Simplificar tela de login — remover painel lateral
+## Instalar Google Tag de conversão na landing page
 
-### Mudancas em `src/pages/Login.tsx`
+### Mudança em `public/lp.html`
 
-1. **Remover componentes decorativos**: Eliminar `Spotlight`, `BackgroundChart` e os imports de `logoWhite` (nao mais usados).
+Adicionar o script do Google Tag (gtag.js) no `<head>` do arquivo, antes do fechamento `</head>`:
 
-2. **Remover painel esquerdo** (linhas 117-136): Eliminar toda a div `lg:w-[55%]` com branding/charts.
+```html
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18023300272"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18023300272');
+</script>
+```
 
-3. **Centralizar formulario**: O layout passa de split (dois paineis) para tela cheia centralizada. A div principal vira `min-h-screen flex items-center justify-center bg-background`.
+Também adicionar no `index.html` (pois a rota `/` é servida pelo React que carrega o `lp.html` via fetch, e scripts injetados via innerHTML nem sempre executam corretamente). Colocar no `<head>` do `index.html` garante que o gtag carregue em todas as páginas.
 
-4. **Manter**: Logo (para todos os tamanhos), formulario de email/senha, botao entrar, link "Esqueceu a senha?", e o modo de recuperacao de senha.
-
-### Resultado
-Tela limpa e centralizada, apenas com o logo e o formulario de acesso, sem divisoria nem painel decorativo.
+### Arquivos alterados
+1. `index.html` — adicionar gtag no `<head>`
+2. `public/lp.html` — adicionar gtag no `<head>`
 
