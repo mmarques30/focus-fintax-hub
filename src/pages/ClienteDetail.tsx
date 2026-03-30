@@ -21,6 +21,7 @@ import logoFintax from "@/assets/logo-focus-fintax.svg";
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
   const [cliente, setCliente] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
