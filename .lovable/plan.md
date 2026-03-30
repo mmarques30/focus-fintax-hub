@@ -1,19 +1,37 @@
 
 
-## Remover grid de Cobertura por Perfil — manter apenas Resumos
+## Editar e Excluir Clientes
 
-### Resumo
-Remover o card "Cobertura por Perfil" (grid colorido de combinações regime×segmento) e manter apenas as seções "Resumo por Regime" e "Resumo por Segmento" como um card independente que ocupa toda a largura.
+### Problema
+Atualmente não há como editar dados de um cliente existente nem excluí-lo. A tabela `clientes` também não tem RLS policy para DELETE.
 
-### Mudanças (`src/pages/MotorConfig.tsx`)
+### Mudanças
 
-**Linhas 400-515** — Substituir o card inteiro:
-- Remover o `<div ref={coverageRef}>` wrapper e o grid de cobertura (linhas 408-468)
-- Manter "Resumo por Regime" e "Resumo por Segmento" dentro de um novo card com título "Resumo de Cobertura"
-- Layout: `grid grid-cols-1 lg:grid-cols-2 gap-6` — Regime à esquerda, Segmento à direita, ocupando largura total
-- Remover a referência `coverageRef` e `coveredCount` se não forem usados em outro lugar
-- Remover imports não utilizados (`CheckCircle2`, `AlertTriangle`, `TooltipProvider`, etc.) se ficarem sem uso
+**1. Migration SQL — Adicionar RLS policy de DELETE**
+```sql
+CREATE POLICY "Admin gestor pmo delete clientes"
+ON public.clientes FOR DELETE TO authenticated
+USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'gestor_tributario') OR has_role(auth.uid(), 'pmo'));
+```
 
-### Resultado
-Card limpo com dois resumos lado a lado usando toda a largura disponível da página.
+**2. `src/components/clientes/ClienteFormModal.tsx` — Suportar modo edição**
+- Aceitar prop opcional `cliente` (dados existentes) para preencher o form
+- Se `cliente` fornecido: título "Editar Cliente", botão "Salvar", usar `supabase.update()` ao invés de `insert()`
+- Se não fornecido: comportamento atual de criação
+
+**3. `src/pages/ClientesList.tsx` — Botões de ação na tabela**
+- Adicionar coluna "Ações" na tabela com botões Editar (ícone Pencil) e Excluir (ícone Trash2)
+- Editar: abre `ClienteFormModal` com os dados do cliente preenchidos
+- Excluir: abre `AlertDialog` de confirmação → executa `supabase.from("clientes").delete().eq("id", id)` → recarrega lista
+- Apenas roles não-comercial veem os botões de ação
+- Ao excluir, também deletar `processos_teses` e `compensacoes_mensais` associados (cascade manual, já que não há FK)
+
+**4. `src/pages/ClienteDetail.tsx` — Botões editar/excluir no header da sidebar**
+- Adicionar botão Editar (abre modal com dados) e Excluir (confirmação → delete → navega para `/clientes`)
+
+### Arquivos alterados
+1. Migration SQL (nova RLS policy DELETE)
+2. `src/components/clientes/ClienteFormModal.tsx`
+3. `src/pages/ClientesList.tsx`
+4. `src/pages/ClienteDetail.tsx`
 
