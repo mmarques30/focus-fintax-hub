@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PIPELINE_STAGES, ACTIVE_STAGES, formatCurrency, daysSince, SEGMENTO_LABELS, getScoreLabel, SCORE_CONFIG } from "@/lib/pipeline-constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /* ─── helpers ─── */
@@ -95,8 +95,8 @@ const MONTH_ABBR: Record<string, string> = {
 /* ─── types ─── */
 interface FunnelRow { stage: string; label: string; count: number; potencial: number; avgDays: number }
 interface RecentLead { id: string; empresa: string; segmento: string; criado_em: string; potencial: number; score: number | null }
-interface MonthBar { month: string; label: string; valor: number }
-interface ClientRank { id: string; empresa: string; compensado: number; saldo: number; identificado: number }
+interface MonthBar { month: string; label: string; valor: number; honorarios: number }
+interface ClientRank { id: string; empresa: string; compensado: number; saldo: number; identificado: number; honorarios: number }
 
 export default function Dashboard() {
   const { profile, userRole } = useAuth();
@@ -201,7 +201,7 @@ export default function Dashboard() {
 
     // ═══ OPERATIONAL TAB DATA ═══
     const [clientesRes, allCompRes, allProcRes] = await Promise.all([
-      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("status", "ativo"),
+      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("compensando_fintax", true),
       supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id"),
       supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario"),
     ]);
@@ -219,23 +219,30 @@ export default function Dashboard() {
     const totalCredito = allProc.reduce((s, p) => s + Number(p.valor_credito ?? 0), 0);
     setOpSaldo(totalCredito - totalCompensado);
 
-    // Monthly bars (last 6 months)
-    const monthMap: Record<string, number> = {};
+    // Monthly bars (last 6 months) — grouped: compensado + honorarios
+    const monthMapComp: Record<string, number> = {};
+    const monthMapHon: Record<string, number> = {};
     allComp.forEach(c => {
-      const m = String(c.mes_referencia).slice(0, 7); // YYYY-MM
-      monthMap[m] = (monthMap[m] ?? 0) + Number(c.valor_compensado ?? 0);
+      const m = String(c.mes_referencia).slice(0, 7);
+      monthMapComp[m] = (monthMapComp[m] ?? 0) + Number(c.valor_compensado ?? 0);
+      monthMapHon[m] = (monthMapHon[m] ?? 0) + Number(c.valor_nf_servico ?? 0);
     });
-    const sortedMonths = Object.keys(monthMap).sort().slice(-6);
+    const sortedMonths = Object.keys(monthMapComp).sort().slice(-6);
     setMonthlyBars(sortedMonths.map(m => ({
       month: m,
-      label: MONTH_ABBR[m.slice(5, 7)] ?? m.slice(5, 7),
-      valor: monthMap[m],
+      label: `${MONTH_ABBR[m.slice(5, 7)] ?? m.slice(5, 7)}/${m.slice(2, 4)}`,
+      valor: monthMapComp[m],
+      honorarios: monthMapHon[m] ?? 0,
     })));
 
     // Top clients by compensado
     const clienteMap = Object.fromEntries(clientes.map(c => [c.id, c.empresa]));
     const compByClient: Record<string, number> = {};
-    allComp.forEach(c => { compByClient[c.cliente_id] = (compByClient[c.cliente_id] ?? 0) + Number(c.valor_compensado ?? 0); });
+    const honByClient: Record<string, number> = {};
+    allComp.forEach(c => {
+      compByClient[c.cliente_id] = (compByClient[c.cliente_id] ?? 0) + Number(c.valor_compensado ?? 0);
+      honByClient[c.cliente_id] = (honByClient[c.cliente_id] ?? 0) + Number(c.valor_nf_servico ?? 0);
+    });
     const creditByClient: Record<string, number> = {};
     allProc.forEach(p => { creditByClient[p.cliente_id] = (creditByClient[p.cliente_id] ?? 0) + Number(p.valor_credito ?? 0); });
 
@@ -244,6 +251,7 @@ export default function Dashboard() {
       id,
       empresa: clienteMap[id] ?? "—",
       compensado: compByClient[id] ?? 0,
+      honorarios: honByClient[id] ?? 0,
       identificado: creditByClient[id] ?? 0,
       saldo: (creditByClient[id] ?? 0) - (compByClient[id] ?? 0),
     }));
@@ -426,7 +434,7 @@ export default function Dashboard() {
           <>
             {/* Row 1 — 5 KPIs */}
             <div className="bg-white rounded-lg shadow-sm flex divide-x divide-gray-100" style={{ height: 72 }}>
-              <KPICell label="Clientes ativos" value={opClientes} color="text-[#0a1564]" />
+              <KPICell label="Clientes compensando" value={opClientes} color="text-[#0a1564]" />
               <KPICell label="Compensado total" value={opCompensado} color="text-[#166534]" format="currency" bold />
               <KPICell label="Honorários gerados" value={opHonorarios} color="text-[#166534]" format="currency" />
               <KPICell label="Economia líquida clientes" value={opEconomia} color="text-[#166534]" format="currency" />
@@ -443,7 +451,7 @@ export default function Dashboard() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="text-xs max-w-[240px]">Total de créditos identificados ainda não compensados na carteira ativa.</p>
+                    <p className="text-xs max-w-[240px]">Créditos identificados ainda não compensados — potencial de honorários futuros</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -460,13 +468,10 @@ export default function Dashboard() {
                     <BarChart data={monthlyBars} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => compactCurrency(v)} width={70} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `R$ ${Math.round(v / 1000)}mil`} width={70} />
                       <RechartsTooltip formatter={(v: number) => fullCurrency(v)} labelFormatter={(l) => l} />
-                      <Bar dataKey="valor" radius={[4, 4, 0, 0]} maxBarSize={48} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }}>
-                        {monthlyBars.map((_, i) => (
-                          <Cell key={i} fill={i === monthlyBars.length - 1 ? "#1e3a8a" : "#0a1564"} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="valor" name="Compensado" fill="#0a1564" radius={[4, 4, 0, 0]} maxBarSize={40} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }} />
+                      <Bar dataKey="honorarios" name="Honorários" fill="#c8001e" radius={[4, 4, 0, 0]} maxBarSize={32} label={{ position: "top", fontSize: 10, fill: "#991b1b", formatter: (v: number) => compactCurrency(v) }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -488,8 +493,9 @@ export default function Dashboard() {
                         onClick={() => navigate(`/clientes/${c.id}`)}
                       >
                         <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
-                        <span className="text-xs font-semibold text-gray-900 truncate flex-1">{c.empresa}</span>
-                        <span className="text-xs font-bold text-[#166534] w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
+                        <span className="text-xs font-semibold text-gray-900 truncate flex-1" style={{ maxWidth: 160 }}>{c.empresa.length > 22 ? c.empresa.slice(0, 22) + "…" : c.empresa}</span>
+                        <span className="text-xs font-bold text-[#166534] w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
+                        <span className="text-[10px] font-medium text-[#0a1564] w-16 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.honorarios)}</span>
                         <span className={`text-[10px] font-semibold w-20 text-right ${c.saldo > 500000 ? "text-[#c8001e]" : "text-gray-400"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                           {compactCurrency(c.saldo)}
                         </span>
@@ -528,20 +534,13 @@ export default function Dashboard() {
 
             {/* Row 4 — Current month strip */}
             <div className="bg-white rounded-lg shadow-sm h-14 flex items-center px-5">
-              {currentMonthComp > 0 ? (
-                <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                  <span className="text-gray-500">Compensado em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthComp)}</span></span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">Honorários em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthHon)}</span></span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">Clientes com compensação: <span className="font-bold text-gray-900">{currentMonthClientes}</span></span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="h-2 w-2 rounded-full bg-orange-400" />
-                  Nenhuma compensação registrada em <span className="capitalize">{currentMonth}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <span className="text-gray-500">{opClientes} clientes na carteira</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500"><span className="font-bold text-gray-900">{compactCurrency(opCompensado)}</span> compensados</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500"><span className="font-bold text-[#c8001e]">{compactCurrency(opSaldo)}</span> saldo disponível</span>
+              </div>
             </div>
           </>
         )}
