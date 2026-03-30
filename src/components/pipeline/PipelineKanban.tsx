@@ -92,7 +92,7 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
                         <span className="text-xs text-muted-foreground font-medium">{stageLeads.length}</span>
                       </div>
                       {totalPotencial > 0 && (
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(totalPotencial)}</p>
+                        <p className="text-[10px] text-[#0a1564] font-medium">{formatCurrency(totalPotencial)}</p>
                       )}
                     </div>
 
