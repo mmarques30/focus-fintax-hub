@@ -14,6 +14,7 @@ import LeadQueue from "@/pages/LeadQueue";
 import LeadForm from "@/pages/LeadForm";
 import LeadReport from "@/pages/LeadReport";
 import Benchmarks from "@/pages/Benchmarks";
+import Clientes from "@/pages/Clientes";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
