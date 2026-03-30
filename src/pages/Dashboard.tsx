@@ -219,17 +219,20 @@ export default function Dashboard() {
     const totalCredito = allProc.reduce((s, p) => s + Number(p.valor_credito ?? 0), 0);
     setOpSaldo(totalCredito - totalCompensado);
 
-    // Monthly bars (last 6 months)
-    const monthMap: Record<string, number> = {};
+    // Monthly bars (last 6 months) — grouped: compensado + honorarios
+    const monthMapComp: Record<string, number> = {};
+    const monthMapHon: Record<string, number> = {};
     allComp.forEach(c => {
-      const m = String(c.mes_referencia).slice(0, 7); // YYYY-MM
-      monthMap[m] = (monthMap[m] ?? 0) + Number(c.valor_compensado ?? 0);
+      const m = String(c.mes_referencia).slice(0, 7);
+      monthMapComp[m] = (monthMapComp[m] ?? 0) + Number(c.valor_compensado ?? 0);
+      monthMapHon[m] = (monthMapHon[m] ?? 0) + Number(c.valor_nf_servico ?? 0);
     });
-    const sortedMonths = Object.keys(monthMap).sort().slice(-6);
+    const sortedMonths = Object.keys(monthMapComp).sort().slice(-6);
     setMonthlyBars(sortedMonths.map(m => ({
       month: m,
-      label: MONTH_ABBR[m.slice(5, 7)] ?? m.slice(5, 7),
-      valor: monthMap[m],
+      label: `${MONTH_ABBR[m.slice(5, 7)] ?? m.slice(5, 7)}/${m.slice(2, 4)}`,
+      valor: monthMapComp[m],
+      honorarios: monthMapHon[m] ?? 0,
     })));
 
     // Top clients by compensado
