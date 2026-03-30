@@ -15,6 +15,7 @@ import LeadForm from "@/pages/LeadForm";
 import LeadReport from "@/pages/LeadReport";
 import Benchmarks from "@/pages/Benchmarks";
 import Clientes from "@/pages/Clientes";
+import Diagnostico from "@/pages/Diagnostico";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
