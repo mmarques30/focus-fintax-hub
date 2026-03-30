@@ -26,8 +26,6 @@ export default function ClienteDetail() {
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
   const obsDebounce = useRef<NodeJS.Timeout>();
-  const [mapaOpen, setMapaOpen] = useState(false);
-  const [mapaData, setMapaData] = useState<{ processos: any[]; compensacoes: any[] } | null>(null);
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
