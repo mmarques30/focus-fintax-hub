@@ -15,10 +15,14 @@ const SEGMENTO_MAP: Record<string, string> = {
 };
 
 const FATURAMENTO_MAP: Record<string, string> = {
-  "Até R$ 500 mil": "ate_2m",
-  "R$ 500 mil – R$ 1M": "ate_2m",
-  "R$ 1M – R$ 5M": "2m_15m",
-  "R$ 5M – R$ 20M": "2m_15m",
+  "Até R$ 500 mil": "ate_500k",
+  "R$ 500 mil – R$ 1M": "500k_2m",
+  "R$ 500 mil – R$ 2M": "500k_2m",
+  "R$ 1M – R$ 5M": "2m_5m",
+  "R$ 2M – R$ 5M": "2m_5m",
+  "R$ 5M – R$ 15M": "5m_15m",
+  "R$ 5M – R$ 20M": "5m_15m",
+  "Acima de R$ 15M": "acima_15m",
   "Acima de R$ 20M": "acima_15m",
 };
 
