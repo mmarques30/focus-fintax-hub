@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search, Shield, Users as UsersIcon } from "lucide-react";
+import { SCREENS, getDefaultPermissions, type ScreenPermission } from "@/lib/screen-permissions";
 
 interface UserRow {
   user_id: string;
@@ -46,12 +48,12 @@ export default function UserManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
 
-  // Form state for creating users via signup
   const [formEmail, setFormEmail] = useState("");
   const [formName, setFormName] = useState("");
   const [formCargo, setFormCargo] = useState("");
   const [formRole, setFormRole] = useState("cliente");
   const [formPassword, setFormPassword] = useState("");
+  const [formPermissions, setFormPermissions] = useState<ScreenPermission[]>(getDefaultPermissions("cliente"));
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
@@ -84,13 +86,27 @@ export default function UserManagement() {
     fetchUsers();
   }, []);
 
-  const openEdit = (u: UserRow) => {
+  const loadUserPermissions = async (userId: string, role: string) => {
+    const { data } = await supabase
+      .from("user_permissions")
+      .select("screen_key, can_access, read_only")
+      .eq("user_id", userId);
+
+    if (data && data.length > 0) {
+      setFormPermissions(data as ScreenPermission[]);
+    } else {
+      setFormPermissions(getDefaultPermissions(role));
+    }
+  };
+
+  const openEdit = async (u: UserRow) => {
     setEditUser(u);
     setFormName(u.full_name);
     setFormEmail(u.email);
     setFormCargo(u.cargo);
     setFormRole(u.role);
     setFormPassword("");
+    await loadUserPermissions(u.user_id, u.role);
     setDialogOpen(true);
   };
 
@@ -101,7 +117,32 @@ export default function UserManagement() {
     setFormCargo("");
     setFormRole("cliente");
     setFormPassword("");
+    setFormPermissions(getDefaultPermissions("cliente"));
     setDialogOpen(true);
+  };
+
+  const handleRoleChange = (newRole: string) => {
+    setFormRole(newRole);
+    // Auto-fill default permissions when role changes (only if not editing with custom perms)
+    setFormPermissions(getDefaultPermissions(newRole));
+  };
+
+  const toggleAccess = (screenKey: string) => {
+    setFormPermissions((prev) =>
+      prev.map((p) =>
+        p.screen_key === screenKey
+          ? { ...p, can_access: !p.can_access, read_only: !p.can_access ? p.read_only : false }
+          : p
+      )
+    );
+  };
+
+  const toggleReadOnly = (screenKey: string) => {
+    setFormPermissions((prev) =>
+      prev.map((p) =>
+        p.screen_key === screenKey ? { ...p, read_only: !p.read_only } : p
+      )
+    );
   };
 
   const handleSave = async () => {
@@ -117,6 +158,7 @@ export default function UserManagement() {
           cargo: formCargo,
           role: formRole,
           current_role: editUser.role,
+          permissions: formPermissions,
         },
       });
 
@@ -142,6 +184,7 @@ export default function UserManagement() {
           full_name: formName,
           cargo: formCargo,
           role: formRole,
+          permissions: formPermissions,
         },
       });
 
@@ -202,7 +245,7 @@ export default function UserManagement() {
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">
                 {editUser ? "Editar Usuário" : "Novo Usuário"}
@@ -231,7 +274,7 @@ export default function UserManagement() {
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold">Perfil de acesso</Label>
-                <Select value={formRole} onValueChange={setFormRole}>
+                <Select value={formRole} onValueChange={handleRoleChange}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -244,6 +287,49 @@ export default function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Screen Permissions */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label className="font-semibold text-sm">Permissões de Tela</Label>
+                <p className="text-xs text-muted-foreground">Marque as telas que este usuário pode acessar. "Somente leitura" impede edições.</p>
+                <div className="space-y-2">
+                  {SCREENS.map((screen) => {
+                    const perm = formPermissions.find((p) => p.screen_key === screen.key);
+                    const hasAccess = perm?.can_access ?? false;
+                    const readOnly = perm?.read_only ?? false;
+                    return (
+                      <div key={screen.key} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={hasAccess}
+                            onCheckedChange={() => toggleAccess(screen.key)}
+                            id={`access-${screen.key}`}
+                          />
+                          <label
+                            htmlFor={`access-${screen.key}`}
+                            className={`text-sm cursor-pointer ${hasAccess ? "text-foreground font-medium" : "text-muted-foreground line-through"}`}
+                          >
+                            {screen.label}
+                          </label>
+                        </div>
+                        {hasAccess && (
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={readOnly}
+                              onCheckedChange={() => toggleReadOnly(screen.key)}
+                              id={`ro-${screen.key}`}
+                            />
+                            <label htmlFor={`ro-${screen.key}`} className="text-xs text-muted-foreground cursor-pointer">
+                              Somente leitura
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <Button onClick={handleSave} className="w-full font-bold" disabled={saving}>
                 {saving ? "Salvando..." : editUser ? "Salvar alterações" : "Criar usuário"}
               </Button>
