@@ -184,8 +184,14 @@ export default function ClienteDetail() {
         </Button>
         <h2 className="text-lg font-bold leading-tight">{cliente.empresa}</h2>
 
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
-          <Upload className="h-4 w-4" /> Importar dados Laratex
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-3.5 w-3.5" /> Editar
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive gap-1" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="h-3.5 w-3.5" /> Excluir
+          </Button>
+        </div>
         </Button>
 
         <div className="space-y-3 text-sm">
