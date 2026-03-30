@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Users, LogOut, UserPlus, Database } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, UserPlus, Database, Building2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,9 +16,10 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Leads", url: "/leads", icon: UserPlus, roles: ["admin", "comercial"] },
+  { title: "Pipeline de Leads", url: "/leads", icon: UserPlus, roles: ["admin", "comercial", "pmo"] },
+  { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo"] },
+  { title: "Benchmarks e Teses", url: "/benchmarks", icon: Database, roles: ["admin"] },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
-  { title: "Benchmarks", url: "/benchmarks", icon: Database, roles: ["admin"] },
 ];
 
 export function AppSidebar() {
