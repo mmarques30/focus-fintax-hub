@@ -7,10 +7,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const FATURAMENTO_VALORES: Record<string, number> = {
-  "ate_2m": 24_000_000,
-  "2m_15m": 102_000_000,
-  "acima_15m": 300_000_000,
+const REGIME_MAP: Record<string, string> = {
+  "Simples Nacional": "simples",
+  "Lucro Presumido": "lucro_presumido",
+  "Lucro Real": "lucro_real",
+};
+
+const FATURAMENTO_MIDPOINTS: Record<string, number> = {
+  "ate_2m": 1_000_000,
+  "2m_15m": 3_500_000,
+  "acima_15m": 20_000_000,
 };
 
 const FATURAMENTO_LABELS: Record<string, string> = {
@@ -70,28 +76,32 @@ serve(async (req) => {
       });
     }
 
-    const { data: benchmarks } = await supabase
-      .from("benchmarks_teses")
+    const regimeKey = REGIME_MAP[lead.regime_tributario] || "simples";
+
+    // Fetch eligible teses from motor_teses_config
+    const { data: motorTeses } = await supabase
+      .from("motor_teses_config")
       .select("*")
       .eq("ativo", true)
-      .eq("faturamento_faixa", lead.faturamento_faixa)
-      .eq("segmento", lead.segmento);
+      .contains("regimes_elegiveis", [regimeKey])
+      .contains("segmentos_elegiveis", [lead.segmento])
+      .order("ordem_exibicao", { ascending: true });
 
-    const faturamentoAnual = FATURAMENTO_VALORES[lead.faturamento_faixa] || 24_000_000;
+    const faturamentoMensal = FATURAMENTO_MIDPOINTS[lead.faturamento_faixa] || 1_000_000;
 
-    const teses = (benchmarks || []).map((b: any) => ({
-      tese_nome: b.tese_nome,
-      estimativa_minima: Math.round(faturamentoAnual * (b.percentual_minimo / 100)),
-      estimativa_maxima: Math.round(faturamentoAnual * (b.percentual_maximo / 100)),
-      percentual_minimo: b.percentual_minimo,
-      percentual_maximo: b.percentual_maximo,
+    const teses = (motorTeses || []).map((t: any) => ({
+      tese_nome: t.nome_exibicao,
+      descricao_comercial: t.descricao_comercial || "",
+      ordem_exibicao: t.ordem_exibicao || 0,
+      estimativa_minima: Math.round(faturamentoMensal * 60 * t.percentual_min),
+      estimativa_maxima: Math.round(faturamentoMensal * 60 * t.percentual_max),
+      percentual_minimo: Number(t.percentual_min),
+      percentual_maximo: Number(t.percentual_max),
     }));
 
-    // Filter IPI from public totals
-    const tesasPublicas = teses.filter((t: any) => !t.tese_nome.toLowerCase().includes("ipi embutido"));
-    const estimativa_total_minima = tesasPublicas.reduce((s: number, t: any) => s + t.estimativa_minima, 0);
-    const estimativa_total_maxima = tesasPublicas.reduce((s: number, t: any) => s + t.estimativa_maxima, 0);
-
+    const estimativa_total_minima = teses.reduce((s: number, t: any) => s + t.estimativa_minima, 0);
+    const estimativa_total_maxima = teses.reduce((s: number, t: any) => s + t.estimativa_maxima, 0);
+    const faturamentoAnual = faturamentoMensal * 12;
     const score = Math.min(100, Math.round((estimativa_total_maxima / faturamentoAnual) * 100));
 
     const segmentoLabel = SEGMENTO_LABELS[lead.segmento] || lead.segmento;
@@ -99,7 +109,7 @@ serve(async (req) => {
 
     let conteudoHtml = "";
 
-    if (lovableApiKey && tesasPublicas.length > 0) {
+    if (lovableApiKey && teses.length > 0) {
       const prompt = `Você é um consultor tributário da Focus FinTax. Gere um relatório HTML formatado (apenas o body content, sem tags html/head/body) com DOIS BLOCOS distintos.
 
 BLOCO 1 — CONTEXTO EDUCATIVO (fixo, independe do lead):
@@ -172,7 +182,7 @@ REGRAS VISUAIS E DE CONTEÚDO:
                 <p style="font-size: 18px; font-weight: bold; color: #010f69; margin: 0;">Potencial estimado de recuperação:</p>
                 <p style="font-size: 24px; font-weight: bold; color: #c73737; margin: 8px 0 0 0;">R$ ${estimativa_total_minima.toLocaleString("pt-BR")} a R$ ${estimativa_total_maxima.toLocaleString("pt-BR")}</p>
               </div>
-            ` : `<p>Não foram identificadas estimativas para este perfil no momento. Verifique os benchmarks cadastrados.</p>`}
+            ` : `<p>Não foram identificadas estimativas para este perfil no momento.</p>`}
             <p style="margin-top: 16px; font-size: 13px; color: #888; border-top: 1px solid #dde0f0; padding-top: 12px;">
               Este valor é uma estimativa baseada em médias históricas de empresas do mesmo segmento e porte. O valor exato será confirmado em uma análise detalhada com os seus dados reais.
             </p>
