@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Calculator, AlertTriangle, CheckCircle2, Clock, ShieldCheck, BarChart3 } from "lucide-react";
+import { Plus, Pencil, Calculator, AlertTriangle, Clock, ShieldCheck, BarChart3 } from "lucide-react";
 
 interface TeseConfig {
   id: string;
