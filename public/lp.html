@@ -746,6 +746,11 @@ async function runDiag(){
       body:JSON.stringify({nome,empresa,cnpj,whatsapp,email,segmento,regime,faturamento:fat})
     });
     const data=await resp.json();
+    if(resp.ok&&data.blocked){
+      alert(data.message||'Regime não elegível.');
+      if(btn){btn.textContent=btnOrigText;btn.disabled=false;}
+      return;
+    }
     if(resp.ok&&data.token){
       window.location.href='/diagnostico/'+data.token;
       return;
