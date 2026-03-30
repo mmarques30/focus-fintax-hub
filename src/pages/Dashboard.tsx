@@ -236,15 +236,17 @@ export default function Dashboard() {
     setMotorTesesAtivas(tesesRes.count ?? 0);
 
     // ═══ OPERATIONAL TAB DATA ═══
-    const [clientesRes, allCompRes, allProcRes] = await Promise.all([
+    const [clientesRes, allCompRes, allProcRes, totalAtivosRes] = await Promise.all([
       supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("compensando_fintax", true),
       supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id"),
       supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario"),
+      supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
     ]);
     const clientes = clientesRes.data ?? [];
     const allComp = allCompRes.data ?? [];
     const allProc = allProcRes.data ?? [];
     setOpClientes(clientesRes.count ?? 0);
+    setOpTotalAtivos(totalAtivosRes.count ?? 0);
 
     const totalCompensado = allComp.reduce((s, c) => s + Number(c.valor_compensado ?? 0), 0);
     setOpCompensado(totalCompensado);
