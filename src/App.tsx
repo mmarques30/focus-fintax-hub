@@ -13,6 +13,7 @@ import UserManagement from "@/pages/UserManagement";
 import LeadQueue from "@/pages/LeadQueue";
 import LeadForm from "@/pages/LeadForm";
 import LeadReport from "@/pages/LeadReport";
+import Pipeline from "@/pages/Pipeline";
 import Benchmarks from "@/pages/Benchmarks";
 import Clientes from "@/pages/Clientes";
 import Diagnostico from "@/pages/Diagnostico";
@@ -39,6 +40,7 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/pipeline" element={<Pipeline />} />
                       <Route path="/leads" element={<LeadQueue />} />
                       <Route path="/leads/novo" element={<LeadForm />} />
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />
