@@ -1,77 +1,63 @@
 
 
-## Criar RPC `calcular_diagnostico` + tabela `diagnosticos_leads` e refatorar Edge Function
+## Importar clientes da planilha + alinhar fluxo
 
-### Contexto atual
-- A edge function `submit-lead-public` insere o lead, busca teses do `motor_teses_config`, calcula estimativas manualmente e insere em `relatorios_leads`
-- A página `/diagnostico/:token` usa RPC `get_diagnostico_by_token` que busca de `leads` + `relatorios_leads`
-- A tabela `diagnosticos_leads` **não existe** no banco — precisa ser criada
-- O RPC `calcular_diagnostico` **não existe** — precisa ser criado
+### Dados na planilha
+A planilha tem ~85 clientes reais (linhas 9-93, Page 1) com dados por tese: REPORTO, SUBVENÇÃO, INSUMOS, ICMS-ST da BC PIS/COFINS, PIS/COFINS BC. Cada tese tem: valor_credito, status_contrato, percentual_honorario, valor_honorario, status_processo.
 
 ### Plano
 
-**1. Migration — Criar tabela `diagnosticos_leads`**
+**1. Script Python para importar dados via INSERT no banco**
 
-```sql
-CREATE TABLE public.diagnosticos_leads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id uuid NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  tese_nome text NOT NULL,
-  descricao_comercial text DEFAULT '',
-  ordem_exibicao integer DEFAULT 0,
-  estimativa_minima numeric DEFAULT 0,
-  estimativa_maxima numeric DEFAULT 0,
-  percentual_minimo numeric DEFAULT 0,
-  percentual_maximo numeric DEFAULT 0,
-  criado_em timestamptz DEFAULT now()
-);
+Usar `openpyxl` para ler o XLSX e `psql` para insertar. Para cada linha válida (com EMPRESA + CNPJ):
 
-ALTER TABLE diagnosticos_leads ENABLE ROW LEVEL SECURITY;
+- **Inserir em `clientes`**: empresa, cnpj, compensando_fintax (SIM→true), compensacao_outro_escritorio, segmento="supermercado", regime_tributario="Lucro Real", status="ativo"
+- **Inserir em `processos_teses`** (até 5 por cliente, só se tiver valor > 0):
+  - REPORTO → tese="reporto"
+  - SUBVENÇÃO → tese="subvencao"  
+  - INSUMOS → tese="insumos"
+  - ICMS-ST → tese="icms_st_bc_pis_cofins"
+  - PIS/COFINS BC → tese="pis_cofins_bc"
 
--- Public read via token (handled by RPC with SECURITY DEFINER)
--- Admin/comercial/pmo can SELECT
-CREATE POLICY "Admin comercial pmo select diagnosticos"
-  ON diagnosticos_leads FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'comercial') OR has_role(auth.uid(), 'pmo'));
-```
+**Mapeamento de status_contrato:**
+- "ASSINADO" → "assinado"
+- "AGUARDANDO ASS" / variantes → "aguardando_assinatura"
+- "não vai fazer" / "nao vai fazer" → "nao_vai_fazer"
 
-**2. Migration — Criar RPC `calcular_diagnostico`**
+**Mapeamento de status_processo:**
+- "COMPENSANDO" / "COMPESANDO" → "compensando"
+- "PEDIDO FEITO RECEITA" → "pedido_feito_receita"
+- "NÃO PROTOCOLADO" / variantes → "nao_protocolado"
+- "A INICIAR" → "a_iniciar"
+- "COMPENSADO" → "compensado"
+- "A COMPENSAR" → "a_compensar"
+- "PROTOCOLADO" → "protocolado"
+- "DESISTIU" / "DESISITU" → "desistiu"
+- Sem status / pendência docs → "a_iniciar"
 
-A function recebe `lead_id`, `faturamento_mensal`, `regime_key`, `segmento` e:
-- Busca teses elegíveis de `motor_teses_config` (ativo, regime, segmento)
-- Calcula estimativas (faturamento_mensal * 60 * percentual)
-- Insere cada tese em `diagnosticos_leads`
-- Calcula totais e score
-- Atualiza `leads` com `score_lead`, `status = 'relatorio_gerado'`
-- Insere/atualiza `relatorios_leads` (manter compatibilidade com página existente)
+**2. Alinhamento com o fluxo (imagem anexa)**
 
-```sql
-CREATE OR REPLACE FUNCTION public.calcular_diagnostico(
-  _lead_id uuid,
-  _faturamento_mensal numeric,
-  _regime text,
-  _segmento text
-) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$ ... $$;
-```
+O fluxo mostra: Comercial → Supermercado (levantamento teses, apresentação, contrato) → Focus FinTax (compensações por tipo de tese: Subvenção, Insumos, Exc. ICMS, Reporto, PIS/COFINS).
 
-**3. Migration — Atualizar `get_diagnostico_by_token`**
+O sistema já suporta isso com:
+- Pipeline/CRM (comercial prospecta leads)
+- Conversão lead→cliente com processos_teses por tese
+- ClienteDetail com tabs de processos, compensações e resumo financeiro
+- Cada processo_tese tem status_contrato + status_processo individual
 
-Alterar para incluir dados de `diagnosticos_leads` no resultado (ou manter lendo de `relatorios_leads` que o RPC já sincroniza).
+Sem mudanças estruturais necessárias — o modelo atual já reflete o fluxo.
 
-**4. Refatorar `supabase/functions/submit-lead-public/index.ts`**
+**3. Execução**
 
-- Manter: insert do lead, mapeamento de enums (SEGMENTO_MAP, FATURAMENTO_MAP, REGIME_MAP)
-- Remover: toda a lógica manual de busca motor_teses_config, cálculo de teses, insert em relatorios_leads, update de score
-- Adicionar: chamada `supabase.rpc('calcular_diagnostico', { _lead_id, _faturamento_mensal, _regime, _segmento })`
-- Retornar: `{ success: true, token: lead.token }` (o frontend LP redireciona para `/diagnostico/{token}`)
+Rodar script Python que:
+1. Lê o XLSX com openpyxl
+2. Parseia valores monetários (remove "R$", pontos, vírgulas)
+3. Insere clientes via psql
+4. Para cada tese com valor > 0, insere processo_tese vinculado ao cliente_id
+5. Gera relatório de quantos clientes/processos importados
 
-**5. Sem alteração no frontend**
-
-A página `Diagnostico.tsx` continua usando `get_diagnostico_by_token` que lê de `relatorios_leads` — o RPC garante que essa tabela é populada.
-
-### Arquivos alterados
-1. **Migration SQL** — criar `diagnosticos_leads`, criar `calcular_diagnostico`, opcionalmente atualizar `get_diagnostico_by_token`
-2. `supabase/functions/submit-lead-public/index.ts` — simplificar para insert + RPC call
+### Resultado esperado
+- ~85 clientes na tabela `clientes`
+- ~200-300 processos_teses vinculados (múltiplas teses por cliente)
+- Dados visíveis imediatamente na página /clientes do sistema
 
