@@ -101,6 +101,51 @@ export type Database = {
         }
         Relationships: []
       }
+      motor_teses_config: {
+        Row: {
+          ativo: boolean | null
+          atualizado_em: string | null
+          atualizado_por: string | null
+          descricao_comercial: string | null
+          id: string
+          nome_exibicao: string
+          ordem_exibicao: number | null
+          percentual_max: number
+          percentual_min: number
+          regimes_elegiveis: string[]
+          segmentos_elegiveis: string[]
+          tese: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          atualizado_por?: string | null
+          descricao_comercial?: string | null
+          id?: string
+          nome_exibicao: string
+          ordem_exibicao?: number | null
+          percentual_max: number
+          percentual_min: number
+          regimes_elegiveis?: string[]
+          segmentos_elegiveis?: string[]
+          tese: string
+        }
+        Update: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          atualizado_por?: string | null
+          descricao_comercial?: string | null
+          id?: string
+          nome_exibicao?: string
+          ordem_exibicao?: number | null
+          percentual_max?: number
+          percentual_min?: number
+          regimes_elegiveis?: string[]
+          segmentos_elegiveis?: string[]
+          tese?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cargo: string
