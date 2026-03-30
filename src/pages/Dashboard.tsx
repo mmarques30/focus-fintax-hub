@@ -426,7 +426,7 @@ export default function Dashboard() {
           <>
             {/* Row 1 — 5 KPIs */}
             <div className="bg-white rounded-lg shadow-sm flex divide-x divide-gray-100" style={{ height: 72 }}>
-              <KPICell label="Clientes ativos" value={opClientes} color="text-[#0a1564]" />
+              <KPICell label="Clientes compensando" value={opClientes} color="text-[#0a1564]" />
               <KPICell label="Compensado total" value={opCompensado} color="text-[#166534]" format="currency" bold />
               <KPICell label="Honorários gerados" value={opHonorarios} color="text-[#166534]" format="currency" />
               <KPICell label="Economia líquida clientes" value={opEconomia} color="text-[#166534]" format="currency" />
