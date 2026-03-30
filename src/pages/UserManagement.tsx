@@ -219,7 +219,7 @@ export default function UserManagement() {
   if (!isAdmin) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
+        <h1 className="font-display text-xl font-bold text-navy">Gestão de Usuários</h1>
         <Card className="border-card-border">
           <CardContent className="p-8 text-center">
             <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -235,8 +235,8 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
-          <p className="text-body-text text-sm mt-1">Gerencie usuários, permissões e acessos do sistema</p>
+          <h1 className="font-display text-xl font-bold text-navy">Gestão de Usuários</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">permissões e acessos do sistema</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>

@@ -7,14 +7,14 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Building2, Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2 } from "lucide-react";
+import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
+import { KpiBox } from "@/components/dashboard/dashboard-utils";
 import { toast } from "sonner";
 
 export default function ClientesList() {
@@ -109,10 +109,9 @@ export default function ClientesList() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Building2 className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Clientes Ativos</h1>
-          <Badge variant="secondary">{totalClientes}</Badge>
+        <div>
+          <h1 className="font-display text-xl font-bold text-navy">Clientes Ativos</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">carteira de clientes e compensações</p>
         </div>
         <div className="flex gap-2">
           {!isComercial && (
@@ -127,12 +126,12 @@ export default function ClientesList() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Total Clientes</p><p className="text-lg font-bold">{totalClientes}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Compensando Fintax</p><p className="text-lg font-bold">{totalCompensando}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Crédito Identificado</p><p className="text-lg font-bold">{formatCurrencyBR(globalCredito)}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Já Compensado</p><p className="text-lg font-bold">{formatCurrencyBR(globalCompensado)}</p></CardContent></Card>
-        <Card><CardContent className="p-3"><p className="text-xs text-muted-foreground">Saldo Restante</p><p className="text-lg font-bold">{formatCurrencyBR(globalCredito - globalCompensado)}</p></CardContent></Card>
+      <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
+        <KpiBox label="Total clientes" value={String(totalClientes)} sub="cadastrados" />
+        <KpiBox label="Compensando Fintax" value={String(totalCompensando)} sub="clientes ativos" />
+        <KpiBox label="Crédito identificado" value={formatCurrencyBR(globalCredito)} sub="total identificado" colorClass="red" />
+        <KpiBox label="Já compensado" value={formatCurrencyBR(globalCompensado)} sub="realizado" colorClass="green" />
+        <KpiBox label="Saldo restante" value={formatCurrencyBR(globalCredito - globalCompensado)} sub="disponível" colorClass="red" last />
       </div>
 
       {/* Filters */}
