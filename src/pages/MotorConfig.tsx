@@ -108,7 +108,7 @@ export default function MotorConfig() {
   const [editData, setEditData] = useState<Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> & { id?: string }>(emptyTese);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const coverageRef = useRef<HTMLDivElement>(null);
+  
 
   const [simSegmento, setSimSegmento] = useState("supermercado");
   const [simRegime, setSimRegime] = useState("lucro_real");
