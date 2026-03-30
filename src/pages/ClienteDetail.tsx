@@ -210,6 +210,9 @@ export default function ClienteDetail() {
         <Button variant="outline" size="sm" className="w-full justify-start gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={openMapa}>
           <FileText className="h-4 w-4" /> Gerar Mapa Tributário
         </Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
+          <Upload className="h-4 w-4" /> Importar dados Laratex
+        </Button>
 
         <div className="space-y-3 text-sm">
           <div><span className="text-muted-foreground">CNPJ:</span> {cliente.cnpj}</div>
