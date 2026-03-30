@@ -33,8 +33,10 @@ const REGIME_MAP: Record<string, string> = {
 };
 
 const FATURAMENTO_MIDPOINTS: Record<string, number> = {
-  "ate_2m": 1_000_000,
-  "2m_15m": 3_500_000,
+  "ate_500k": 250_000,
+  "500k_2m": 1_250_000,
+  "2m_5m": 3_500_000,
+  "5m_15m": 10_000_000,
   "acima_15m": 20_000_000,
 };
 
