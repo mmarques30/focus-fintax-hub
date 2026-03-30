@@ -1,76 +1,51 @@
 
 
-## Criar página pública de diagnóstico — `/diagnostico/:token`
+## Integrar formulário LP → banco → diagnóstico
 
-### Visão geral
-Página pública (sem login) que exibe o resultado do diagnóstico tributário para o lead. O acesso é controlado por um token UUID na URL.
+### Contexto
+O formulário da LP (`runDiag()`) atualmente faz cálculo 100% client-side com valores fixos. Precisamos: salvar o lead no banco, calcular com benchmarks reais, salvar relatório, e redirecionar para `/diagnostico/:token`.
 
-### 1. Migração de banco de dados
+### Problema de mapeamento
+Os valores do formulário LP (ex: "Supermercado", "Até R$ 500 mil") diferem dos valores no banco (ex: `supermercado`, `ate_2m`). Precisamos mapear no backend.
 
-**Adicionar coluna `token` na tabela `leads`:**
-```sql
-ALTER TABLE public.leads ADD COLUMN token uuid DEFAULT gen_random_uuid() UNIQUE;
-UPDATE public.leads SET token = gen_random_uuid() WHERE token IS NULL;
-ALTER TABLE public.leads ALTER COLUMN token SET NOT NULL;
+### 1. Nova edge function `submit-lead-public`
+
+Criar `supabase/functions/submit-lead-public/index.ts` — função pública (sem auth):
+
+- Recebe: `nome`, `empresa`, `cnpj`, `whatsapp`, `segmento`, `regime`, `faturamento` (valores do formulário LP como strings)
+- Mapeia valores do form para valores do banco:
+  - Segmento: "Supermercado" → `supermercado`, "Farmácia" → `farmacia`, "PET Shop" → `pet`, "Material de Construção" → `materiais_construcao`, resto → `outros`
+  - Faturamento: "Até R$ 500 mil" / "R$ 500 mil – R$ 1M" → `ate_2m`, "R$ 1M – R$ 5M" / "R$ 5M – R$ 20M" → `2m_15m`, "Acima de R$ 20M" → `acima_15m`
+  - Regime: direto (já compatível)
+- Insere na tabela `leads` com `origem = 'formulario_lp'`, `status = 'novo'`
+- Consulta `benchmarks_teses` cruzando segmento + faturamento_faixa
+- Calcula `valor_min = base_mensal × 60 × percentual_min`, `valor_max = base_mensal × 60 × percentual_max` por tese
+- Insere na tabela `relatorios_leads`
+- Retorna `{ token }` para redirect
+
+Usa `SUPABASE_SERVICE_ROLE_KEY` para bypass de RLS (função pública precisa inserir sem auth).
+
+### 2. Alterar `runDiag()` em `public/lp.html`
+
+Modificar a função para:
+- Coletar os dados do form
+- Fazer `fetch` à edge function `submit-lead-public`
+- Em caso de sucesso, redirecionar: `window.location.href = '/diagnostico/' + data.token`
+- Em caso de erro, manter o comportamento atual (cálculo client-side como fallback)
+- Adicionar um spinner/loading state no botão durante o envio
+
+Nenhuma mudança visual — apenas o comportamento do submit.
+
+### 3. Configurar `verify_jwt = false` na config
+
+Adicionar bloco em `supabase/config.toml` para a nova função:
+```toml
+[functions.submit-lead-public]
+verify_jwt = false
 ```
-
-**Criar função `get_diagnostico_by_token` (security definer)** para acesso público sem RLS:
-```sql
-CREATE OR REPLACE FUNCTION public.get_diagnostico_by_token(_token uuid)
-RETURNS json
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  result json;
-BEGIN
-  SELECT json_build_object(
-    'lead', row_to_json(l),
-    'relatorio', row_to_json(r)
-  ) INTO result
-  FROM leads l
-  LEFT JOIN relatorios_leads r ON r.lead_id = l.id
-  WHERE l.token = _token
-  ORDER BY r.criado_em DESC
-  LIMIT 1;
-  
-  RETURN result;
-END;
-$$;
-```
-
-### 2. Página `src/pages/Diagnostico.tsx`
-
-Componente React que:
-- Extrai o `:token` da URL via `useParams`
-- Chama `supabase.rpc('get_diagnostico_by_token', { _token: token })` no `useEffect`
-- Renderiza sem layout interno (sem sidebar) — página standalone
-
-**Estrutura visual:**
-- **Topo**: Logo Focus FinTax, titulo "Diagnóstico Focus FinTax — [Empresa]", data, badge "Análise estimada · Dados declarados"
-- **Card destaque**: "Sua empresa pode recuperar entre R$ X e R$ Y em créditos tributários" com valores formatados em vermelho da marca
-- **Tabela de teses**: Itera `teses_identificadas` do relatório, exibe apenas teses com valores > 0 (nome, descrição comercial, intervalo)
-- **Disclaimer**: Texto obrigatório sobre estimativas
-- **CTAs**: Botão primário "Quero minha análise completa" → abre WhatsApp com mensagem pré-formatada. Botão secundário "Baixar diagnóstico em PDF" → usa `window.print()` com CSS de impressão
-
-Paleta: azul `#0a1a6e`, vermelho `#d04545`, fundo branco/cinza claro.
-
-### 3. Rota pública em `src/App.tsx`
-
-Adicionar antes da rota protegida `/*`:
-```tsx
-<Route path="/diagnostico/:token" element={<Diagnostico />} />
-```
-
-### 4. Atualizar edge function `analyze-lead`
-
-Incluir o `token` do lead no retorno da função para que o sistema possa gerar o link `/diagnostico/{token}` após a análise.
 
 ### Arquivos alterados
-1. **Migração SQL** — nova coluna `token` + função `get_diagnostico_by_token`
-2. `src/pages/Diagnostico.tsx` — novo arquivo
-3. `src/App.tsx` — rota pública
-4. `supabase/functions/analyze-lead/index.ts` — retornar token
+1. `supabase/functions/submit-lead-public/index.ts` — novo
+2. `supabase/config.toml` — bloco da nova função
+3. `public/lp.html` — alterar `runDiag()` (linhas 723-765)
 
