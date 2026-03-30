@@ -474,7 +474,7 @@ export default function Dashboard() {
             </div>
 
             {/* Row 3 — Rankings */}
-            <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-3">
               {/* LEFT — Top compensado */}
               <div className="bg-white rounded-lg shadow-sm px-5 py-4">
                 <p className="text-sm font-bold text-gray-900 mb-3">Ranking de compensações</p>
