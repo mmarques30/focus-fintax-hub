@@ -63,6 +63,7 @@ export function AppSidebar() {
       <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
         {visibleItems.map((item) => {
           const isActive = location.pathname === item.url;
+          const isReadOnly = !!(item.readOnlyRoles && userRole && item.readOnlyRoles.includes(userRole));
           return (
             <NavLink
               key={item.title}
@@ -77,11 +78,12 @@ export function AppSidebar() {
               <item.icon className="h-5 w-5 shrink-0" />
               <span
                 className={cn(
-                  "text-sm transition-opacity duration-200",
+                  "text-sm transition-opacity duration-200 flex items-center gap-1.5",
                   open ? "opacity-100" : "opacity-0"
                 )}
               >
                 {item.title}
+                {isReadOnly && <Lock className="h-3 w-3 opacity-60" />}
               </span>
             </NavLink>
           );
