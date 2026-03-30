@@ -299,13 +299,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <LogoSVG />
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-            <span style={{ fontWeight: 600, fontSize: 18, letterSpacing: 1, color: "#fff" }}>FOCUS</span>
-            <span style={{ fontWeight: 500, fontSize: 11, color: "#c8001e", letterSpacing: 3, textTransform: "uppercase" }}>FinTax</span>
-          </div>
-        </div>
+        <img src={logoFocus} alt="Focus FinTax" style={{ height: 40, width: "auto" }} />
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
