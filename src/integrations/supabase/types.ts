@@ -489,6 +489,33 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          can_access: boolean
+          created_at: string | null
+          id: string
+          read_only: boolean
+          screen_key: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          created_at?: string | null
+          id?: string
+          read_only?: boolean
+          screen_key: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          created_at?: string | null
+          id?: string
+          read_only?: boolean
+          screen_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

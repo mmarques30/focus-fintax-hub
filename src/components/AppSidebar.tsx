@@ -6,56 +6,70 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import logoWhite from "@/assets/logo-focus-fintax-white.png";
 import { cn } from "@/lib/utils";
+import { SCREENS } from "@/lib/screen-permissions";
 
 interface MenuItem {
   title: string;
   url: string;
   icon: typeof LayoutDashboard;
-  roles?: string[];
-  readOnlyRoles?: string[];
+  screenKey?: string;
   children?: SubMenuItem[];
 }
 
 interface SubMenuItem {
   title: string;
   url: string;
-  roles?: string[];
+  screenKey?: string;
 }
 
 const menuItems: MenuItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, roles: ["admin", "comercial", "pmo", "gestor_tributario"], readOnlyRoles: ["gestor_tributario"] },
-  { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo", "comercial"], readOnlyRoles: ["comercial"] },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, screenKey: "dashboard" },
+  { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, screenKey: "pipeline" },
+  { title: "Clientes", url: "/clientes", icon: Building2, screenKey: "clientes" },
   {
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
-    roles: ["admin", "pmo"],
     children: [
-      { title: "Motor de Cálculo", url: "/configuracoes/motor", roles: ["admin", "pmo"] },
-      { title: "Benchmarks e Teses", url: "/benchmarks", roles: ["admin"] },
+      { title: "Motor de Cálculo", url: "/configuracoes/motor", screenKey: "motor_calculo" },
+      { title: "Benchmarks e Teses", url: "/benchmarks", screenKey: "benchmarks" },
     ],
   },
-  { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
+  { title: "Usuários", url: "/usuarios", icon: Users, screenKey: "usuarios" },
 ];
 
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const location = useLocation();
-  const { profile, userRole, signOut } = useAuth();
-
-  const visibleItems = menuItems.filter(
-    (item) => !item.roles || userRole === "admin" || (userRole && item.roles.includes(userRole))
-  );
+  const { profile, permissions, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const canAccess = (key?: string) => {
+    if (!key) return true;
+    const perm = permissions.find((p) => p.screen_key === key);
+    if (!perm) return false;
+    return perm.can_access;
+  };
+
+  const isReadOnly = (key?: string) => {
+    if (!key) return false;
+    const perm = permissions.find((p) => p.screen_key === key);
+    return perm?.read_only ?? false;
+  };
+
+  const visibleItems = menuItems.filter((item) => {
+    if (item.children) {
+      return item.children.some((c) => canAccess(c.screenKey));
+    }
+    return canAccess(item.screenKey);
+  });
 
   const handleLogout = async () => {
     await signOut();
     navigate("/auth");
   };
 
-  // Auto-open config submenu if on a config route
   const isOnConfigRoute = location.pathname.startsWith("/configuracoes") || location.pathname.startsWith("/benchmarks");
 
   return (
@@ -82,16 +96,12 @@ export function AppSidebar() {
       <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
         {visibleItems.map((item) => {
           const hasChildren = item.children && item.children.length > 0;
-          const isActive = hasChildren
-            ? isOnConfigRoute
-            : location.pathname === item.url;
-          const isReadOnly = !!(item.readOnlyRoles && userRole && item.readOnlyRoles.includes(userRole));
+          const isActive = hasChildren ? isOnConfigRoute : location.pathname === item.url;
+          const readOnly = isReadOnly(item.screenKey);
           const showChildren = hasChildren && open && (configOpen || isOnConfigRoute);
 
           if (hasChildren) {
-            const visibleChildren = item.children!.filter(
-              (c) => !c.roles || userRole === "admin" || (userRole && c.roles.includes(userRole))
-            );
+            const visibleChildren = item.children!.filter((c) => canAccess(c.screenKey));
             if (visibleChildren.length === 0) return null;
 
             return (
@@ -127,6 +137,7 @@ export function AppSidebar() {
                   <div className="flex flex-col gap-0.5 mt-0.5">
                     {visibleChildren.map((child) => {
                       const childActive = location.pathname === child.url;
+                      const childReadOnly = isReadOnly(child.screenKey);
                       return (
                         <NavLink
                           key={child.url}
@@ -138,7 +149,10 @@ export function AppSidebar() {
                               : "hover:bg-sidebar-accent/50"
                           )}
                         >
-                          <span className="text-xs">{child.title}</span>
+                          <span className="text-xs flex items-center gap-1.5">
+                            {child.title}
+                            {childReadOnly && <Lock className="h-3 w-3 opacity-60" />}
+                          </span>
                         </NavLink>
                       );
                     })}
@@ -167,7 +181,7 @@ export function AppSidebar() {
                 )}
               >
                 {item.title}
-                {isReadOnly && <Lock className="h-3 w-3 opacity-60" />}
+                {readOnly && <Lock className="h-3 w-3 opacity-60" />}
               </span>
             </NavLink>
           );

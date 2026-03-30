@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is authenticated admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -26,14 +25,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Allow service role key as bearer or via x-seed-key header for bootstrap
     const bearerToken = authHeader.replace("Bearer ", "");
     const seedKey = req.headers.get("x-seed-key");
     const isServiceRole = bearerToken === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || 
                           seedKey === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!isServiceRole) {
-      // Normal auth flow: verify JWT and check admin role
       const anonClient = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -66,7 +63,22 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action } = body;
+    const { action, permissions } = body;
+
+    const upsertPermissions = async (userId: string, perms: { screen_key: string; can_access: boolean; read_only: boolean }[]) => {
+      if (!perms || !Array.isArray(perms)) return;
+      // Delete existing then insert new
+      await serviceClient.from("user_permissions").delete().eq("user_id", userId);
+      const rows = perms.map((p) => ({
+        user_id: userId,
+        screen_key: p.screen_key,
+        can_access: p.can_access,
+        read_only: p.read_only,
+      }));
+      if (rows.length > 0) {
+        await serviceClient.from("user_permissions").insert(rows);
+      }
+    };
 
     if (action === "create") {
       const { email, password, full_name, cargo, role } = body;
@@ -78,7 +90,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create user with admin API (auto-confirms email)
       const { data: newUser, error: createErr } = await serviceClient.auth.admin.createUser({
         email,
         password,
@@ -95,7 +106,6 @@ Deno.serve(async (req) => {
 
       const userId = newUser.user.id;
 
-      // Update profile cargo if provided
       if (cargo) {
         await serviceClient
           .from("profiles")
@@ -103,7 +113,6 @@ Deno.serve(async (req) => {
           .eq("user_id", userId);
       }
 
-      // Update role if not default 'cliente'
       if (role && role !== "cliente") {
         await serviceClient
           .from("user_roles")
@@ -113,6 +122,9 @@ Deno.serve(async (req) => {
           .from("user_roles")
           .insert({ user_id: userId, role });
       }
+
+      // Upsert permissions
+      await upsertPermissions(userId, permissions);
 
       return new Response(
         JSON.stringify({ success: true, user_id: userId }),
@@ -130,13 +142,11 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Update profile
       await serviceClient
         .from("profiles")
         .update({ full_name, cargo })
         .eq("user_id", user_id);
 
-      // Update role if changed
       if (role && role !== current_role) {
         await serviceClient
           .from("user_roles")
@@ -146,6 +156,9 @@ Deno.serve(async (req) => {
           .from("user_roles")
           .insert({ user_id, role });
       }
+
+      // Upsert permissions
+      await upsertPermissions(user_id, permissions);
 
       return new Response(
         JSON.stringify({ success: true }),
