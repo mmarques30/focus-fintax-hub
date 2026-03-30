@@ -1,59 +1,33 @@
 
 
-## Redesign completo do Dashboard
+## Relatório Consolidado da Carteira
 
 ### Arquivo alterado
-`src/pages/Dashboard.tsx` — rewrite visual completo, preservando toda lógica de dados (queries, realtime, role filtering, state).
+`src/pages/ClientesList.tsx` — adicionar botão + modal de relatório
 
-### Estrutura
+### Plano
 
-**SECTION 1 — Header strip** (full width, `bg-[#0a1564]`, h-[72px])
-- Left: greeting dinâmico + nome, abaixo data formatada em branco 60% opacity
-- Right: badge com role do usuário (fundo white/10%), badge com hora atual
+**1. Botão "Relatório da Carteira"** ao lado do "Cadastrar cliente" no header (ícone FileText, variant outline)
 
-**SECTION 2 — KPI strip** (6 cards em uma faixa unificada branca, 88px, separados por divider vertical 1px)
-- Leads no pipeline (Users icon)
-- Novos leads 7d (TrendingUp)
-- Potencial da carteira (DollarSign, **text-red-600**)
-- Clientes ativos (Briefcase)
-- Total compensado (CheckCircle2, **text-green-700**)
-- Honorários a receber (FileText)
-- Cada card: ícone navy left, número bold navy, label gray, trend arrow right (green/red %)
+**2. Estado `reportOpen`** para controlar modal fullscreen
 
-**SECTION 3 — Duas colunas** (left 65% / right 35%)
+**3. Modal fullscreen** (Dialog com `max-w-[95vw] h-[90vh] overflow-auto`) com classes `print:` para ocupar tela toda no print
 
-Left column:
-- **Alertas operacionais**: amber border-left se alerts > 0, compact lines (dot + empresa + detail + "há Xd" + arrow). Se zero: linha verde "Tudo em ordem". Max 5.
-- **Funil comercial**: tabela compacta (stage name | thin bar navy | count + potencial). Click navega para /pipeline?etapa=X. Total no footer.
+**4. Conteúdo do relatório** (usa dados já carregados em `allStats`, `processos`, `compensacoes`):
 
-Right column (3 cards stacked):
-- **Últimos leads**: 5 items compactos (empresa bold, segmento chip colorido, potencial green, time ago). Link "Ver pipeline →"
-- **Compensações do mês**: total green large + lista, ou "R$ 0 registrado em [mês]" compacto. Link "Ver clientes →"
-- **Motor de teses** (bg navy): 3 métricas em row (diagnósticos / leads LP 30d / taxa conversão) em branco
+- **Título**: "Carteira Focus FinTax — Visão Consolidada" + data atual formatada
+- **Summary row**: 4 cards — Total clientes / Total identificado / Total compensado / Saldo total
+- **Tabela de clientes**: ordenada por totalCredito desc. Colunas: Empresa, CNPJ, Teses ativas, Total Identificado, Total Compensado, Saldo, % Recuperado (progress bar + percentual). Grand total row no `TableFooter`.
+- **Breakdown por tese**: segunda tabela agrupando `processos` (status_contrato=assinado) por `tese`. Colunas: Tese (nome_exibicao), Clientes (count distinct cliente_id), Total Identificado, Total Compensado, Saldo. Precisa buscar `tese, nome_exibicao` no select de processos_teses (já busca parcial, adicionar esses campos).
 
-**SECTION 4 — Bottom strip** (full width, white, 64px)
-- 3 métricas estáticas separadas por dividers: clientes na carteira / teses configuradas / combinações cobertas
-- Buscar count de `motor_teses_config` ativo e calcular combinações cobertas (regime×segmento)
+**5. Botão "Imprimir / Exportar PDF"** no header do modal → `window.print()`
 
-### Detalhes visuais
-- Background geral: `bg-[#f4f5f7]`
-- Card radius: `rounded-[10px]`
-- Shadow: `shadow-[0_1px_3px_rgba(0,0,0,0.08)]`
-- Padding máximo 20px por card
-- Gaps 16px (gap-4)
-- Segmento chips: supermercado=blue, farmacia=green, pet=orange, materiais=gray, outros=purple (10px font, pill)
-- Trend arrows: green `#166534` / red `#991b1b`, 11px
-- Monetary: `Intl.NumberFormat('pt-BR')` via `formatCurrency` existente
+**6. Print CSS** (via `@media print`): ocultar sidebar, header, botões do modal; mostrar só o conteúdo do relatório.
 
-### Dados adicionais necessários
-- Query `motor_teses_config` para contar teses ativas e combinações cobertas (já temos acesso via RLS). Adicionar ao `fetchData`.
-- Query `clientes` count para bottom strip (já existe no KPI).
+### Query adjustment
+Linha 29: adicionar `tese, nome_exibicao` ao select de `processos_teses` para poder agrupar por tese no breakdown.
 
-### Preservado integralmente
-- Todas as queries Supabase existentes
-- Realtime subscriptions
-- Role-based filtering (`showLeads`, `showClientes`)
-- Routing/navigation
-- `AnimatedNumber`, `timeAgo`, `greeting` helpers
-- `fetchData` callback structure
+Linha 30: adicionar `processo_tese_id` ao select de `compensacoes_mensais` para vincular compensações a teses.
+
+### Sem novos arquivos — tudo inline no ClientesList.tsx
 
