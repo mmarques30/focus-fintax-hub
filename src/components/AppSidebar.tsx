@@ -19,6 +19,7 @@ const menuItems: MenuItem[] = [
   { title: "Pipeline de Leads", url: "/leads", icon: UserPlus, roles: ["admin", "comercial", "pmo"] },
   { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo"] },
   { title: "Benchmarks e Teses", url: "/benchmarks", icon: Database, roles: ["admin"] },
+  { title: "Motor de Cálculo", url: "/configuracoes/motor", icon: Settings, roles: ["admin", "pmo"] },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
 ];
 

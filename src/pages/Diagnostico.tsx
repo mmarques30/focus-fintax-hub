@@ -390,7 +390,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
           {teses.map((t, i) => {
             const barWidth = Math.round((t.estimativa_maxima / maxTese) * 100);
-            const desc = t.descricao_comercial || TESE_DESCRICOES[t.tese_nome] || "Tese tributária com potencial de recuperação de créditos para o seu segmento.";
+            const desc = t.descricao_comercial || TESE_DESCRICOES_FALLBACK[t.tese_nome] || "Tese tributária com potencial de recuperação de créditos para o seu segmento.";
             return (
               <div key={i} className="diag-tese-card diag-fadeUp" style={{
                 background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
