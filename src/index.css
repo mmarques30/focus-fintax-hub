@@ -4,6 +4,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #report-content, #report-content * {
+    visibility: visible;
+  }
+  #report-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 230 33% 97%;
