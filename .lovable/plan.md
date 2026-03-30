@@ -1,68 +1,69 @@
 
 
-## Refinamento de Papeis por Nivel de Acesso
+## Dashboard Redesign — Duas abas (Comercial + Operacional)
 
-### Resumo
-Implementar controle granular de acesso por role (comercial, gestor_tributario) no frontend: sidebar com lock icons, restrições de edição no pipeline, bloqueio de acesso a /clientes/:id para comercial, e pipeline read-only para gestor_tributario.
+### Arquivo alterado
+`src/pages/Dashboard.tsx` — rewrite completo do componente visual, preservando helpers, realtime, auth
 
-### Arquivos alterados
+### Estrutura
 
-**1. `src/lib/role-permissions.ts`** (novo)
-Centralizar permissões num único arquivo:
-```
-EDITABLE_STAGES_COMERCIAL = ["qualificado", "levantamento_teses", "em_apresentacao", "contrato_emitido"]
+**Header** (mantido, ajustado para 64px): greeting + role badge + horário
 
-canEditLead(role, stage) — comercial só edita nos stages acima; admin/pmo sempre
-canAccessRoute(role, path) — mapa de acesso por role
-isReadOnly(role, path) — true se o role pode ver mas não editar
-```
+**Tab switcher** (novo): Centered underline tabs "Visão Comercial" / "Visão Operacional". Default baseado em role (`comercial` → tab 0, `gestor_tributario` → tab 1, `admin/pmo` → localStorage). Usar estado `activeTab` com persistência em `localStorage`.
 
-**2. `src/components/AppSidebar.tsx`**
-- Adicionar campo `readOnlyRoles` ao `MenuItem` interface
-- Clientes: visível para comercial como read-only (adicionar `readOnlyRoles: ["comercial"]`)
-- Pipeline: visível para gestor_tributario como read-only (adicionar `readOnlyRoles: ["gestor_tributario"]`)
-- Itens read-only mostram um `Lock` icon (lucide) ao lado do título (pequeno, opacity 60%)
-- Itens sem acesso continuam ocultos (benchmarks, motor, usuarios para comercial/gestor)
+---
 
-Mapa final de visibilidade:
-| Menu | admin | comercial | gestor_tributario | pmo |
-|------|-------|-----------|-------------------|-----|
-| Dashboard | full | full | full | full |
-| Pipeline | full | full | read-only + lock | full |
-| Clientes | full | read-only + lock | full | full |
-| Benchmarks | full | hidden | hidden | hidden |
-| Motor | full | hidden | hidden | full |
-| Usuarios | full | hidden | hidden | full |
+### TAB 1 — Visão Comercial
 
-**3. `src/components/pipeline/PipelineKanban.tsx`**
-- Receber `userRole` prop
-- Comercial: desabilitar drag para stages fora de `EDITABLE_STAGES_COMERCIAL`; cards em `cliente_ativo` ficam sem drag handle
-- Gestor_tributario: desabilitar todo drag (read-only)
-- Cards `cliente_ativo` para comercial: adicionar `Tooltip` "Gerenciado pelo time operacional" com cursor-default
+**Row 1 — 4 KPIs** (strip branca, dividida): Leads no pipeline (navy), Novos esta semana (navy), Potencial total (red `#c8001e`, compact format), Contratos emitidos (amber se >0, gray se 0)
 
-**4. `src/components/pipeline/LeadSidePanel.tsx`**
-- Importar `useAuth` (já importa) e usar `userRole`
-- Comercial: ocultar botões "Converter", "Exceção", "Perdido" em stages fora dos editáveis
-- Comercial em `cliente_ativo`: todo o painel fica read-only (sem textarea editável, sem select de etapa, sem botões de ação)
-- Gestor_tributario: todo o painel read-only (sem botões, textarea disabled, select disabled)
+**Row 2 — 60/40 grid**
+- LEFT: Funil comercial — tabela compacta com stages que têm dados. Colunas: stage, count, potencial, alerta dias. Border-left vermelho decrescente (8→6→4→2→1px). `contrato_emitido` com bg amber se count>0. Clickable → `/pipeline?etapa=X`
+- RIGHT: Leads recentes — últimos 5, com empresa, segmento chip, potencial green, timeAgo, score badge. Link "Ver pipeline →"
 
-**5. `src/pages/Pipeline.tsx`**
-- Passar `userRole` para `PipelineKanban`
-- Gestor_tributario: ocultar botão "Novo lead"
-- Comercial: ocultar botão "Novo lead" se necessário (confirmar — o user disse "can edit leads in stages", implica que pode criar)
+**Row 3 — Alertas** (condicional): Banner amber com leads parados em "novo" >1d. Max 3 + "ver todos"
 
-**6. `src/pages/ClienteDetail.tsx`**
-- Adicionar guard: se `userRole === "comercial"`, redirecionar para `/clientes` com toast "Acesso restrito"
-- Alternativa: renderizar read-only (sem botões de ação), mas o user disse "cannot access detail pages" → redirect
+---
 
-**7. `src/pages/ClientesList.tsx`**
-- Comercial: ocultar botão "Cadastrar cliente" e "Relatório da Carteira"
-- Links para `/clientes/:id` para comercial: não navegar, mostrar tooltip "Acesso restrito ao time operacional"
+### TAB 2 — Visão Operacional
 
-### Detalhes Técnicos
-- Toda lógica de permissão concentrada em `role-permissions.ts` para manutenibilidade
-- Sem alterações no banco — controle apenas no frontend (RLS já protege no backend)
-- `useAuth().userRole` já disponível em todos os componentes necessários
-- Import `Lock` de lucide-react no sidebar
-- Import `Tooltip` components para cards read-only no kanban
+**Row 1 — 5 KPIs** (strip branca, 72px): Clientes ativos (navy), Compensado total (green), Honorários gerados (green), Economia líquida (green), Saldo de créditos (red `#c8001e` + tooltip)
+
+**Row 2 — Evolução mensal** (full width): BarChart (Recharts) — últimos 6 meses de compensações agrupadas por `mes_referencia`. Barras navy, mês mais recente lighter. Título "Evolução mensal — compensações realizadas". Placeholder se sem dados.
+
+**Row 3 — 55/45 grid**
+- LEFT: "Ranking de compensações" — Top 8 clientes por total compensado. Colunas: rank, empresa, compensado (green), saldo (red se >500k), mini progress bar. Click → `/clientes/:id`
+- RIGHT: "Maior saldo a compensar" — Top 8 por saldo restante. Colunas: empresa, saldo (red bold), total identificado (gray). Subtitle "Priorize esses clientes"
+
+**Row 4 — Resumo mês atual** (strip compacta): Compensado em [mês], Honorários em [mês], Clientes com compensação. Se sem dados: "Nenhuma compensação registrada em [mês]" com dot laranja.
+
+---
+
+### Queries novas/ajustadas
+
+1. **Saldo de créditos**: Query `processos_teses` (status_contrato = 'assinado') → sum valor_credito, minus sum compensacoes_mensais.valor_compensado → saldo
+2. **Evolução mensal 6m**: `compensacoes_mensais` grouped by month (últimos 6 meses)
+3. **Top clientes por compensado**: `compensacoes_mensais` grouped by cliente_id, joined com `clientes.empresa`, top 8
+4. **Top clientes por saldo**: Calcular saldo por cliente (crédito - compensado), top 8
+5. **Contratos emitidos**: count leads where status_funil = 'contrato_emitido'
+6. **Score dos leads recentes**: adicionar fetch de `score_lead` na query de leads recentes
+7. **Honorários mês atual**: compensacoes do mês × percentual médio ou usar valor_nf_servico
+
+### Preservado
+- Helpers: `greeting`, `AnimatedNumber`, `timeAgo`, `SEGMENTO_CHIP`
+- Realtime subscriptions
+- Role-based filtering
+- All imports/routing
+- `fetchData` callback pattern
+
+### Imports adicionais
+- `BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer` de recharts
+- `Tooltip, TooltipContent, TooltipProvider, TooltipTrigger` de ui/tooltip
+- `Info` de lucide-react
+- `getScoreLabel, SCORE_CONFIG` de pipeline-constants
+
+### Design tokens
+- `font-variant-numeric: tabular-nums` nos valores monetários
+- Monetary compact: `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 })`
+- Tab switcher: underline style, navy active, no background pill
 
