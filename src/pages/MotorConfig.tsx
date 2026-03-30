@@ -389,122 +389,55 @@ export default function MotorConfig() {
         </CardContent>
       </Card>
 
-      {/* Coverage Grid */}
-      <div ref={coverageRef}>
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-semibold">Cobertura por Perfil</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4 px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left — Coverage Grid */}
-              <div>
-                <TooltipProvider>
-                  <div className="grid grid-cols-4 gap-2">
-                    {/* Header row */}
-                    <div></div>
-                    {REGIMES.map((r) => (
-                      <div key={r.value} className="text-center text-xs font-bold text-muted-foreground">{r.abbr}</div>
-                    ))}
-                    {/* Data rows */}
-                    {SEGMENTOS.map((s) => (
-                      <>
-                        <div key={`label-${s.value}`} className="text-xs font-medium text-foreground flex items-center">{s.label}</div>
-                        {REGIMES.map((r) => {
-                          const cell = coverageGrid[s.value]?.[r.value];
-                          const count = cell?.count || 0;
-                          const names = cell?.teses || [];
-                          const isGreen = count > 0;
-                          return (
-                            <Tooltip key={`${s.value}-${r.value}`}>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`rounded-lg flex flex-col items-center justify-center py-2 cursor-default transition-all ${
-                                    isGreen
-                                      ? "bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800"
-                                      : "bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-800"
-                                  }`}
-                                >
-                                  <span className={`text-lg font-bold ${isGreen ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-400"}`}>
-                                    {count}
-                                  </span>
-                                  {isGreen ? (
-                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                  ) : (
-                                    <AlertTriangle className="h-3 w-3 text-red-500" />
-                                  )}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-[220px]">
-                                {count > 0 ? (
-                                  <div>
-                                    <p className="font-medium mb-1">{count} tese(s):</p>
-                                    <ul className="text-xs space-y-0.5">
-                                      {names.map((n) => <li key={n}>• {n}</li>)}
-                                    </ul>
-                                  </div>
-                                ) : (
-                                  <p>Nenhuma tese ativa. Diagnóstico vazio.</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                      </>
-                    ))}
-                  </div>
-                </TooltipProvider>
-                <p className="text-xs text-muted-foreground mt-3">
-                  {coveredCount} de 15 combinações com cobertura ativa.
-                </p>
-              </div>
-
-              {/* Right — Resumo por Regime e Segmento */}
-              <div className="space-y-5">
-                {/* Resumo por Regime */}
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Resumo por Regime</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {REGIMES.map((r) => {
-                      const count = teses.filter(t => t.ativo && t.regimes_elegiveis.includes(r.value)).length;
-                      return (
-                        <div key={r.value} className="rounded-lg border bg-card p-3 text-center">
-                          <span className="text-2xl font-bold text-foreground">{count}</span>
-                          <p className="text-xs text-muted-foreground mt-0.5">{r.abbr}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Resumo por Segmento */}
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Resumo por Segmento</h4>
-                  <div className="space-y-2">
-                    {SEGMENTOS.map((s) => {
-                      const count = teses.filter(t => t.ativo && t.segmentos_elegiveis.includes(s.value)).length;
-                      const total = teses.filter(t => t.ativo).length || 1;
-                      const pct = Math.round((count / total) * 100);
-                      return (
-                        <div key={s.value} className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-foreground w-24 shrink-0">{s.label}</span>
-                          <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-primary transition-all"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-bold text-foreground w-6 text-right">{count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+      {/* Resumo de Cobertura */}
+      <Card>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-semibold">Resumo de Cobertura</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4 px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Resumo por Regime */}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Resumo por Regime</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {REGIMES.map((r) => {
+                  const count = teses.filter(t => t.ativo && t.regimes_elegiveis.includes(r.value)).length;
+                  return (
+                    <div key={r.value} className="rounded-lg border bg-card p-3 text-center">
+                      <span className="text-2xl font-bold text-foreground">{count}</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">{r.abbr}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            {/* Resumo por Segmento */}
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Resumo por Segmento</h4>
+              <div className="space-y-2">
+                {SEGMENTOS.map((s) => {
+                  const count = teses.filter(t => t.ativo && t.segmentos_elegiveis.includes(s.value)).length;
+                  const total = teses.filter(t => t.ativo).length || 1;
+                  const pct = Math.round((count / total) * 100);
+                  return (
+                    <div key={s.value} className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-foreground w-24 shrink-0">{s.label}</span>
+                      <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-foreground w-6 text-right">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Edit/Create Modal */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
