@@ -292,36 +292,76 @@ export default function UserManagement() {
               <div className="space-y-3 pt-2 border-t">
                 <Label className="font-semibold text-sm">Permissões de Tela</Label>
                 <p className="text-xs text-muted-foreground">Marque as telas que este usuário pode acessar. "Somente leitura" impede edições.</p>
-                <div className="space-y-2">
+              <div className="space-y-2">
                   {SCREENS.map((screen) => {
                     const perm = formPermissions.find((p) => p.screen_key === screen.key);
                     const hasAccess = perm?.can_access ?? false;
                     const readOnly = perm?.read_only ?? false;
                     return (
-                      <div key={screen.key} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/30">
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={hasAccess}
-                            onCheckedChange={() => toggleAccess(screen.key)}
-                            id={`access-${screen.key}`}
-                          />
-                          <label
-                            htmlFor={`access-${screen.key}`}
-                            className={`text-sm cursor-pointer ${hasAccess ? "text-foreground font-medium" : "text-muted-foreground line-through"}`}
-                          >
-                            {screen.label}
-                          </label>
-                        </div>
-                        {hasAccess && (
-                          <div className="flex items-center gap-2">
+                      <div key={screen.key}>
+                        <div className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/30">
+                          <div className="flex items-center gap-3">
                             <Checkbox
-                              checked={readOnly}
-                              onCheckedChange={() => toggleReadOnly(screen.key)}
-                              id={`ro-${screen.key}`}
+                              checked={hasAccess}
+                              onCheckedChange={() => toggleAccess(screen.key)}
+                              id={`access-${screen.key}`}
                             />
-                            <label htmlFor={`ro-${screen.key}`} className="text-xs text-muted-foreground cursor-pointer">
-                              Somente leitura
+                            <label
+                              htmlFor={`access-${screen.key}`}
+                              className={`text-sm cursor-pointer ${hasAccess ? "text-foreground font-medium" : "text-muted-foreground line-through"}`}
+                            >
+                              {screen.label}
                             </label>
+                          </div>
+                          {hasAccess && (
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={readOnly}
+                                onCheckedChange={() => toggleReadOnly(screen.key)}
+                                id={`ro-${screen.key}`}
+                              />
+                              <label htmlFor={`ro-${screen.key}`} className="text-xs text-muted-foreground cursor-pointer">
+                                Somente leitura
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        {hasAccess && screen.children && screen.children.length > 0 && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            {screen.children.map((child) => {
+                              const cPerm = formPermissions.find((p) => p.screen_key === child.key);
+                              const cAccess = cPerm?.can_access ?? false;
+                              const cReadOnly = cPerm?.read_only ?? false;
+                              return (
+                                <div key={child.key} className="flex items-center justify-between py-1 px-3 rounded-md bg-muted/20">
+                                  <div className="flex items-center gap-3">
+                                    <Checkbox
+                                      checked={cAccess}
+                                      onCheckedChange={() => toggleAccess(child.key)}
+                                      id={`access-${child.key}`}
+                                    />
+                                    <label
+                                      htmlFor={`access-${child.key}`}
+                                      className={`text-xs cursor-pointer ${cAccess ? "text-foreground font-medium" : "text-muted-foreground line-through"}`}
+                                    >
+                                      ↳ {child.label}
+                                    </label>
+                                  </div>
+                                  {cAccess && (
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        checked={cReadOnly}
+                                        onCheckedChange={() => toggleReadOnly(child.key)}
+                                        id={`ro-${child.key}`}
+                                      />
+                                      <label htmlFor={`ro-${child.key}`} className="text-xs text-muted-foreground cursor-pointer">
+                                        Somente leitura
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
