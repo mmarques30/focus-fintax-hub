@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Plus, LayoutGrid, List, Users, TrendingUp, AlertTriangle, Sparkles } from "lucide-react";
+import { Plus, LayoutGrid, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ACTIVE_STAGES, daysSince, formatCurrency } from "@/lib/pipeline-constants";
+import { KpiBox, compactCurrency } from "@/components/dashboard/dashboard-utils";
 import { PipelineKanban } from "@/components/pipeline/PipelineKanban";
 import { PipelineList } from "@/components/pipeline/PipelineList";
 import { LeadFormModal } from "@/components/pipeline/LeadFormModal";
