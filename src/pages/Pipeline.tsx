@@ -85,6 +85,7 @@ export default function Pipeline() {
     [leads]
   );
 
+
   const newToday = useMemo(
     () => leads.filter((l) => {
       const d = new Date(l.criado_em);

@@ -1,14 +1,18 @@
 export const PIPELINE_STAGES = [
   { value: "novo", label: "Novo" },
   { value: "qualificado", label: "Qualificado" },
-  { value: "em_negociacao", label: "Em Negociação" },
-  { value: "levantamento_teses", label: "Levantamento de Teses" },
+  { value: "em_negociacao", label: "Negociação / Teses" },
   { value: "em_apresentacao", label: "Em Apresentação" },
   { value: "contrato_emitido", label: "Contrato Emitido" },
   { value: "cliente_ativo", label: "Cliente Ativo" },
-  { value: "nao_vai_fazer", label: "Não vai fazer" },
   { value: "perdido", label: "Perdido" },
 ] as const;
+
+/** Maps legacy DB values to their unified kanban column */
+export const STAGE_MERGE_MAP: Record<string, string> = {
+  levantamento_teses: "em_negociacao",
+  nao_vai_fazer: "perdido",
+};
 
 export const STAGE_COLORS: Record<string, string> = {
   novo: "bg-blue-100 text-blue-800 border-blue-200",
