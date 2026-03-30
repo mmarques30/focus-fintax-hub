@@ -612,106 +612,302 @@ function KpiBox({ label, value, sub, colorClass, trend, last }: { label: string;
 /* ═══════════════════════════════════════════════════════
    TAB 2 — VISÃO OPERACIONAL (preserved)
    ═══════════════════════════════════════════════════════ */
-function OperationalTab({ opClientes, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate }: any) {
+function OperationalTab({ opClientes, opTotalAtivos, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate }: any) {
+  const anim = (delay: number): React.CSSProperties => ({
+    opacity: 0, transform: "translateY(10px)",
+    animation: `fu 0.45s ease ${delay}ms both`,
+  });
+
+  // Projections
+  const numMonths = monthlyBars.length || 1;
+  const avgMensal = opCompensado / numMonths;
+  const projAnual = avgMensal * 12;
+  const taxaHon = opCompensado > 0 ? opHonorarios / opCompensado : 0;
+  const projHonAnual = projAnual * taxaHon;
+  const prazoSaldo = avgMensal > 0 ? opSaldo / avgMensal : 0;
+  const honFuturosSaldo = opSaldo * taxaHon;
+
+  // Month period label
+  const periodLabel = monthlyBars.length >= 2
+    ? `${monthlyBars[0]?.label} — ${monthlyBars[monthlyBars.length - 1]?.label}`
+    : monthlyBars[0]?.label ?? "—";
+
+  // Trend (last vs prev month)
+  const lastMonth = monthlyBars.length >= 1 ? monthlyBars[monthlyBars.length - 1]?.valor ?? 0 : 0;
+  const prevMonth = monthlyBars.length >= 2 ? monthlyBars[monthlyBars.length - 2]?.valor ?? 0 : 0;
+  const trendPct = prevMonth > 0 ? Math.round(((lastMonth - prevMonth) / prevMonth) * 100) : 0;
+
+  // Insight: variation between last two months
+  const insightVar = monthlyBars.length >= 2
+    ? `${trendPct > 0 ? "+" : ""}${trendPct}%`
+    : "—";
+  const insightVarLabel = monthlyBars.length >= 2
+    ? `Var. ${monthlyBars[monthlyBars.length - 2]?.label?.split("/")[0]?.toLowerCase()}→${monthlyBars[monthlyBars.length - 1]?.label?.split("/")[0]?.toLowerCase()}`
+    : "Variação";
+
+  // Saldo distribution from topSaldo (all rankings include saldo)
+  const allRankings: ClientRank[] = [...topCompensado];
+  // Merge topSaldo entries not in topCompensado
+  topSaldo.forEach((s: ClientRank) => {
+    if (!allRankings.find(r => r.id === s.id)) allRankings.push(s);
+  });
+
+  const saldoAbove1M = allRankings.filter(r => r.saldo >= 1000000);
+  const saldo500kTo1M = allRankings.filter(r => r.saldo >= 500000 && r.saldo < 1000000);
+  const saldoBelow500k = allRankings.filter(r => r.saldo > 0 && r.saldo < 500000);
+  const saldoZero = allRankings.filter(r => r.saldo <= 0);
+
+  const distBands = [
+    { label: "Acima de R$1M", count: saldoAbove1M.length, total: saldoAbove1M.reduce((s, r) => s + r.saldo, 0), color: "var(--dash-red)", fontWeight: 700 },
+    { label: "R$500k – R$1M", count: saldo500kTo1M.length, total: saldo500kTo1M.reduce((s, r) => s + r.saldo, 0), color: "var(--dash-amber)", fontWeight: 500 },
+    { label: "Até R$500k", count: saldoBelow500k.length, total: saldoBelow500k.reduce((s, r) => s + r.saldo, 0), color: "var(--navy)", fontWeight: 500 },
+    { label: "Saldo zerado", count: saldoZero.length, total: 0, color: "var(--ink-35)", fontWeight: 500 },
+  ];
+  const maxDistCount = Math.max(...distBands.map(d => d.count), 1);
+
+  // Urgency: top 5 clients with saldo > 1M
+  const urgencyClients = [...allRankings].filter(r => r.saldo >= 1000000).sort((a, b) => b.saldo - a.saldo).slice(0, 5);
+
+  // Full ranking sorted by compensado
+  const fullRanking = [...allRankings].sort((a, b) => b.compensado - a.compensado).slice(0, 8);
+
+  // Projected bar for next month
+  const nextMonthLabel = (() => {
+    if (!monthlyBars.length) return "PROJ";
+    const last = monthlyBars[monthlyBars.length - 1].month;
+    const [y, m] = last.split("-").map(Number);
+    const nm = m === 12 ? 1 : m + 1;
+    const ny = m === 12 ? y + 1 : y;
+    const mk = String(nm).padStart(2, "0");
+    return `${(MONTH_ABBR[mk] ?? mk).toUpperCase()}/${String(ny).slice(2)} ≈`;
+  })();
+
   return (
     <>
-      {/* Row 1 — 5 KPIs */}
-      <div className="bg-white rounded-lg shadow-sm flex divide-x divide-gray-100" style={{ height: 72 }}>
-        <OpKPI label="Clientes compensando" value={opClientes} color="text-[#0a1564]" />
-        <OpKPI label="Compensado total" value={opCompensado} color="text-[#166534]" format="currency" bold />
-        <OpKPI label="Honorários gerados" value={opHonorarios} color="text-[#166534]" format="currency" />
-        <OpKPI label="Economia líquida clientes" value={opEconomia} color="text-[#166534]" format="currency" />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex-1 min-w-[120px] px-4 flex flex-col justify-center cursor-help">
-                <p className="text-xl font-extrabold text-[#c8001e]" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(opSaldo)}</p>
-                <p className="text-[11px] text-gray-500 leading-tight flex items-center gap-1">Saldo de créditos <Info className="h-3 w-3 text-gray-400" /></p>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p className="text-xs max-w-[240px]">Créditos identificados ainda não compensados — potencial de honorários futuros</p></TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      {/* KPI STRIP */}
+      <div style={{ ...anim(40), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, display: "grid", gridTemplateColumns: "repeat(5,1fr)", marginBottom: 14, overflow: "hidden" }}>
+        <KpiBox label="Clientes compensando" value={String(opClientes)} sub={`de ${opTotalAtivos} ativos`} />
+        <KpiBox label="Total compensado" value={compactCurrency(opCompensado)} sub={periodLabel} colorClass="green" trend={trendPct !== 0 ? trendPct : undefined} />
+        <KpiBox label="Honorários gerados" value={compactCurrency(opHonorarios)} sub={`taxa média ${(taxaHon * 100).toFixed(1)}%`} />
+        <KpiBox label="Economia líquida clientes" value={compactCurrency(opEconomia)} sub="líquido de honorários" colorClass="green" />
+        <KpiBox label="Saldo de créditos" value={compactCurrency(opSaldo)} sub="disponível para compensar" colorClass="red" last />
       </div>
 
-      {/* Row 2 — Monthly chart */}
-      <div className="bg-white rounded-lg shadow-sm px-5 py-4 mt-3">
-        <p className="text-sm font-bold text-gray-900 mb-1">Evolução mensal — compensações realizadas</p>
-        {monthlyBars.length === 0 ? (
-          <p className="text-xs text-gray-400 py-8 text-center">Nenhuma compensação registrada.</p>
-        ) : (
-          <div className="h-[220px] mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyBars} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `R$ ${Math.round(v / 1000)}mil`} width={70} />
-                <RechartsTooltip formatter={(v: number) => fullCurrency(v)} />
-                <Bar dataKey="valor" name="Compensado" fill="#0a1564" radius={[4, 4, 0, 0]} maxBarSize={40} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }} />
-                <Bar dataKey="honorarios" name="Honorários" fill="#c8001e" radius={[4, 4, 0, 0]} maxBarSize={32} label={{ position: "top", fontSize: 10, fill: "#991b1b", formatter: (v: number) => compactCurrency(v) }} />
-              </BarChart>
-            </ResponsiveContainer>
+      {/* PROJECTION BAND */}
+      <div style={{ ...anim(90), background: "var(--navy)", borderRadius: 10, padding: "14px 24px", display: "grid", gridTemplateColumns: "1fr 1px 1fr 1px 1fr 1px 1fr 1px 1fr", gap: 0, marginBottom: 14, alignItems: "center" }}>
+        {[
+          { label: "Projeção anual", val: compactCurrency(projAnual), sub: "compensado se ritmo mantido", colorClass: "accent" },
+          null,
+          { label: "Honorários projetados / ano", val: compactCurrency(projHonAnual), sub: "receita estimada Focus FinTax", colorClass: "green-light" },
+          null,
+          { label: "Prazo do saldo atual", val: `${prazoSaldo.toFixed(1)} meses`, sub: "ao ritmo médio atual", colorClass: "amber-light" },
+          null,
+          { label: "Honorários futuros no saldo", val: compactCurrency(honFuturosSaldo), sub: `sobre os ${compactCurrency(opSaldo)} identificados`, colorClass: "green-light" },
+          null,
+          { label: "Média mensal realizada", val: compactCurrency(avgMensal), sub: periodLabel, colorClass: "white" },
+        ].map((item, i) => {
+          if (!item) return <div key={i} style={{ width: 1, background: "rgba(255,255,255,0.12)", alignSelf: "stretch" }} />;
+          const colorMap: Record<string, string> = { accent: "#fca5a5", "green-light": "#6ee7b7", "amber-light": "#fcd34d", white: "#fff" };
+          const isFirst = i === 0;
+          const isLast = i === 8;
+          return (
+            <div key={i} style={{ padding: "0 20px", textAlign: isFirst ? "left" : isLast ? "right" : "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.8, textTransform: "uppercase", color: "rgba(255,255,255,0.45)", marginBottom: 5 }}>{item.label}</div>
+              <div style={{ ...fontCondensed, fontSize: 22, fontWeight: 700, color: colorMap[item.colorClass] ?? "#fff", lineHeight: 1 }}>{item.val}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>{item.sub}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CHART + DISTRIBUTION ROW */}
+      <div style={{ ...anim(140), display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 14, marginBottom: 14 }}>
+        {/* LEFT — CHART */}
+        <div style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ padding: "12px 18px 10px", borderBottom: "1px solid var(--dash-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--navy)" }}>Evolução mensal — compensações realizadas</div>
+              <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 2 }}>receita da Focus FinTax vs economia bruta dos clientes</div>
+            </div>
+            <span style={{ display: "inline-flex", alignItems: "center", background: "var(--navy-10)", borderRadius: 5, padding: "2px 8px", fontSize: 10, fontWeight: 600, color: "var(--navy)", ...fontMono }}>{periodLabel}</span>
           </div>
-        )}
-      </div>
 
-      {/* Row 3 — Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-3 mt-3">
-        <div className="bg-white rounded-lg shadow-sm px-5 py-4">
-          <p className="text-sm font-bold text-gray-900 mb-3">Ranking de compensações</p>
-          {topCompensado.map((c: ClientRank, i: number) => {
-            const ratio = c.identificado > 0 ? (c.compensado / c.identificado) * 100 : 0;
-            return (
-              <div key={c.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" onClick={() => navigate(`/clientes/${c.id}`)}>
-                <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
-                <span className="text-xs font-semibold text-gray-900 truncate flex-1" style={{ maxWidth: 160 }}>{c.empresa.length > 22 ? c.empresa.slice(0, 22) + "…" : c.empresa}</span>
-                <span className="text-xs font-bold text-[#166534] w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
-                <span className="text-[10px] font-medium text-[#0a1564] w-16 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.honorarios)}</span>
-                <span className={`text-[10px] font-semibold w-20 text-right ${c.saldo > 500000 ? "text-[#c8001e]" : "text-gray-400"}`} style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.saldo)}</span>
-                <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-[#166534] rounded-full" style={{ width: `${Math.min(ratio, 100)}%` }} /></div>
+          {monthlyBars.length === 0 ? (
+            <div style={{ padding: "40px 18px", textAlign: "center", fontSize: 12, color: "var(--ink-35)" }}>Nenhuma compensação registrada.</div>
+          ) : (
+            <>
+              <div style={{ padding: "10px 18px 0", height: 160 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[...monthlyBars, { month: "proj", label: nextMonthLabel, valor: avgMensal, honorarios: 0, isProjection: true }]} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-12)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--ink-35)", fontFamily: "'DM Mono', monospace", fontWeight: 500 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--ink-35)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => compactCurrency(v)} width={60} />
+                    <RechartsTooltip formatter={(v: number) => fullCurrency(v)} />
+                    <Bar dataKey="valor" name="Compensado" fill="var(--navy)" radius={[3, 3, 0, 0]} maxBarSize={36} label={{ position: "top", fontSize: 9, fill: "var(--ink-60)", fontFamily: "'DM Mono', monospace", formatter: (v: number) => compactCurrency(v) }} />
+                    <Bar dataKey="honorarios" name="Honorários" fill="var(--dash-red)" radius={[3, 3, 0, 0]} maxBarSize={28} opacity={0.65} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            );
-          })}
-          {topCompensado.length === 0 && <p className="text-xs text-gray-400 py-4 text-center">Nenhuma compensação registrada.</p>}
+              {/* Legend */}
+              <div style={{ display: "flex", gap: 14, padding: "8px 18px 12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--ink-60)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: "var(--navy)" }} />Compensado
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--ink-60)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: "var(--dash-red)", opacity: 0.65 }} />Honorários Focus
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--ink-60)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, border: "2px dashed var(--navy)", background: "transparent" }} />Projeção
+                </div>
+              </div>
+              {/* Insight strip */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid var(--dash-border)" }}>
+                <div style={{ padding: "10px 14px", borderRight: "1px solid var(--dash-border)", textAlign: "center" }}>
+                  <div style={{ ...fontCondensed, fontSize: 18, fontWeight: 700, color: trendPct < 0 ? "var(--dash-red)" : trendPct > 0 ? "var(--dash-green)" : "var(--navy)", lineHeight: 1 }}>{insightVar}</div>
+                  <div style={{ fontSize: 9, color: "var(--ink-35)", letterSpacing: 0.8, textTransform: "uppercase", marginTop: 3, fontWeight: 600 }}>{insightVarLabel}</div>
+                </div>
+                <div style={{ padding: "10px 14px", borderRight: "1px solid var(--dash-border)", textAlign: "center" }}>
+                  <div style={{ ...fontCondensed, fontSize: 18, fontWeight: 700, color: "var(--navy)", lineHeight: 1 }}>{(taxaHon * 100).toFixed(1)}%</div>
+                  <div style={{ fontSize: 9, color: "var(--ink-35)", letterSpacing: 0.8, textTransform: "uppercase", marginTop: 3, fontWeight: 600 }}>Taxa hon. média</div>
+                </div>
+                <div style={{ padding: "10px 14px", textAlign: "center" }}>
+                  <div style={{ ...fontCondensed, fontSize: 18, fontWeight: 700, color: "var(--dash-green)", lineHeight: 1 }}>{compactCurrency(avgMensal)}</div>
+                  <div style={{ fontSize: 9, color: "var(--ink-35)", letterSpacing: 0.8, textTransform: "uppercase", marginTop: 3, fontWeight: 600 }}>Média mensal</div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm px-5 py-4">
-          <p className="text-sm font-bold text-gray-900 mb-0.5">Maior saldo a compensar</p>
-          <p className="text-[11px] text-gray-400 mb-3">Priorize esses clientes</p>
-          {topSaldo.map((c: ClientRank) => (
-            <div key={c.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors" onClick={() => navigate(`/clientes/${c.id}`)}>
-              <span className="text-xs font-semibold text-gray-900 truncate flex-1">{c.empresa}</span>
-              <div className="text-right ml-2">
-                <p className="text-xs font-bold text-[#c8001e]" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.saldo)}</p>
-                <p className="text-[10px] text-gray-400" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.identificado)}</p>
+        {/* RIGHT — SALDO DISTRIBUTION */}
+        <div style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "12px 18px 10px", borderBottom: "1px solid var(--dash-border)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--navy)" }}>Distribuição do saldo</div>
+            <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 2 }}>{opClientes} clientes · por faixa de saldo restante</div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 16px" }}>
+            {distBands.map((d, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: d.fontWeight, color: d.color, width: 110, flexShrink: 0 }}>{d.label}</span>
+                <div style={{ flex: 1, height: 6, background: "var(--ink-12)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 3, background: d.color, width: `${(d.count / maxDistCount) * 100}%` }} />
+                </div>
+                <span style={{ ...fontMono, fontSize: 11, fontWeight: 700, color: d.color, width: 20, textAlign: "right", flexShrink: 0 }}>{d.count}</span>
+                <span style={{ ...fontMono, fontSize: 10, color: d.total > 0 ? d.color : "var(--ink-35)", width: 52, textAlign: "right", flexShrink: 0 }}>{d.total > 0 ? compactCurrency(d.total) : "—"}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Strategic callout */}
+          {prazoSaldo > 0 && prazoSaldo < 9 && (
+            <div style={{ margin: "0 14px 14px", background: "rgba(200,0,30,0.04)", border: "1px solid rgba(200,0,30,0.15)", borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "var(--dash-red)", marginBottom: 4 }}>⚠ Atenção estratégica</div>
+              <div style={{ fontSize: 11, color: "var(--ink-60)", lineHeight: 1.5 }}>
+                Ao ritmo atual, o saldo identificado se esgota em <strong style={{ color: "var(--dash-red)" }}>{prazoSaldo.toFixed(1)} meses</strong>. Para manter a receita, é preciso onboardar novos clientes ou levantar novas teses para a carteira atual.
               </div>
             </div>
-          ))}
-          {topSaldo.length === 0 && <p className="text-xs text-gray-400 py-4 text-center">Nenhum saldo pendente.</p>}
+          )}
+
+          {/* Honorários futuros */}
+          <div style={{ borderTop: "1px solid var(--dash-border)", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--dash-green-10)", marginTop: "auto" }}>
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--dash-green)" }}>Honorários futuros estimados</div>
+              <div style={{ fontSize: 10, color: "var(--ink-60)", marginTop: 2 }}>sobre o saldo restante · taxa {(taxaHon * 100).toFixed(1)}%</div>
+            </div>
+            <div style={{ ...fontCondensed, fontSize: 22, fontWeight: 700, color: "var(--dash-green)" }}>{compactCurrency(honFuturosSaldo)}</div>
+          </div>
         </div>
       </div>
 
-      {/* Row 4 — Strip */}
-      <div className="bg-white rounded-lg shadow-sm h-14 flex items-center px-5 mt-3">
-        <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
-          <span className="text-gray-500">{opClientes} clientes na carteira</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-500"><span className="font-bold text-gray-900">{compactCurrency(opCompensado)}</span> compensados</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-gray-500"><span className="font-bold text-[#c8001e]">{compactCurrency(opSaldo)}</span> saldo disponível</span>
+      {/* URGENCY CARD */}
+      {urgencyClients.length > 0 && (
+        <div style={{ ...anim(190), background: "rgba(200,0,30,0.04)", border: "1px solid rgba(200,0,30,0.18)", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
+          <div style={{ padding: "10px 16px", background: "rgba(200,0,30,0.08)", borderBottom: "1px solid rgba(200,0,30,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12 }}>🎯</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--dash-red)" }}>
+              Prioridade máxima — {urgencyClients.length} cliente{urgencyClients.length > 1 ? "s" : ""} com saldo acima de R$1M
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(urgencyClients.length, 5)},1fr)`, gap: 0 }}>
+            {urgencyClients.map((c: ClientRank, i: number) => (
+              <div key={c.id} onClick={() => navigate(`/clientes/${c.id}`)} style={{ padding: "10px 14px", borderRight: i < urgencyClients.length - 1 ? "1px solid rgba(200,0,30,0.10)" : "none", textAlign: "center", cursor: "pointer" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{c.empresa}</div>
+                <div style={{ ...fontCondensed, fontSize: 17, fontWeight: 700, color: "var(--dash-red)", lineHeight: 1 }}>{compactCurrency(c.saldo)}</div>
+                <div style={{ fontSize: 10, color: "var(--ink-35)", marginTop: 2 }}>hon. potencial {compactCurrency(c.saldo * taxaHon)}</div>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+
+      {/* RANKING TABLE */}
+      <div style={{ ...anim(240), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
+        <div style={{ padding: "12px 18px 10px", borderBottom: "1px solid var(--dash-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--navy)" }}>Ranking de compensações</div>
+            <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 2 }}>economia bruta acumulada · {numMonths} meses · % do crédito identificado utilizado</div>
+          </div>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {["#", "Empresa", "Total compensado", "Honorários", "Economia líquida", "% utilizado", "Progresso", "Saldo restante"].map((h, i) => (
+                <th key={i} style={{ padding: "7px 12px", textAlign: i === 7 ? "right" : "left", fontSize: 9, fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-35)", borderBottom: "1px solid var(--dash-border)", background: "var(--ink-06)" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {fullRanking.map((c: ClientRank, i: number) => {
+              const pctUsed = c.identificado > 0 ? Math.round((c.compensado / c.identificado) * 100) : 0;
+              const econLiquida = c.compensado - c.honorarios;
+              return (
+                <tr key={c.id} onClick={() => navigate(`/clientes/${c.id}`)} style={{ cursor: "pointer" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--ink-06)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ""; }}>
+                  <td style={{ padding: "8px 12px", fontSize: 10, color: "var(--ink-35)", borderBottom: "1px solid rgba(0,0,0,0.04)", ...fontMono }}>{i + 1}</td>
+                  <td style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "var(--ink)", borderBottom: "1px solid rgba(0,0,0,0.04)", maxWidth: 170, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.empresa}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)", ...fontMono, fontWeight: 700, color: "var(--dash-green)", fontSize: 12 }}>{fullCurrency(c.compensado)}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)", ...fontMono, fontWeight: 400, color: "var(--ink-35)", fontSize: 10 }}>{fullCurrency(c.honorarios)}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)", ...fontMono, fontWeight: 600, color: "var(--navy)", fontSize: 11 }}>{fullCurrency(econLiquida)}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)", ...fontMono, fontWeight: 400, color: "var(--ink-35)", fontSize: 10 }}>{pctUsed}%</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                    <span style={{ width: 50, height: 4, background: "var(--ink-12)", borderRadius: 2, overflow: "hidden", display: "inline-block" }}>
+                      <span style={{ height: "100%", borderRadius: 2, background: "var(--dash-green)", display: "block", width: `${Math.min(pctUsed, 100)}%` }} />
+                    </span>
+                  </td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid rgba(0,0,0,0.04)", textAlign: "right", ...fontMono, fontWeight: 700, color: c.saldo > 500000 ? "var(--dash-red)" : "var(--ink-35)", fontSize: 12 }}>
+                    {c.saldo > 0 ? compactCurrency(c.saldo) : fullCurrency(0)}
+                  </td>
+                </tr>
+              );
+            })}
+            {fullRanking.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "var(--ink-35)" }}>Nenhuma compensação registrada.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* BOTTOM STRIP */}
+      <div style={{ ...anim(290), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, padding: "13px 24px", display: "flex", alignItems: "center" }}>
+        {[
+          { val: String(opClientes), label: "Clientes compensando" },
+          { val: compactCurrency(opCompensado), label: `Compensado (${numMonths} meses)`, colorClass: "green" },
+          { val: compactCurrency(opHonorarios), label: "Honorários gerados" },
+          { val: compactCurrency(opEconomia), label: "Economia líquida", colorClass: "green" },
+          { val: compactCurrency(opSaldo), label: "Saldo disponível", colorClass: "red" },
+          { val: `${prazoSaldo.toFixed(1)} meses`, label: "Prazo do saldo atual", colorClass: "amber" },
+          { val: compactCurrency(projHonAnual), label: "Projeção hon. anual", colorClass: "green" },
+        ].map((item, i) => {
+          const colorMap: Record<string, string> = { red: "var(--dash-red)", green: "var(--dash-green)", amber: "var(--dash-amber)" };
+          return (
+            <div key={i} style={{ flex: 1, textAlign: "center", borderRight: i < 6 ? "1px solid var(--dash-border)" : "none", padding: "0 14px" }}>
+              <span style={{ ...fontCondensed, fontSize: 20, fontWeight: 700, color: item.colorClass ? colorMap[item.colorClass] : "var(--navy)", display: "block", lineHeight: 1.1 }}>{item.val}</span>
+              <span style={{ fontSize: 9, color: "var(--ink-35)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginTop: 3, display: "block" }}>{item.label}</span>
+            </div>
+          );
+        })}
       </div>
     </>
-  );
-}
-
-function OpKPI({ label, value, color, format: fmt, bold }: { label: string; value: number; color: string; format?: "currency"; bold?: boolean }) {
-  return (
-    <div className="flex-1 min-w-[120px] px-4 flex flex-col justify-center">
-      <p className={`text-xl ${bold ? "font-extrabold" : "font-bold"} ${color}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-        {fmt === "currency" ? compactCurrency(value) : value}
-      </p>
-      <p className="text-[11px] text-gray-500 leading-tight truncate">{label}</p>
-    </div>
   );
 }
