@@ -47,6 +47,100 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes: {
+        Row: {
+          atualizado_em: string | null
+          cnpj: string
+          criado_em: string | null
+          email: string | null
+          empresa: string
+          faturamento_faixa: string | null
+          id: string
+          lead_id: string | null
+          nome_contato: string | null
+          regime_tributario: string | null
+          segmento: string | null
+          status: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          cnpj?: string
+          criado_em?: string | null
+          email?: string | null
+          empresa: string
+          faturamento_faixa?: string | null
+          id?: string
+          lead_id?: string | null
+          nome_contato?: string | null
+          regime_tributario?: string | null
+          segmento?: string | null
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          cnpj?: string
+          criado_em?: string | null
+          email?: string | null
+          empresa?: string
+          faturamento_faixa?: string | null
+          id?: string
+          lead_id?: string | null
+          nome_contato?: string | null
+          regime_tributario?: string | null
+          segmento?: string | null
+          status?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_historico: {
+        Row: {
+          anotacao: string | null
+          criado_em: string | null
+          criado_por: string | null
+          de_etapa: string | null
+          id: string
+          lead_id: string
+          para_etapa: string
+        }
+        Insert: {
+          anotacao?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          de_etapa?: string | null
+          id?: string
+          lead_id: string
+          para_etapa: string
+        }
+        Update: {
+          anotacao?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          de_etapa?: string | null
+          id?: string
+          lead_id?: string
+          para_etapa?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_historico_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           cnpj: string
@@ -57,11 +151,14 @@ export type Database = {
           faturamento_faixa: string
           id: string
           nome: string
+          observacoes: string | null
           origem: string
           regime_tributario: string
           score_lead: number | null
           segmento: string
           status: string
+          status_funil: string
+          status_funil_atualizado_em: string | null
           token: string
           whatsapp: string
         }
@@ -74,11 +171,14 @@ export type Database = {
           faturamento_faixa?: string
           id?: string
           nome?: string
+          observacoes?: string | null
           origem?: string
           regime_tributario?: string
           score_lead?: number | null
           segmento?: string
           status?: string
+          status_funil?: string
+          status_funil_atualizado_em?: string | null
           token?: string
           whatsapp?: string
         }
@@ -91,11 +191,14 @@ export type Database = {
           faturamento_faixa?: string
           id?: string
           nome?: string
+          observacoes?: string | null
           origem?: string
           regime_tributario?: string
           score_lead?: number | null
           segmento?: string
           status?: string
+          status_funil?: string
+          status_funil_atualizado_em?: string | null
           token?: string
           whatsapp?: string
         }
