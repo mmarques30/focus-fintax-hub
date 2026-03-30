@@ -468,13 +468,10 @@ export default function Dashboard() {
                     <BarChart data={monthlyBars} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => compactCurrency(v)} width={70} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `R$ ${Math.round(v / 1000)}mil`} width={70} />
                       <RechartsTooltip formatter={(v: number) => fullCurrency(v)} labelFormatter={(l) => l} />
-                      <Bar dataKey="valor" radius={[4, 4, 0, 0]} maxBarSize={48} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }}>
-                        {monthlyBars.map((_, i) => (
-                          <Cell key={i} fill={i === monthlyBars.length - 1 ? "#1e3a8a" : "#0a1564"} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="valor" name="Compensado" fill="#0a1564" radius={[4, 4, 0, 0]} maxBarSize={40} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }} />
+                      <Bar dataKey="honorarios" name="Honorários" fill="#c8001e" radius={[4, 4, 0, 0]} maxBarSize={32} label={{ position: "top", fontSize: 10, fill: "#991b1b", formatter: (v: number) => compactCurrency(v) }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
