@@ -1,4 +1,4 @@
-import { fontMono, fontCondensed, compactCurrency } from "../dashboard-utils";
+import { compactCurrency } from "../dashboard-utils";
 
 interface DistBand {
   label: string;
@@ -20,41 +20,41 @@ interface Props {
 
 export function DistribuicaoSaldo({ opClientes, distBands, maxDistCount, prazoSaldo, honFuturosSaldo, opSaldo, taxaHon }: Props) {
   return (
-    <div style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div style={{ padding: "12px 18px 10px", borderBottom: "1px solid var(--dash-border)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--navy)" }}>Distribuição do saldo</div>
-        <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 2 }}>{opClientes} clientes · por faixa de saldo restante</div>
+    <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden flex flex-col">
+      <div className="px-[18px] pt-3 pb-2.5 border-b border-[rgba(10,21,100,0.10)]">
+        <div className="text-[11px] font-bold tracking-[0.8px] uppercase text-navy">Distribuição do saldo</div>
+        <div className="text-[11px] text-ink-35 mt-0.5">{opClientes} clientes · por faixa de saldo restante</div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 16px" }}>
+      <div className="flex flex-col gap-2 px-4 py-3">
         {distBands.map((d, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 11, fontWeight: d.fontWeight, color: d.color, width: 110, flexShrink: 0 }}>{d.label}</span>
-            <div style={{ flex: 1, height: 6, background: "var(--ink-12)", borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 3, background: d.color, width: `${(d.count / maxDistCount) * 100}%` }} />
+          <div key={i} className="flex items-center gap-2.5">
+            <span className="text-[11px] w-[110px] shrink-0" style={{ fontWeight: d.fontWeight, color: d.color }}>{d.label}</span>
+            <div className="flex-1 h-1.5 bg-ink-12 rounded-[3px] overflow-hidden">
+              <div className="h-full rounded-[3px]" style={{ background: d.color, width: `${(d.count / maxDistCount) * 100}%` }} />
             </div>
-            <span style={{ ...fontMono, fontSize: 11, fontWeight: 700, color: d.color, width: 20, textAlign: "right", flexShrink: 0 }}>{d.count}</span>
-            <span style={{ ...fontMono, fontSize: 10, color: d.total > 0 ? d.color : "var(--ink-35)", width: 52, textAlign: "right", flexShrink: 0 }}>{d.total > 0 ? compactCurrency(d.total) : "—"}</span>
+            <span className="font-mono-dm tabular-nums text-[11px] font-bold w-5 text-right shrink-0" style={{ color: d.color }}>{d.count}</span>
+            <span className="font-mono-dm tabular-nums text-[10px] w-[52px] text-right shrink-0" style={{ color: d.total > 0 ? d.color : "var(--ink-35)" }}>{d.total > 0 ? compactCurrency(d.total) : "—"}</span>
           </div>
         ))}
       </div>
 
       {/* Strategic callout */}
       {prazoSaldo > 0 && prazoSaldo < 9 && (
-        <div style={{ margin: "0 14px 14px", background: "rgba(200,0,30,0.04)", border: "1px solid rgba(200,0,30,0.15)", borderRadius: 8, padding: "10px 12px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "var(--dash-red)", marginBottom: 4 }}>⚠ Atenção estratégica</div>
-          <div style={{ fontSize: 11, color: "var(--ink-60)", lineHeight: 1.5 }}>
-            Ao ritmo atual, o saldo identificado se esgota em <strong style={{ color: "var(--dash-red)" }}>{prazoSaldo.toFixed(1)} meses</strong>. Para manter a receita, é preciso onboardar novos clientes ou levantar novas teses para a carteira atual.
+        <div className="mx-3.5 mb-3.5 bg-[rgba(200,0,30,0.04)] border border-[rgba(200,0,30,0.15)] rounded-lg px-3 py-2.5">
+          <div className="text-[10px] font-bold tracking-[1px] uppercase text-dash-red mb-1">⚠ Atenção estratégica</div>
+          <div className="text-[11px] text-ink-60 leading-[1.5]">
+            Ao ritmo atual, o saldo identificado se esgota em <strong className="text-dash-red">{prazoSaldo.toFixed(1)} meses</strong>. Para manter a receita, é preciso onboardar novos clientes ou levantar novas teses para a carteira atual.
           </div>
         </div>
       )}
 
       {/* Honorários futuros */}
-      <div style={{ borderTop: "1px solid var(--dash-border)", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--dash-green-10)", marginTop: "auto" }}>
+      <div className="border-t border-[rgba(10,21,100,0.10)] px-3.5 py-2.5 flex justify-between items-center bg-[rgba(15,123,78,0.10)] mt-auto">
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: "var(--dash-green)" }}>Honorários futuros estimados</div>
-          <div style={{ fontSize: 10, color: "var(--ink-60)", marginTop: 2 }}>sobre o saldo restante · taxa {(taxaHon * 100).toFixed(1)}%</div>
+          <div className="text-[9px] font-bold tracking-[1.2px] uppercase text-dash-green">Honorários futuros estimados</div>
+          <div className="text-[10px] text-ink-60 mt-0.5">sobre o saldo restante · taxa {(taxaHon * 100).toFixed(1)}%</div>
         </div>
-        <div style={{ ...fontCondensed, fontSize: 22, fontWeight: 700, color: "var(--dash-green)" }}>{compactCurrency(honFuturosSaldo)}</div>
+        <div className="font-display text-[22px] font-bold text-dash-green">{compactCurrency(honFuturosSaldo)}</div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { anim, fontCondensed, compactCurrency } from "../dashboard-utils";
+import { animDelay, compactCurrency } from "../dashboard-utils";
 
 interface Props {
   opClientes: number;
@@ -13,22 +13,21 @@ interface Props {
 
 export function BottomStripOperacional({ opClientes, opCompensado, opHonorarios, opEconomia, opSaldo, numMonths, prazoSaldo, projHonAnual }: Props) {
   const items = [
-    { val: String(opClientes), label: "Clientes compensando" },
-    { val: compactCurrency(opCompensado), label: `Compensado (${numMonths} meses)`, colorClass: "green" },
-    { val: compactCurrency(opHonorarios), label: "Honorários gerados" },
-    { val: compactCurrency(opEconomia), label: "Economia líquida", colorClass: "green" },
-    { val: compactCurrency(opSaldo), label: "Saldo disponível", colorClass: "red" },
-    { val: `${prazoSaldo.toFixed(1)} meses`, label: "Prazo do saldo atual", colorClass: "amber" },
-    { val: compactCurrency(projHonAnual), label: "Projeção hon. anual", colorClass: "green" },
+    { val: String(opClientes), label: "Clientes compensando", colorClass: "" },
+    { val: compactCurrency(opCompensado), label: `Compensado (${numMonths} meses)`, colorClass: "text-dash-green" },
+    { val: compactCurrency(opHonorarios), label: "Honorários gerados", colorClass: "" },
+    { val: compactCurrency(opEconomia), label: "Economia líquida", colorClass: "text-dash-green" },
+    { val: compactCurrency(opSaldo), label: "Saldo disponível", colorClass: "text-dash-red" },
+    { val: `${prazoSaldo.toFixed(1)} meses`, label: "Prazo do saldo atual", colorClass: "text-dash-amber" },
+    { val: compactCurrency(projHonAnual), label: "Projeção hon. anual", colorClass: "text-dash-green" },
   ];
-  const colorMap: Record<string, string> = { red: "var(--dash-red)", green: "var(--dash-green)", amber: "var(--dash-amber)" };
 
   return (
-    <div style={{ ...anim(290), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, padding: "13px 24px", display: "flex", alignItems: "center" }}>
+    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] px-6 py-[13px] flex items-center" style={animDelay(290)}>
       {items.map((item, i) => (
-        <div key={i} style={{ flex: 1, textAlign: "center", borderRight: i < items.length - 1 ? "1px solid var(--dash-border)" : "none", padding: "0 8px" }}>
-          <span style={{ ...fontCondensed, fontSize: 17, fontWeight: 700, color: item.colorClass ? colorMap[item.colorClass] : "var(--navy)", display: "block", lineHeight: 1.1 }}>{item.val}</span>
-          <span style={{ fontSize: 8, color: "var(--ink-35)", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginTop: 2, display: "block" }}>{item.label}</span>
+        <div key={i} className={`flex-1 text-center px-2 ${i < items.length - 1 ? "border-r border-[rgba(10,21,100,0.10)]" : ""}`}>
+          <span className={`font-display text-[17px] font-bold block leading-[1.1] ${item.colorClass || "text-navy"}`}>{item.val}</span>
+          <span className="text-[8px] text-ink-35 font-semibold tracking-[0.8px] uppercase mt-0.5 block">{item.label}</span>
         </div>
       ))}
     </div>

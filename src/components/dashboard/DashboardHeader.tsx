@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { greeting, ROLE_LABELS, fontMono, fontBarlow } from "./dashboard-utils";
+import { greeting, ROLE_LABELS } from "./dashboard-utils";
 
 interface Props {
   profileName: string;
@@ -13,21 +13,21 @@ interface Props {
 
 export function DashboardHeader({ profileName, role, canComercial, canOperacional, activeTab, switchTab }: Props) {
   return (
-    <div style={{ background: "var(--dash-surface)", borderBottom: "1px solid var(--dash-border)", position: "sticky", top: 0, zIndex: 100 }}>
-      <div style={{ height: 52, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "baseline" }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)" }}>{greeting()}, {profileName}</span>
-          <span style={{ fontSize: 12, color: "var(--ink-60)", marginLeft: 10 }}>{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</span>
+    <div className="bg-white border-b border-[rgba(10,21,100,0.10)] sticky top-0 z-[100]">
+      <div className="h-[52px] px-7 flex items-center justify-between">
+        <div className="flex items-baseline">
+          <span className="text-base font-bold text-navy">{greeting()}, {profileName}</span>
+          <span className="text-xs text-ink-60 ml-2.5">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span style={{ background: "var(--navy-10)", border: "1px solid var(--dash-border)", borderRadius: 6, padding: "3px 10px", ...fontMono, fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--navy)" }}>{ROLE_LABELS[role] ?? role}</span>
-          <span style={{ ...fontMono, fontSize: 12, color: "var(--ink-60)", marginLeft: 10 }}>{format(new Date(), "HH:mm")}</span>
+        <div className="flex items-center">
+          <span className="bg-[rgba(10,21,100,0.08)] border border-[rgba(10,21,100,0.10)] rounded-md px-2.5 py-[3px] font-mono-dm text-[10px] tracking-[1.5px] uppercase text-navy">{ROLE_LABELS[role] ?? role}</span>
+          <span className="font-mono-dm text-xs text-ink-60 ml-2.5">{format(new Date(), "HH:mm")}</span>
         </div>
       </div>
       {canComercial && canOperacional && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+        <div className="flex justify-center gap-2">
           {[{ key: "comercial", label: "Visão Comercial" }, { key: "operacional", label: "Visão Operacional" }].map(t => (
-            <button key={t.key} onClick={() => switchTab(t.key)} style={{ padding: "12px 32px", fontSize: 13, fontWeight: activeTab === t.key ? 600 : 500, color: activeTab === t.key ? "var(--navy)" : "var(--ink-60)", cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === t.key ? "2px solid var(--navy)" : "2px solid transparent", ...fontBarlow }}>
+            <button key={t.key} onClick={() => switchTab(t.key)} className={`px-8 py-3 text-[13px] cursor-pointer bg-transparent border-none font-sans ${activeTab === t.key ? "font-semibold text-navy border-b-2 border-b-navy" : "font-medium text-ink-60 border-b-2 border-b-transparent"}`}>
               {t.label}
             </button>
           ))}

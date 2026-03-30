@@ -1,4 +1,4 @@
-import { anim, KpiBox, compactCurrency } from "../dashboard-utils";
+import { animDelay, KpiBox, compactCurrency } from "../dashboard-utils";
 
 interface Props {
   opClientes: number;
@@ -14,7 +14,7 @@ interface Props {
 
 export function KpiStripOperacional({ opClientes, opTotalAtivos, opCompensado, opHonorarios, opEconomia, opSaldo, periodLabel, trendPct, taxaHon }: Props) {
   return (
-    <div style={{ ...anim(40), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, display: "grid", gridTemplateColumns: "repeat(5,1fr)", marginBottom: 14, overflow: "hidden" }}>
+    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 mb-3.5 overflow-hidden" style={animDelay(40)}>
       <KpiBox label="Clientes compensando" value={String(opClientes)} sub={`de ${opTotalAtivos} ativos`} />
       <KpiBox label="Total compensado" value={compactCurrency(opCompensado)} sub={periodLabel} colorClass="green" trend={trendPct !== 0 ? trendPct : undefined} />
       <KpiBox label="Honorários gerados" value={compactCurrency(opHonorarios)} sub={`taxa média ${(taxaHon * 100).toFixed(1)}%`} />
