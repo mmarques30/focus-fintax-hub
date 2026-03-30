@@ -288,7 +288,7 @@ export default function MotorConfig() {
             <BarChart3 className="h-4 w-4 text-blue-300" />
             <span className="text-xs font-medium text-blue-200">Perfis Cobertos</span>
           </div>
-          <p className="text-3xl font-bold">{coveredCount} <span className="text-lg font-normal text-blue-300">/ 15</span></p>
+          <p className="text-3xl font-bold">{15 - uncoveredCount} <span className="text-lg font-normal text-blue-300">/ 15</span></p>
           <p className="text-xs text-blue-300 mt-0.5">combinações regime × segmento</p>
         </div>
         <div className="rounded-xl bg-[#0a1a6e] text-white p-5">
