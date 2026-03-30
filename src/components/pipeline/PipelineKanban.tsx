@@ -118,19 +118,21 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
   );
 }
 
-function LeadCard({ lead, index, onClick, isException }: { lead: PipelineLead; index: number; onClick: () => void; isException: boolean }) {
+function LeadCard({ lead, index, onClick, isException, userRole, isDragDisabled }: { lead: PipelineLead; index: number; onClick: () => void; isException: boolean; userRole: string | null; isDragDisabled: boolean }) {
   const days = daysSince(lead.status_funil_atualizado_em || lead.criado_em);
   const isNew = lead.status_funil === "novo";
   const scoreLabel = getScoreLabel(lead.score_lead);
   const scoreConf = SCORE_CONFIG[scoreLabel];
   const potencialMax = lead.relatorios_leads?.[0]?.estimativa_total_maxima || 0;
+  const isClienteAtivo = lead.status_funil === "cliente_ativo";
+  const showTooltip = isClienteAtivo && userRole === "comercial";
 
   let borderClass = "";
   if (isNew && days > 3) borderClass = "border-l-4 border-l-red-500";
   else if (isNew && days > 1) borderClass = "border-l-4 border-l-orange-400";
 
-  return (
-    <Draggable draggableId={lead.id} index={index}>
+  const card = (
+    <Draggable draggableId={lead.id} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -139,7 +141,7 @@ function LeadCard({ lead, index, onClick, isException }: { lead: PipelineLead; i
           onClick={onClick}
           className={`bg-card rounded-md border p-2 cursor-pointer hover:shadow-md transition-shadow ${borderClass} ${
             snapshot.isDragging ? "shadow-lg rotate-1" : ""
-          }`}
+          } ${isDragDisabled ? "cursor-default" : ""}`}
         >
           <div className="flex items-center justify-between gap-1">
             <p className="text-xs font-bold text-foreground leading-tight truncate flex-1">{lead.empresa}</p>
@@ -165,4 +167,17 @@ function LeadCard({ lead, index, onClick, isException }: { lead: PipelineLead; i
       )}
     </Draggable>
   );
+
+  if (showTooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{card}</TooltipTrigger>
+          <TooltipContent><p>Gerenciado pelo time operacional</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return card;
 }

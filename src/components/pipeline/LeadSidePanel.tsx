@@ -311,24 +311,26 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
               )}
 
               {/* Footer */}
-              <div className="border-t p-4 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
-                  <UserCheck className="h-4 w-4 mr-1" /> Converter
-                </Button>
-                {lead.status_funil === "contrato_emitido" && !showException && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
-                    onClick={() => setShowException(true)}
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+              {!isFullReadOnly && isEditable && (
+                <div className="border-t p-4 flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
+                    <UserCheck className="h-4 w-4 mr-1" /> Converter
                   </Button>
-                )}
-                <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
-                  <XCircle className="h-4 w-4 mr-1" /> Perdido
-                </Button>
-              </div>
+                  {lead.status_funil === "contrato_emitido" && !showException && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+                      onClick={() => setShowException(true)}
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
+                    <XCircle className="h-4 w-4 mr-1" /> Perdido
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>

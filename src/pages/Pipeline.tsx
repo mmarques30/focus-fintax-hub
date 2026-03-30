@@ -137,9 +137,11 @@ export default function Pipeline() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo Lead
-          </Button>
+          {userRole !== "gestor_tributario" && (
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo Lead
+            </Button>
+          )}
         </div>
       </div>
 
