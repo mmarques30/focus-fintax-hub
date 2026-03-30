@@ -34,6 +34,7 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
   }, [leads]);
 
   const handleDragEnd = async (result: DropResult) => {
+    if (!dragEnabled) return;
     if (!result.destination) return;
     const leadId = result.draggableId;
     const newStage = result.destination.droppableId;
