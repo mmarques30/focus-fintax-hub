@@ -731,6 +731,7 @@ async function runDiag(){
   const regime=document.getElementById('regime').value;
   const fat=document.getElementById('faturamento').value;
   if(!nome||!segmento||!fat){alert('Por favor preencha pelo menos: nome, segmento e faturamento.');return;}
+  if(regime==='Simples Nacional'){alert('O regime Simples Nacional não se enquadra nas teses tributárias atuais. Entre em contato para uma análise personalizada.');return;}
 
   // Show loading state on button
   const btn=document.querySelector('#form-state .btn-primary')||document.querySelector('#form-state button');
@@ -745,6 +746,11 @@ async function runDiag(){
       body:JSON.stringify({nome,empresa,cnpj,whatsapp,email,segmento,regime,faturamento:fat})
     });
     const data=await resp.json();
+    if(resp.ok&&data.blocked){
+      alert(data.message||'Regime não elegível.');
+      if(btn){btn.textContent=btnOrigText;btn.disabled=false;}
+      return;
+    }
     if(resp.ok&&data.token){
       window.location.href='/diagnostico/'+data.token;
       return;

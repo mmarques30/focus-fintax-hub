@@ -37,6 +37,8 @@ export default function LeadForm() {
   const [regimeTributario, setRegimeTributario] = useState("");
   const [segmento, setSegmento] = useState("");
 
+  const isSimplesNacional = regimeTributario === "Simples Nacional";
+
   const handleSubmit = async () => {
     const parsed = leadSchema.safeParse({
       nome, whatsapp, email, empresa, cnpj,
@@ -150,6 +152,11 @@ export default function LeadForm() {
                   ))}
                 </SelectContent>
               </Select>
+              {isSimplesNacional && (
+                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md p-2 border border-amber-200 dark:border-amber-700">
+                  ⚠ O regime Simples Nacional não se enquadra nas teses tributárias atuais. Entre em contato para uma análise personalizada.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="font-semibold">Segmento *</Label>
@@ -165,7 +172,7 @@ export default function LeadForm() {
           </div>
 
           <div className="pt-4">
-            <Button onClick={handleSubmit} disabled={saving} className="w-full font-bold">
+            <Button onClick={handleSubmit} disabled={saving || isSimplesNacional} className="w-full font-bold">
               <Send className="h-4 w-4 mr-2" />
               {saving ? "Salvando e analisando..." : "Cadastrar e Analisar"}
             </Button>
