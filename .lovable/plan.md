@@ -1,39 +1,30 @@
 
 
-## Aprovação por exceção no pipeline
+## Pipeline Kanban — Cards mais compactos
 
 ### Arquivo alterado
-`src/components/pipeline/LeadSidePanel.tsx`
+`src/components/pipeline/PipelineKanban.tsx` — rewrite do `LeadCard` e ajuste no column header
 
-### Plano
+### Mudanças
 
-**1. Novo estado**
-- `showException` (boolean) — mostra form inline de exceção
-- `exceptionReason` (string) — motivo digitado
-- `exceptionSaving` (boolean) — loading
+**1. LeadCard compacto (max ~90px)**
+- Padding reduzido: `p-2` em vez de `p-3`
+- Remover `mt-2` entre seções, usar `mt-1`
+- Linha 1: empresa (bold, `text-xs`, truncate, flex-1) + score badge (mesmo estilo atual)
+- Linha 2: segmento chip (`text-[10px]`) + score na mesma linha + se exceção → `AlertTriangle` amber h-3 w-3
+- Linha 3: potencial value left (green se >= 500k, `text-muted-foreground` se abaixo) + `· Xd` right em gray `text-[10px]`
+- Manter border-left para leads novos stale
 
-**2. Footer — botão condicional**
-Quando `lead.status_funil === "contrato_emitido"`, adicionar entre os botões existentes um botão amber:
-```
-<Button variant="outline" className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50">
-  <AlertTriangle /> Aprovar por exceção
-</Button>
-```
-Ao clicar, seta `showException = true` e exibe inline (acima do footer) um form com:
-- Textarea obrigatória "Motivo da aprovação por exceção"
-- Botões "Cancelar" e "Confirmar" (amber)
+**2. Detecção de exceção**
+- Adicionar prop `exceptionLeadIds: Set<string>` ao `PipelineKanban`
+- No `Pipeline.tsx`: fetch `lead_historico` onde `anotacao LIKE '⚠ EXCEÇÃO:%'`, extrair `lead_id`s únicos, passar como prop
+- No `LeadCard`: receber `isException` boolean, mostrar `AlertTriangle` amber h-3 w-3 ao lado do score badge
 
-**3. Lógica ao confirmar**
-- Inserir em `clientes` (mesma lógica do `ConvertClientModal.handleConvert`)
-- Atualizar lead `status_funil = "cliente_ativo"`
-- Inserir `lead_historico` com `anotacao = "⚠ EXCEÇÃO: {motivo}"`
-- Toast, refresh, close
+**3. Column header**
+- Stage name left (já existe), count badge right (já existe)
+- Potencial total em `text-[10px] text-[#0a1564] font-medium` abaixo do nome (já existe mas mudar cor para navy)
 
-**4. Histórico tab — ícone amber para exceções**
-No render de cada `HistoricoEntry`, verificar se `h.anotacao?.startsWith("⚠ EXCEÇÃO:")`. Se sim:
-- Trocar o dot azul por `AlertTriangle` amber (h-3 w-3 text-amber-500)
-- Mostrar anotação com `text-amber-700` em vez de muted
-
-**5. Import adicional**
-- `AlertTriangle` de lucide-react (já importado? Verificar — não está no import atual, adicionar)
+### Arquivos alterados
+1. `src/pages/Pipeline.tsx` — fetch exception lead IDs, passar prop
+2. `src/components/pipeline/PipelineKanban.tsx` — redesign LeadCard + accept exceptionLeadIds prop
 
