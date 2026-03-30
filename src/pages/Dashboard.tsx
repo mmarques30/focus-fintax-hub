@@ -275,7 +275,7 @@ export default function Dashboard() {
   const opEconomia = opCompensado - opHonorarios;
 
   return (
-    <div className="bg-[#f4f5f7] -m-6 min-h-[calc(100vh-64px)]">
+    <div className="bg-[#f4f5f7] -m-4 min-h-[calc(100vh-64px)]">
       {/* ═══ Header ═══ */}
       <div className="bg-[#0a1564] h-16 px-6 flex items-center justify-between">
         <div>
