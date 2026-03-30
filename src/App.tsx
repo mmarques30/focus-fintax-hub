@@ -15,7 +15,8 @@ import LeadForm from "@/pages/LeadForm";
 import LeadReport from "@/pages/LeadReport";
 import Pipeline from "@/pages/Pipeline";
 import Benchmarks from "@/pages/Benchmarks";
-import Clientes from "@/pages/Clientes";
+import ClientesList from "@/pages/ClientesList";
+import ClienteDetail from "@/pages/ClienteDetail";
 import Diagnostico from "@/pages/Diagnostico";
 import MotorConfig from "@/pages/MotorConfig";
 import NotFound from "@/pages/NotFound";
@@ -44,7 +45,8 @@ const App = () => (
                       <Route path="/leads" element={<LeadQueue />} />
                       <Route path="/leads/novo" element={<LeadForm />} />
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />
-                      <Route path="/clientes" element={<Clientes />} />
+                      <Route path="/clientes" element={<ClientesList />} />
+                      <Route path="/clientes/:id" element={<ClienteDetail />} />
                       <Route path="/benchmarks" element={<Benchmarks />} />
                       <Route path="/configuracoes/motor" element={<MotorConfig />} />
                       <Route path="/usuarios" element={<UserManagement />} />
