@@ -40,6 +40,7 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/pipeline" element={<Pipeline />} />
                       <Route path="/leads" element={<LeadQueue />} />
                       <Route path="/leads/novo" element={<LeadForm />} />
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />
