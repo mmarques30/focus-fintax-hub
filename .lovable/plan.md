@@ -1,37 +1,65 @@
 
 
-## Editar e Excluir Clientes
+## Permissões granulares por aba e sub-aba
 
-### Problema
-Atualmente não há como editar dados de um cliente existente nem excluí-lo. A tabela `clientes` também não tem RLS policy para DELETE.
+### Resumo
+Expandir o sistema de permissões para incluir não apenas telas (menus), mas também abas e sub-abas internas de cada tela. O admin poderá habilitar/desabilitar cada aba individualmente na gestão de usuários.
+
+### Mapeamento de todas as abas do sistema
+
+| Tela | Aba/Sub-aba | Key |
+|------|------------|-----|
+| Dashboard | Visão Comercial | `dashboard.comercial` |
+| Dashboard | Visão Operacional | `dashboard.operacional` |
+| Clientes (detalhe) | Processos por Tese | `clientes.processos` |
+| Clientes (detalhe) | Compensações | `clientes.compensacoes` |
+| Clientes (detalhe) | Resumo Financeiro | `clientes.resumo` |
+
+Pipeline, Motor de Cálculo, Benchmarks e Usuários não têm sub-abas — mantêm permissão apenas no nível de tela.
 
 ### Mudanças
 
-**1. Migration SQL — Adicionar RLS policy de DELETE**
-```sql
-CREATE POLICY "Admin gestor pmo delete clientes"
-ON public.clientes FOR DELETE TO authenticated
-USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'gestor_tributario') OR has_role(auth.uid(), 'pmo'));
+**1. `src/lib/screen-permissions.ts`**
+- Adicionar campo opcional `children` ao `ScreenDef` com sub-keys
+- Expandir `SCREENS` para incluir sub-abas em Dashboard e Clientes
+- `getDefaultPermissions` gera entradas para cada sub-aba
+- Manter retrocompatibilidade: telas sem children funcionam como antes
+
+```typescript
+export interface ScreenDef {
+  key: string;
+  label: string;
+  route: string;
+  defaultRoles: string[];
+  defaultReadOnlyRoles: string[];
+  children?: { key: string; label: string; defaultRoles: string[]; defaultReadOnlyRoles: string[] }[];
+}
 ```
 
-**2. `src/components/clientes/ClienteFormModal.tsx` — Suportar modo edição**
-- Aceitar prop opcional `cliente` (dados existentes) para preencher o form
-- Se `cliente` fornecido: título "Editar Cliente", botão "Salvar", usar `supabase.update()` ao invés de `insert()`
-- Se não fornecido: comportamento atual de criação
+**2. `src/pages/UserManagement.tsx`**
+- No checklist de permissões, renderizar sub-abas indentadas abaixo da tela-pai
+- Sub-abas só aparecem se a tela-pai estiver habilitada
+- Cada sub-aba tem seu próprio checkbox de acesso e somente leitura
+- As sub-abas são salvas na mesma tabela `user_permissions` com keys como `dashboard.comercial`
 
-**3. `src/pages/ClientesList.tsx` — Botões de ação na tabela**
-- Adicionar coluna "Ações" na tabela com botões Editar (ícone Pencil) e Excluir (ícone Trash2)
-- Editar: abre `ClienteFormModal` com os dados do cliente preenchidos
-- Excluir: abre `AlertDialog` de confirmação → executa `supabase.from("clientes").delete().eq("id", id)` → recarrega lista
-- Apenas roles não-comercial veem os botões de ação
-- Ao excluir, também deletar `processos_teses` e `compensacoes_mensais` associados (cascade manual, já que não há FK)
+**3. `src/hooks/useAuth.tsx`**
+- Sem mudança — já carrega todas as permissões por `screen_key`, que agora inclui sub-keys
 
-**4. `src/pages/ClienteDetail.tsx` — Botões editar/excluir no header da sidebar**
-- Adicionar botão Editar (abre modal com dados) e Excluir (confirmação → delete → navega para `/clientes`)
+**4. `src/pages/Dashboard.tsx`**
+- Verificar permissão de `dashboard.comercial` e `dashboard.operacional` antes de mostrar cada tab
+- Se só uma tab permitida, mostrar direto sem switcher
+- Se nenhuma, mostrar mensagem de acesso restrito
+
+**5. `src/pages/ClienteDetail.tsx`**
+- Verificar permissões `clientes.processos`, `clientes.compensacoes`, `clientes.resumo`
+- Filtrar TabsTrigger e TabsContent — só renderizar abas permitidas
+- Default tab = primeira aba permitida
+
+**6. Migration SQL** — nenhuma necessária (tabela `user_permissions` já suporta qualquer `screen_key` string)
 
 ### Arquivos alterados
-1. Migration SQL (nova RLS policy DELETE)
-2. `src/components/clientes/ClienteFormModal.tsx`
-3. `src/pages/ClientesList.tsx`
-4. `src/pages/ClienteDetail.tsx`
+1. `src/lib/screen-permissions.ts` — children nas definições
+2. `src/pages/UserManagement.tsx` — UI de sub-abas no modal
+3. `src/pages/Dashboard.tsx` — filtrar tabs por permissão
+4. `src/pages/ClienteDetail.tsx` — filtrar tabs por permissão
 
