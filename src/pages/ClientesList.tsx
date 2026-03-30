@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Building2, Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer } from "lucide-react";
+import { Building2, Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
+import { toast } from "sonner";
 
 export default function ClientesList() {
   const navigate = useNavigate();
@@ -24,6 +26,9 @@ export default function ClientesList() {
   const [compensacoes, setCompensacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editCliente, setEditCliente] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
@@ -153,7 +158,7 @@ export default function ClientesList() {
 
       {/* Table */}
       <Table>
-        <TableHeader>
+         <TableHeader>
           <TableRow>
             <TableHead>Empresa</TableHead>
             <TableHead>CNPJ</TableHead>
@@ -164,13 +169,14 @@ export default function ClientesList() {
             <TableHead>Compensado</TableHead>
             <TableHead>Saldo</TableHead>
             <TableHead>Alerta</TableHead>
+            {!isComercial && <TableHead className="w-[80px]">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+            <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : filtered.length === 0 ? (
-            <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
           ) : filtered.map((c) => (
             <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
               <TableCell className="font-medium">{c.empresa}</TableCell>
@@ -185,12 +191,50 @@ export default function ClientesList() {
                 {c.hasAlertNaoProtocolado ? <AlertOctagon className="h-4 w-4 text-red-500" /> :
                  c.hasAlertAguardando ? <AlertTriangle className="h-4 w-4 text-orange-500" /> : null}
               </TableCell>
+              {!isComercial && (
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditCliente(c); setModalOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <ClienteFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={fetchAll} />
+      <ClienteFormModal open={modalOpen} onOpenChange={(v) => { setModalOpen(v); if (!v) setEditCliente(null); }} onSuccess={fetchAll} cliente={editCliente} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteTarget?.empresa}</strong>? Todos os processos e compensações associados serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              setDeleting(true);
+              await supabase.from("compensacoes_mensais").delete().eq("cliente_id", deleteTarget.id);
+              await supabase.from("processos_teses").delete().eq("cliente_id", deleteTarget.id);
+              const { error } = await supabase.from("clientes").delete().eq("id", deleteTarget.id);
+              setDeleting(false);
+              if (error) { toast.error("Erro ao excluir cliente."); return; }
+              toast.success("Cliente excluído com sucesso!");
+              setDeleteTarget(null);
+              fetchAll();
+            }}>{deleting ? "Excluindo..." : "Excluir"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Report Modal */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>

@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,26 +13,50 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  cliente?: any;
 }
 
 const REGIMES = ["Lucro Real", "Lucro Presumido", "Simples Nacional"];
 const FAIXAS = ["Até R$ 500 mil", "R$ 500 mil a R$ 1M", "R$ 1M a R$ 2M", "R$ 2M a R$ 5M", "R$ 5M a R$ 10M", "Acima de R$ 10M"];
 
-export function ClienteFormModal({ open, onOpenChange, onSuccess }: Props) {
+const emptyForm = {
+  empresa: "",
+  cnpj: "",
+  regime_tributario: "",
+  segmento: "",
+  nome_contato: "",
+  whatsapp: "",
+  email: "",
+  faturamento_faixa: "",
+  compensando_fintax: false,
+  compensacao_outro_escritorio: "",
+  status: "ativo",
+};
+
+export function ClienteFormModal({ open, onOpenChange, onSuccess, cliente }: Props) {
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    empresa: "",
-    cnpj: "",
-    regime_tributario: "",
-    segmento: "",
-    nome_contato: "",
-    whatsapp: "",
-    email: "",
-    faturamento_faixa: "",
-    compensando_fintax: false,
-    compensacao_outro_escritorio: "",
-    status: "ativo",
-  });
+  const [form, setForm] = useState(emptyForm);
+  const isEdit = !!cliente;
+
+  useEffect(() => {
+    if (open && cliente) {
+      setForm({
+        empresa: cliente.empresa || "",
+        cnpj: cliente.cnpj || "",
+        regime_tributario: cliente.regime_tributario || "",
+        segmento: cliente.segmento || "",
+        nome_contato: cliente.nome_contato || "",
+        whatsapp: cliente.whatsapp || "",
+        email: cliente.email || "",
+        faturamento_faixa: cliente.faturamento_faixa || "",
+        compensando_fintax: !!cliente.compensando_fintax,
+        compensacao_outro_escritorio: cliente.compensacao_outro_escritorio || "",
+        status: cliente.status || "ativo",
+      });
+    } else if (open && !cliente) {
+      setForm(emptyForm);
+    }
+  }, [open, cliente]);
 
   const update = (field: string, value: string | boolean) => setForm((p) => ({ ...p, [field]: value }));
 
@@ -43,7 +66,7 @@ export function ClienteFormModal({ open, onOpenChange, onSuccess }: Props) {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("clientes").insert({
+    const payload = {
       empresa: form.empresa,
       cnpj: form.cnpj,
       regime_tributario: form.regime_tributario,
@@ -55,23 +78,29 @@ export function ClienteFormModal({ open, onOpenChange, onSuccess }: Props) {
       compensando_fintax: form.compensando_fintax,
       compensacao_outro_escritorio: form.compensacao_outro_escritorio,
       status: form.status,
-    });
+    };
+
+    let error;
+    if (isEdit) {
+      ({ error } = await supabase.from("clientes").update({ ...payload, atualizado_em: new Date().toISOString() }).eq("id", cliente.id));
+    } else {
+      ({ error } = await supabase.from("clientes").insert(payload));
+    }
     setSaving(false);
     if (error) {
-      toast.error("Erro ao cadastrar cliente.");
+      toast.error(isEdit ? "Erro ao atualizar cliente." : "Erro ao cadastrar cliente.");
       return;
     }
-    toast.success("Cliente cadastrado com sucesso!");
+    toast.success(isEdit ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!");
     onSuccess();
     onOpenChange(false);
-    setForm({ empresa: "", cnpj: "", regime_tributario: "", segmento: "", nome_contato: "", whatsapp: "", email: "", faturamento_faixa: "", compensando_fintax: false, compensacao_outro_escritorio: "", status: "ativo" });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar Cliente</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Cliente" : "Cadastrar Cliente"}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-2 gap-3">
@@ -136,7 +165,7 @@ export function ClienteFormModal({ open, onOpenChange, onSuccess }: Props) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : isEdit ? "Salvar" : "Cadastrar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

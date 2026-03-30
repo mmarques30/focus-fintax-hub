@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, MessageCircle, Upload } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, Upload, Pencil, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ProcessosTesesTab } from "@/components/clientes/ProcessosTesesTab";
@@ -16,6 +16,8 @@ import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertTitle } from "@/components/ui/alert-dialog";
+import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,9 @@ export default function ClienteDetail() {
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingCliente, setDeletingCliente] = useState(false);
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
@@ -179,6 +184,15 @@ export default function ClienteDetail() {
         </Button>
         <h2 className="text-lg font-bold leading-tight">{cliente.empresa}</h2>
 
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-3.5 w-3.5" /> Editar
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive gap-1" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="h-3.5 w-3.5" /> Excluir
+          </Button>
+        </div>
+
         <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
           <Upload className="h-4 w-4" /> Importar dados Laratex
         </Button>
@@ -312,6 +326,36 @@ export default function ClienteDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Modal */}
+      <ClienteFormModal open={editOpen} onOpenChange={setEditOpen} onSuccess={() => {
+        supabase.from("clientes").select("*").eq("id", id!).single().then(({ data }) => { if (data) setCliente(data); });
+      }} cliente={cliente} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertTitle>Excluir cliente</AlertTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{cliente.empresa}</strong>? Todos os processos e compensações associados serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingCliente}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={deletingCliente} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              setDeletingCliente(true);
+              await supabase.from("compensacoes_mensais").delete().eq("cliente_id", id!);
+              await supabase.from("processos_teses").delete().eq("cliente_id", id!);
+              const { error } = await supabase.from("clientes").delete().eq("id", id!);
+              setDeletingCliente(false);
+              if (error) { toast.error("Erro ao excluir cliente."); return; }
+              toast.success("Cliente excluído com sucesso!");
+              navigate("/clientes");
+            }}>{deletingCliente ? "Excluindo..." : "Excluir"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
