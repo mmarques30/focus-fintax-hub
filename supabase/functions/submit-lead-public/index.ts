@@ -61,6 +61,18 @@ serve(async (req) => {
     const regimeDb = regime || "Simples Nacional";
     const regimeKey = REGIME_MAP[regimeDb] || "simples";
 
+    // Block Simples Nacional — no eligible teses
+    if (regimeKey === "simples") {
+      return new Response(
+        JSON.stringify({
+          blocked: true,
+          reason: "simples",
+          message: "O regime Simples Nacional não se enquadra nas teses tributárias atuais. Entre em contato para uma análise personalizada.",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

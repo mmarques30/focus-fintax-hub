@@ -172,7 +172,7 @@ export default function LeadForm() {
           </div>
 
           <div className="pt-4">
-            <Button onClick={handleSubmit} disabled={saving} className="w-full font-bold">
+            <Button onClick={handleSubmit} disabled={saving || isSimplesNacional} className="w-full font-bold">
               <Send className="h-4 w-4 mr-2" />
               {saving ? "Salvando e analisando..." : "Cadastrar e Analisar"}
             </Button>

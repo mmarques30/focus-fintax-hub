@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Calculator, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Calculator, AlertTriangle, CheckCircle2, Clock, ShieldCheck, BarChart3 } from "lucide-react";
 
 interface TeseConfig {
   id: string;
@@ -31,9 +32,9 @@ interface TeseConfig {
 }
 
 const REGIMES = [
-  { value: "lucro_real", label: "Lucro Real" },
-  { value: "lucro_presumido", label: "Lucro Presumido" },
-  { value: "simples", label: "Simples Nacional" },
+  { value: "lucro_real", label: "Lucro Real", abbr: "LR" },
+  { value: "lucro_presumido", label: "Lucro Presumido", abbr: "LP" },
+  { value: "simples", label: "Simples Nacional", abbr: "SN" },
 ];
 
 const SEGMENTOS = [
@@ -51,6 +52,20 @@ const FATURAMENTO_FAIXAS = [
   { value: "5m_15m", label: "R$ 5M – R$ 15M", midpoint: 10_000_000 },
   { value: "acima_15m", label: "Acima R$ 15M", midpoint: 20_000_000 },
 ];
+
+const REGIME_CHIP_COLORS: Record<string, string> = {
+  lucro_real: "bg-blue-900 text-white border-blue-900",
+  lucro_presumido: "bg-blue-500 text-white border-blue-500",
+  simples: "bg-gray-400 text-white border-gray-400",
+};
+
+const SEGMENTO_CHIP_COLORS: Record<string, string> = {
+  supermercado: "bg-emerald-600 text-white border-emerald-600",
+  farmacia: "bg-purple-600 text-white border-purple-600",
+  pet: "bg-amber-600 text-white border-amber-600",
+  materiais_construcao: "bg-orange-600 text-white border-orange-600",
+  outros: "bg-gray-500 text-white border-gray-500",
+};
 
 const emptyTese: Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> = {
   tese: "",
@@ -70,6 +85,22 @@ function formatCurrency(v: number): string {
   return `R$ ${v}`;
 }
 
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const d = new Date(dateStr);
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `há ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return `há ${diffD} dia${diffD > 1 ? "s" : ""}`;
+  const diffM = Math.floor(diffD / 30);
+  if (diffM < 12) return `há ${diffM} mês${diffM > 1 ? "es" : ""}`;
+  return `há ${Math.floor(diffM / 12)} ano${Math.floor(diffM / 12) > 1 ? "s" : ""}`;
+}
+
 export default function MotorConfig() {
   const [teses, setTeses] = useState<TeseConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +108,7 @@ export default function MotorConfig() {
   const [editData, setEditData] = useState<Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> & { id?: string }>(emptyTese);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const coverageRef = useRef<HTMLDivElement>(null);
 
   const [simSegmento, setSimSegmento] = useState("supermercado");
   const [simRegime, setSimRegime] = useState("lucro_real");
@@ -127,6 +159,26 @@ export default function MotorConfig() {
       }
     }
     return grid;
+  }, [teses]);
+
+  const uncoveredCount = useMemo(() => {
+    let count = 0;
+    for (const s of SEGMENTOS) {
+      for (const r of REGIMES) {
+        if ((coverageGrid[s.value]?.[r.value]?.count || 0) === 0) count++;
+      }
+    }
+    return count;
+  }, [coverageGrid]);
+
+  const coveredCount = 15 - uncoveredCount;
+
+  const activeTesesCount = teses.filter(t => t.ativo).length;
+
+  const lastUpdate = useMemo(() => {
+    if (teses.length === 0) return null;
+    const dates = teses.map(t => new Date(t.atualizado_em).getTime());
+    return new Date(Math.max(...dates)).toISOString();
   }, [teses]);
 
   const inlineSave = useCallback(async (id: string, fields: Record<string, any>) => {
@@ -211,95 +263,126 @@ export default function MotorConfig() {
 
   if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
 
-  const segLabel = SEGMENTOS.find((s) => s.value === simSegmento)?.label || simSegmento;
-  const regLabel = REGIMES.find((r) => r.value === simRegime)?.label || simRegime;
-  const fatLabel = FATURAMENTO_FAIXAS.find((f) => f.value === simFaturamento)?.label || simFaturamento;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Motor de Cálculo — Configuração de Teses</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Os percentuais abaixo são aplicados sobre o faturamento declarado × 60 meses para gerar a estimativa de cada tese no diagnóstico do lead. Ajuste com base nos casos reais da carteira para manter a precisão das estimativas.
+        <h1 className="text-2xl font-bold text-foreground">Motor de Cálculo</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Configuração de teses, percentuais e cobertura por perfil
         </p>
       </div>
 
-      {/* Simulation Card — dark premium */}
-      <div className="rounded-xl bg-[#0a1a6e] text-white p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Calculator className="h-5 w-5 text-blue-300" />
-          <h2 className="font-semibold text-lg">Simulação ao Vivo</h2>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-xl bg-[#0a1a6e] text-white p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="h-4 w-4 text-blue-300" />
+            <span className="text-xs font-medium text-blue-200">Teses Ativas</span>
+          </div>
+          <p className="text-3xl font-bold">{activeTesesCount}</p>
+          <p className="text-xs text-blue-300 mt-0.5">de {teses.length} configuradas</p>
         </div>
-        <p className="text-blue-200 text-sm mb-4">
-          Para um <strong>{segLabel}</strong> em <strong>{regLabel}</strong> faturando <strong>{fatLabel}</strong>, o diagnóstico atual geraria:
-        </p>
+        <div className="rounded-xl bg-[#0a1a6e] text-white p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="h-4 w-4 text-blue-300" />
+            <span className="text-xs font-medium text-blue-200">Perfis Cobertos</span>
+          </div>
+          <p className="text-3xl font-bold">{coveredCount} <span className="text-lg font-normal text-blue-300">/ 15</span></p>
+          <p className="text-xs text-blue-300 mt-0.5">combinações regime × segmento</p>
+        </div>
+        <div className="rounded-xl bg-[#0a1a6e] text-white p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="h-4 w-4 text-blue-300" />
+            <span className="text-xs font-medium text-blue-200">Última Atualização</span>
+          </div>
+          <p className="text-3xl font-bold">{lastUpdate ? timeAgo(lastUpdate) : "—"}</p>
+          <p className="text-xs text-blue-300 mt-0.5">{lastUpdate ? new Date(lastUpdate).toLocaleDateString("pt-BR") : ""}</p>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div>
-            <Label className="text-xs text-blue-200">Segmento</Label>
+      {/* Alert banner */}
+      {uncoveredCount > 0 && (
+        <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-amber-800 dark:text-amber-200 text-sm">
+              <strong>{uncoveredCount} combinação{uncoveredCount > 1 ? "ões" : ""}</strong> sem cobertura — leads com esse perfil receberão diagnóstico vazio.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-3 text-xs border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
+              onClick={() => coverageRef.current?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Ver quais
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Simulator — compact inline */}
+      <div className="rounded-xl bg-muted/50 border px-5 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Calculator className="h-3.5 w-3.5" /> Simulador ao vivo
+          </span>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
             <Select value={simSegmento} onValueChange={setSimSegmento}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {SEGMENTOS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-          </div>
-          <div>
-            <Label className="text-xs text-blue-200">Regime</Label>
             <Select value={simRegime} onValueChange={setSimRegime}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {REGIMES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
               </SelectContent>
             </Select>
-          </div>
-          <div>
-            <Label className="text-xs text-blue-200">Faturamento</Label>
             <Select value={simFaturamento} onValueChange={setSimFaturamento}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {FATURAMENTO_FAIXAS.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <div className="rounded-lg bg-white/10 p-5 text-center">
-          <p className="text-blue-200 text-sm mb-1">{simulation.eligible} teses elegíveis → Estimativa total (5 anos):</p>
-          <p className="text-3xl font-bold">
-            {formatCurrency(simulation.totalMin)} — {formatCurrency(simulation.totalMax)}
-          </p>
-          <p className="text-blue-300 text-sm mt-2">
-            equivale a {simulation.multMin.toFixed(1)}–{simulation.multMax.toFixed(1)} faturamentos mensais
-          </p>
+          <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+            Estimativa: {formatCurrency(simulation.totalMin)} → {formatCurrency(simulation.totalMax)}
+            <span className="text-muted-foreground font-normal ml-2">
+              · {simulation.multMin.toFixed(1)}–{simulation.multMax.toFixed(1)}× fat. mensal
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Teses Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Teses Configuradas</CardTitle>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Nova tese</Button>
+        <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+          <CardTitle className="text-sm font-semibold">Teses Configuradas ({teses.length})</CardTitle>
+          <Button size="sm" onClick={openCreate} className="h-7 text-xs"><Plus className="h-3.5 w-3.5 mr-1" /> Nova tese</Button>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Tese</TableHead>
+                <TableRow className="text-xs">
+                  <TableHead className="w-8 pl-4">#</TableHead>
+                  <TableHead>Nome da Tese</TableHead>
                   <TableHead>Regimes</TableHead>
                   <TableHead>Segmentos</TableHead>
-                  <TableHead className="text-right w-[100px]">% Mín</TableHead>
-                  <TableHead className="text-right w-[100px]">% Máx</TableHead>
-                  <TableHead className="text-center">Ativo</TableHead>
-                  <TableHead>Atualizado</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="text-right w-[80px]">% Mín</TableHead>
+                  <TableHead className="text-right w-[80px]">% Máx</TableHead>
+                  <TableHead className="text-center w-[60px]">Ativo</TableHead>
+                  <TableHead className="w-[100px]">Última edição</TableHead>
+                  <TableHead className="w-8"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teses.map((t) => (
+                {teses.map((t, idx) => (
                   <TeseRow
                     key={t.id}
+                    index={idx + 1}
                     tese={t}
                     onToggleAtivo={() => toggleAtivo(t)}
                     onToggleRegime={(r) => toggleArrayField(t, "regimes_elegiveis", r)}
@@ -314,72 +397,74 @@ export default function MotorConfig() {
         </CardContent>
       </Card>
 
-      {/* Coverage Panel */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Cobertura por Perfil de Lead</CardTitle>
-          <CardDescription>Cada célula mostra quantas teses ativas cobrem aquela combinação. Vermelho = diagnóstico vazio.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TooltipProvider>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left p-2 font-medium text-muted-foreground">Segmento</th>
-                    {REGIMES.map((r) => (
-                      <th key={r.value} className="p-2 font-medium text-muted-foreground text-center">{r.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {SEGMENTOS.map((s) => (
-                    <tr key={s.value}>
-                      <td className="p-2 font-medium">{s.label}</td>
-                      {REGIMES.map((r) => {
-                        const cell = coverageGrid[s.value]?.[r.value];
-                        const count = cell?.count || 0;
-                        const names = cell?.teses || [];
-                        return (
-                          <td key={r.value} className="p-2 text-center">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold cursor-default ${
-                                  count > 0
-                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                }`}>
-                                  {count > 0 ? (
-                                    <><CheckCircle2 className="h-3.5 w-3.5" />{count}</>
-                                  ) : (
-                                    <><AlertTriangle className="h-3.5 w-3.5" />0</>
-                                  )}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-[220px]">
-                                {count > 0 ? (
-                                  <div>
-                                    <p className="font-medium mb-1">{count} tese(s) ativa(s):</p>
-                                    <ul className="text-xs space-y-0.5">
-                                      {names.map((n) => <li key={n}>• {n}</li>)}
-                                    </ul>
-                                  </div>
-                                ) : (
-                                  <p>Nenhuma tese ativa. Leads com esse perfil receberão diagnóstico vazio.</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </TooltipProvider>
-        </CardContent>
-      </Card>
+      {/* Coverage Grid */}
+      <div ref={coverageRef}>
+        <Card>
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="text-sm font-semibold">Cobertura por Perfil</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4 px-4">
+            <TooltipProvider>
+              <div className="grid grid-cols-4 gap-2" style={{ maxWidth: 400 }}>
+                {/* Header row */}
+                <div></div>
+                {REGIMES.map((r) => (
+                  <div key={r.value} className="text-center text-xs font-bold text-muted-foreground">{r.abbr}</div>
+                ))}
+                {/* Data rows */}
+                {SEGMENTOS.map((s) => (
+                  <>
+                    <div key={`label-${s.value}`} className="text-xs font-medium text-foreground flex items-center">{s.label}</div>
+                    {REGIMES.map((r) => {
+                      const cell = coverageGrid[s.value]?.[r.value];
+                      const count = cell?.count || 0;
+                      const names = cell?.teses || [];
+                      const isGreen = count > 0;
+                      return (
+                        <Tooltip key={`${s.value}-${r.value}`}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`rounded-lg flex flex-col items-center justify-center py-2 cursor-default transition-all ${
+                                isGreen
+                                  ? "bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800"
+                                  : "bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-800"
+                              }`}
+                            >
+                              <span className={`text-lg font-bold ${isGreen ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-400"}`}>
+                                {count}
+                              </span>
+                              {isGreen ? (
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                              ) : (
+                                <AlertTriangle className="h-3 w-3 text-red-500" />
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px]">
+                            {count > 0 ? (
+                              <div>
+                                <p className="font-medium mb-1">{count} tese(s):</p>
+                                <ul className="text-xs space-y-0.5">
+                                  {names.map((n) => <li key={n}>• {n}</li>)}
+                                </ul>
+                              </div>
+                            ) : (
+                              <p>Nenhuma tese ativa. Diagnóstico vazio.</p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </>
+                ))}
+              </div>
+            </TooltipProvider>
+            <p className="text-xs text-muted-foreground mt-3">
+              {coveredCount} de 15 combinações com cobertura ativa.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Edit/Create Modal */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -459,6 +544,7 @@ export default function MotorConfig() {
 
 /* ─── Inline-editable row component ─── */
 function TeseRow({
+  index,
   tese: t,
   onToggleAtivo,
   onToggleRegime,
@@ -466,6 +552,7 @@ function TeseRow({
   onInlineSave,
   onEdit,
 }: {
+  index: number;
   tese: TeseConfig;
   onToggleAtivo: () => void;
   onToggleRegime: (r: string) => void;
@@ -491,67 +578,76 @@ function TeseRow({
   };
 
   return (
-    <TableRow className={!t.ativo ? "opacity-50" : ""}>
-      <TableCell className="font-medium max-w-[200px]">
-        <div className="truncate">{t.nome_exibicao}</div>
-        <div className="text-xs text-muted-foreground truncate">{t.tese}</div>
+    <TableRow className={`${!t.ativo ? "opacity-40" : ""} cursor-pointer hover:bg-muted/50`} onClick={onEdit}>
+      <TableCell className="pl-4 text-xs text-muted-foreground font-mono">{index}</TableCell>
+      <TableCell className="font-medium max-w-[180px]">
+        <div className="truncate text-sm">{t.nome_exibicao}</div>
+        <div className="text-[10px] text-muted-foreground truncate">{t.tese}</div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-1">
-          {REGIMES.map((r) => (
-            <Badge
-              key={r.value}
-              variant={t.regimes_elegiveis.includes(r.value) ? "default" : "outline"}
-              className="text-[10px] px-1.5 py-0 cursor-pointer select-none"
-              onClick={() => onToggleRegime(r.value)}
-            >
-              {r.label}
-            </Badge>
-          ))}
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap gap-0.5">
+          {REGIMES.map((r) => {
+            const active = t.regimes_elegiveis.includes(r.value);
+            return (
+              <span
+                key={r.value}
+                className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold cursor-pointer select-none transition-opacity ${
+                  active ? REGIME_CHIP_COLORS[r.value] : "bg-muted text-muted-foreground opacity-30"
+                }`}
+                onClick={() => onToggleRegime(r.value)}
+              >
+                {r.abbr}
+              </span>
+            );
+          })}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-1">
-          {SEGMENTOS.map((s) => (
-            <Badge
-              key={s.value}
-              variant={t.segmentos_elegiveis.includes(s.value) ? "default" : "outline"}
-              className="text-[10px] px-1.5 py-0 cursor-pointer select-none"
-              onClick={() => onToggleSegmento(s.value)}
-            >
-              {s.label}
-            </Badge>
-          ))}
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap gap-0.5">
+          {SEGMENTOS.map((s) => {
+            const active = t.segmentos_elegiveis.includes(s.value);
+            return (
+              <span
+                key={s.value}
+                className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold cursor-pointer select-none transition-opacity ${
+                  active ? SEGMENTO_CHIP_COLORS[s.value] : "bg-muted text-muted-foreground opacity-30"
+                }`}
+                onClick={() => onToggleSegmento(s.value)}
+              >
+                {s.label.slice(0, 3)}
+              </span>
+            );
+          })}
         </div>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
         <Input
           type="number"
           step="0.01"
           value={minVal}
           onChange={(e) => setMinVal(e.target.value)}
           onBlur={saveMin}
-          className="w-20 text-right text-sm h-8 ml-auto"
+          className="w-16 text-right text-xs h-7 ml-auto"
         />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
         <Input
           type="number"
           step="0.01"
           value={maxVal}
           onChange={(e) => setMaxVal(e.target.value)}
           onBlur={saveMax}
-          className="w-20 text-right text-sm h-8 ml-auto"
+          className="w-16 text-right text-xs h-7 ml-auto"
         />
       </TableCell>
-      <TableCell className="text-center">
-        <Switch checked={t.ativo} onCheckedChange={onToggleAtivo} />
+      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+        <Switch checked={t.ativo} onCheckedChange={onToggleAtivo} className="scale-75" />
       </TableCell>
-      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-        {new Date(t.atualizado_em).toLocaleDateString("pt-BR")}
+      <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">
+        {timeAgo(t.atualizado_em)}
       </TableCell>
-      <TableCell>
-        <Button size="icon" variant="ghost" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <Button size="icon" variant="ghost" onClick={onEdit} className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
       </TableCell>
     </TableRow>
   );
