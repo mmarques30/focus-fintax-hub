@@ -1,125 +1,104 @@
 
 
-## Replace ALL Dashboard Inline Styles with Tailwind CSS
+## PART 3 — Visual Consistency Fixes
 
 ### Summary
-Convert every `style={{...}}` across all 18 dashboard component files to Tailwind utility classes. Add custom font families and dashboard-specific colors to `tailwind.config.ts`. Some dynamic styles (computed widths, dynamic colors from data) will remain as minimal inline styles where Tailwind can't handle runtime values.
+Standardize KPI strips, page headers, and table hover states across all pages to match the dashboard design system.
 
-### Step 1 — Update `tailwind.config.ts`
+### 1. Table hover state — `src/components/ui/table.tsx` (line 37)
 
-Add font families and dashboard-specific colors:
-```ts
-fontFamily: {
-  sans: ['Barlow', 'sans-serif'],        // replaces Montserrat for dashboard
-  display: ['"Barlow Condensed"', 'sans-serif'],
-  'mono-dm': ['"DM Mono"', 'monospace'],
-},
-colors: {
-  // existing colors stay...
-  navy: '#0a1564',
-  'dash-red': '#c8001e',
-  'dash-green': '#0f7b4e',
-  'dash-amber': '#b45309',
-  ink: '#0f1117',
-}
+Change `TableRow` default hover from `hover:bg-muted/50` to `hover:bg-[rgba(10,21,100,0.03)]`.
+
+### 2. Pipeline KPI strip — `src/pages/Pipeline.tsx` (lines 149-188)
+
+Replace the 4 separate `<Card>` KPI cards with a single dashboard-style KPI strip:
+```
+<div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
+  <KpiBox label="Leads ativos" value={...} sub="excluindo perdidos" />
+  <KpiBox label="Novos hoje" value={...} sub="captados hoje" />
+  <KpiBox label="Potencial total" value={...} sub="soma do potencial máx." colorClass="green" />
+  <KpiBox label="Sem contato >1d" value={...} sub="leads parados" colorClass="red" last />
+</div>
+```
+Import `KpiBox` and `compactCurrency` from `@/components/dashboard/dashboard-utils`. Remove `Card/CardContent` imports and icon imports (`Users, TrendingUp, AlertTriangle, Sparkles`) if no longer used.
+
+### 3. Pipeline header — `src/pages/Pipeline.tsx` (lines 116-121)
+
+Replace:
+```
+<h1 className="text-2xl font-bold text-foreground">Pipeline de Leads ...</h1>
+```
+With:
+```
+<h1 className="font-display text-xl font-bold text-navy">Pipeline de Leads</h1>
+<p className="text-xs text-muted-foreground uppercase tracking-widest">gerenciamento de leads e oportunidades</p>
 ```
 
-Add custom animation for fade-up (`fu` keyframe already in CSS):
-```ts
-animation: {
-  'dash-in': 'fu 0.45s ease var(--anim-delay) both',
-}
+### 4. ClientesList header — `src/pages/ClientesList.tsx` (lines 111-127)
+
+Replace the Building2 icon + h1 + Badge pattern with:
+```
+<div>
+  <h1 className="font-display text-xl font-bold text-navy">Clientes Ativos</h1>
+  <p className="text-xs text-muted-foreground uppercase tracking-widest">carteira de clientes e compensações</p>
+</div>
+```
+Keep action buttons right-aligned.
+
+### 5. ClientesList KPI strip — `src/pages/ClientesList.tsx` (lines 130-136)
+
+Replace 5 separate `<Card>` components with a single dashboard-style strip:
+```
+<div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
+  <KpiBox label="Total clientes" value={...} sub="cadastrados" />
+  <KpiBox label="Compensando Fintax" value={...} sub="clientes ativos" />
+  <KpiBox label="Crédito identificado" value={...} sub="total identificado" colorClass="red" />
+  <KpiBox label="Já compensado" value={...} sub="realizado" colorClass="green" />
+  <KpiBox label="Saldo restante" value={...} sub="disponível" colorClass="red" last />
+</div>
 ```
 
-### Step 2 — Update `src/index.css`
+### 6. UserManagement header — `src/pages/UserManagement.tsx` (lines 236-240)
 
-Add Tailwind-compatible utility for the animation delay pattern using CSS custom properties, since `anim(delay)` is used everywhere with different delay values.
-
-### Step 3 — Refactor `dashboard-utils.tsx`
-
-- Remove `fontMono`, `fontCondensed`, `fontBarlow` style objects (replaced by `font-mono-dm tabular-nums`, `font-display`, `font-sans`)
-- Remove `anim()` helper — replaced by a className helper: `cn("animate-dash-in", style with --anim-delay var)` or keep a tiny `animClass(delay)` that returns className + minimal style
-- Convert `KpiBox` component from inline styles to Tailwind classes
-- Keep `compactCurrency`, `fullCurrency`, `timeAgo`, constants, types unchanged
-
-### Step 4 — Convert each component file
-
-**Files to convert (17 component files):**
-
-| File | Inline styles approx | Notes |
-|------|---------------------|-------|
-| `DashboardHeader.tsx` | ~15 | Sticky header, tab buttons |
-| `KpiStripComercial.tsx` | ~5 | Grid wrapper |
-| `AlertasBanner.tsx` | ~10 | Conditional banner |
-| `FunilComercial.tsx` | ~40 | Most complex — funnel rows with dynamic colors per row, hover handlers |
-| `LeadsRecentes.tsx` | ~25 | Lead cards with dynamic chip colors |
-| `QualidadeCarteira.tsx` | ~10 | Score distribution |
-| `MotorPerformance.tsx` | ~10 | Navy card |
-| `BottomStripComercial.tsx` | ~10 | Bottom strip |
-| `CommercialView.tsx` | ~3 | Layout grid |
-| `KpiStripOperacional.tsx` | ~5 | Grid wrapper |
-| `ProjectionBand.tsx` | ~15 | Navy band with dividers |
-| `ChartEvolucao.tsx` | ~30 | Chart + legend + insight strip |
-| `DistribuicaoSaldo.tsx` | ~20 | Bands with dynamic colors |
-| `UrgencyClients.tsx` | ~15 | Dynamic grid columns |
-| `RankingTable.tsx` | ~30 | Full table with hover |
-| `BottomStripOperacional.tsx` | ~10 | 7-item strip |
-| `OperationalView.tsx` | ~3 | Layout grid |
-
-**Conversion pattern:**
-
-Before:
-```tsx
-<div style={{ background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, overflow: "hidden" }}>
+Replace:
 ```
-
-After:
-```tsx
-<div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden">
+<h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
+<p className="text-body-text text-sm mt-1">...</p>
 ```
+With:
+```
+<h1 className="font-display text-xl font-bold text-navy">Gestão de Usuários</h1>
+<p className="text-xs text-muted-foreground uppercase tracking-widest">permissões e acessos do sistema</p>
+```
+Also update the non-admin view header (line 222).
 
-**Dynamic values that must stay as style:**
-- `width: \`${(f.count / maxFunnelCount) * 100}%\`` — computed percentages for progress bars
-- `background: f.color` — colors from data (funnel stage colors)
-- `gridTemplateColumns: \`repeat(${Math.min(urgencyClients.length, 5)},1fr)\`` — dynamic grid
-- `style={{ '--anim-delay': '140ms' }}` — animation delays
+### 7. Benchmarks header — `src/pages/Benchmarks.tsx` (lines 143-146)
 
-### Step 5 — Update `Dashboard.tsx`
+Replace with:
+```
+<h1 className="font-display text-xl font-bold text-navy">Benchmarks de Teses</h1>
+<p className="text-xs text-muted-foreground uppercase tracking-widest">percentuais históricos para estimativas</p>
+```
+Also update non-admin view (line 130).
 
-Convert the 2 remaining inline style divs (outer wrapper + content area) to Tailwind classes.
+### 8. MotorConfig header — `src/pages/MotorConfig.tsx` (lines 269-274)
 
-### What stays as inline style
-- Dynamic computed widths/percentages (progress bars)
-- Dynamic colors from data arrays (funnel colors, segmento bar colors)  
-- Recharts component props (they use their own style system)
-- Animation delay values (CSS custom property)
+Replace with:
+```
+<h1 className="font-display text-xl font-bold text-navy">Motor de Cálculo</h1>
+<p className="text-xs text-muted-foreground uppercase tracking-widest">teses, percentuais e cobertura por perfil</p>
+```
 
 ### Files modified
-1. `tailwind.config.ts`
-2. `src/index.css` (animation utility)
-3. `src/components/dashboard/dashboard-utils.tsx`
-4. `src/components/dashboard/DashboardHeader.tsx`
-5. `src/components/dashboard/comercial/KpiStripComercial.tsx`
-6. `src/components/dashboard/comercial/AlertasBanner.tsx`
-7. `src/components/dashboard/comercial/FunilComercial.tsx`
-8. `src/components/dashboard/comercial/LeadsRecentes.tsx`
-9. `src/components/dashboard/comercial/QualidadeCarteira.tsx`
-10. `src/components/dashboard/comercial/MotorPerformance.tsx`
-11. `src/components/dashboard/comercial/BottomStripComercial.tsx`
-12. `src/components/dashboard/comercial/CommercialView.tsx`
-13. `src/components/dashboard/operacional/KpiStripOperacional.tsx`
-14. `src/components/dashboard/operacional/ProjectionBand.tsx`
-15. `src/components/dashboard/operacional/ChartEvolucao.tsx`
-16. `src/components/dashboard/operacional/DistribuicaoSaldo.tsx`
-17. `src/components/dashboard/operacional/UrgencyClients.tsx`
-18. `src/components/dashboard/operacional/RankingTable.tsx`
-19. `src/components/dashboard/operacional/BottomStripOperacional.tsx`
-20. `src/components/dashboard/operacional/OperationalView.tsx`
-21. `src/pages/Dashboard.tsx`
+1. `src/components/ui/table.tsx` — hover state
+2. `src/pages/Pipeline.tsx` — KPI strip + header
+3. `src/pages/ClientesList.tsx` — KPI strip + header
+4. `src/pages/UserManagement.tsx` — header
+5. `src/pages/Benchmarks.tsx` — header
+6. `src/pages/MotorConfig.tsx` — header
 
 ### Preserved
-- All visual output — pixel-identical
-- All data logic, queries, realtime — untouched
-- Recharts internal styling — unchanged
-- CSS variables in `index.css` — kept for non-Tailwind consumers
+- All data logic, queries, state — untouched
+- Functional behavior — identical
+- Only visual/structural changes to match dashboard design system
 
