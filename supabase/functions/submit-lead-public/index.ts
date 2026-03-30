@@ -57,7 +57,7 @@ serve(async (req) => {
     }
 
     const segmentoDb = SEGMENTO_MAP[segmento] || "outros";
-    const faturamentoDb = FATURAMENTO_MAP[faturamento] || "ate_2m";
+    const faturamentoDb = FATURAMENTO_MAP[faturamento] || "ate_500k";
     const regimeDb = regime || "Simples Nacional";
     const regimeKey = REGIME_MAP[regimeDb] || "simples";
 

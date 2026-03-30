@@ -44,7 +44,9 @@ export const LEAD_STATUS_COLORS: Record<string, string> = {
 
 // Map faixa to approximate annual revenue for calculation
 export const FATURAMENTO_VALORES: Record<string, number> = {
-  "ate_2m": 24_000_000,
-  "2m_15m": 102_000_000,
+  "ate_500k": 6_000_000,
+  "500k_2m": 15_000_000,
+  "2m_5m": 42_000_000,
+  "5m_15m": 120_000_000,
   "acima_15m": 300_000_000,
 };

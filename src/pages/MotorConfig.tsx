@@ -80,7 +80,7 @@ export default function MotorConfig() {
 
   const [simSegmento, setSimSegmento] = useState("supermercado");
   const [simRegime, setSimRegime] = useState("lucro_real");
-  const [simFaturamento, setSimFaturamento] = useState("ate_2m");
+  const [simFaturamento, setSimFaturamento] = useState("ate_500k");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));

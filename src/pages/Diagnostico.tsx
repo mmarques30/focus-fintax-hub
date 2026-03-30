@@ -48,9 +48,6 @@ const FATURAMENTO_MIDPOINTS: Record<string, number> = {
   "2m_5m": 3_500_000,
   "5m_15m": 10_000_000,
   acima_15m: 20_000_000,
-  // legacy fallbacks
-  ate_2m: 1_000_000,
-  "2m_15m": 8_500_000,
 };
 
 const NICHE_IMAGES: Record<string, string> = {
