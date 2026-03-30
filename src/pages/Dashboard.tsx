@@ -319,7 +319,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-3 py-3 space-y-3">
         {loading ? (
           <div className="space-y-4">
             <div className="bg-white rounded-lg p-4 flex gap-4">
