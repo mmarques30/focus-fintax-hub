@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,9 +39,22 @@ const SEGMENTO_LABELS: Record<string, string> = {
 };
 
 const FATURAMENTO_MIDPOINTS: Record<string, number> = {
+  ate_500k: 250_000,
+  "500k_2m": 1_250_000,
+  "2m_5m": 3_500_000,
+  "5m_15m": 10_000_000,
+  acima_15m: 20_000_000,
+  // legacy fallbacks
   ate_2m: 1_000_000,
   "2m_15m": 8_500_000,
-  acima_15m: 20_000_000,
+};
+
+const NICHE_IMAGES: Record<string, string> = {
+  supermercado: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=1200&q=80&auto=format&fit=crop",
+  farmacia: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&q=80&auto=format&fit=crop",
+  pet: "https://images.unsplash.com/photo-1601758003122-53c40e686a19?w=1200&q=80&auto=format&fit=crop",
+  materiais_construcao: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80&auto=format&fit=crop",
+  outros: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80&auto=format&fit=crop",
 };
 
 const TESE_DESCRICOES_FALLBACK: Record<string, string> = {
@@ -70,8 +83,7 @@ function heroSuffix(n: number): string {
   return "";
 }
 
-// Animated counter hook
-function useAnimatedCounter(target: number, duration = 1800, startDelay = 600) {
+function useAnimatedCounter(target: number, duration = 1600, startDelay = 600) {
   const [value, setValue] = useState(0);
   const rafRef = useRef<number>();
 
@@ -82,7 +94,7 @@ function useAnimatedCounter(target: number, duration = 1800, startDelay = 600) {
       const tick = (now: number) => {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - progress, 4); // out-quart
+        const ease = 1 - Math.pow(1 - progress, 4);
         setValue(Math.round(ease * target));
         if (progress < 1) rafRef.current = requestAnimationFrame(tick);
       };
@@ -97,7 +109,6 @@ function useAnimatedCounter(target: number, duration = 1800, startDelay = 600) {
   return value;
 }
 
-// Inject fonts
 function useFonts() {
   useEffect(() => {
     const id = "diagnostico-fonts";
@@ -105,12 +116,11 @@ function useFonts() {
     const link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@600;700;800&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap";
     document.head.appendChild(link);
   }, []);
 }
 
-// Inject styles
 function useStyles() {
   useEffect(() => {
     const id = "diagnostico-styles";
@@ -118,36 +128,62 @@ function useStyles() {
     const style = document.createElement("style");
     style.id = id;
     style.textContent = `
-      @keyframes diag-fadeUp {
-        from { opacity: 0; transform: translateY(20px); }
+      :root {
+        --dg-navy: #0a1564;
+        --dg-red: #c8001e;
+        --dg-ink: #111827;
+        --dg-surface: #ffffff;
+        --dg-page: #f7f7f5;
+        --dg-gold: #b8860b;
+        --dg-green: #00c853;
+        --dg-border: rgba(17,24,39,0.09);
+        --dg-ink-60: rgba(17,24,39,0.6);
+        --dg-ink-30: rgba(17,24,39,0.3);
+        --dg-ink-10: rgba(17,24,39,0.1);
+      }
+      @keyframes dg-fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-      @keyframes diag-blink {
-        0%,100% { opacity: 1; }
-        50% { opacity: 0.3; }
+      .dg-fade-up {
+        opacity: 0;
+        animation: dg-fadeUp 0.55s ease-out forwards;
       }
-      .diag-fadeUp {
-        animation: diag-fadeUp 0.6s ease both;
-      }
+      .dg-d1 { animation-delay: 0.1s; }
+      .dg-d2 { animation-delay: 0.2s; }
+      .dg-d3 { animation-delay: 0.3s; }
+      .dg-d4 { animation-delay: 0.4s; }
+      .dg-d5 { animation-delay: 0.5s; }
+      .dg-d6 { animation-delay: 0.6s; }
+      .dg-d7 { animation-delay: 0.7s; }
+      .dg-d8 { animation-delay: 0.8s; }
       @media print {
-        .diag-page { background: #fff !important; color: #000 !important; }
-        .diag-page::before { display: none !important; }
-        .diag-header { background: #0a1564 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .diag-cta-section { display: none !important; }
-        .diag-btn { display: none !important; }
-        .diag-hero, .diag-tese-card, .diag-disclaimer {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
+        .dg-page { background: #fff !important; }
+        .dg-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-hero-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-total-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-cta-section { display: none !important; }
+        .dg-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-fade-up { opacity: 1 !important; animation: none !important; }
+        .dg-tese-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-disclaimer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+      @media (max-width: 600px) {
+        .dg-total-inner { flex-direction: column !important; text-align: center !important; }
+        .dg-total-inner > div:last-child { margin-top: 16px; }
+        .dg-hero-text h1 { font-size: 28px !important; }
+        .dg-tese-grid { grid-template-columns: 1fr !important; }
+        .dg-tese-right { text-align: left !important; margin-top: 8px; }
+        .dg-stamps { gap: 16px !important; }
+        .dg-cta-buttons { flex-direction: column !important; }
       }
     `;
     document.head.appendChild(style);
-    return () => { /* keep styles for print */ };
   }, []);
 }
 
 const LogoSVG = () => (
-  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
     <path d="M20 6C20 6 13 10 11 18C10 22 11 26 14 28C16 29.5 18 30 20 30C22 30 24 29.5 26 28C29 26 30 22 29 18C27 10 20 6 20 6Z" fill="#c8001e"/>
     <path d="M16 18C16 18 17 20 20 20C23 20 24 18 24 18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
@@ -187,7 +223,6 @@ export default function Diagnostico() {
       });
   }, [token]);
 
-  // Trigger bars after mount
   useEffect(() => {
     if (data) {
       const t = setTimeout(() => setBarsVisible(true), 800);
@@ -197,19 +232,19 @@ export default function Diagnostico() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060e4a", fontFamily: "'Barlow', sans-serif" }}>
-        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Carregando diagnóstico...</div>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7f7f5", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ color: "var(--dg-ink-60)", fontSize: 14 }}>Carregando diagnóstico...</div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060e4a", fontFamily: "'Barlow', sans-serif", flexDirection: "column", gap: 16 }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7f7f5", fontFamily: "'DM Sans', sans-serif", flexDirection: "column", gap: 16 }}>
         <div style={{ fontSize: 48, opacity: 0.3 }}>📄</div>
-        <h1 style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>Diagnóstico não encontrado</h1>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>O link pode estar incorreto ou o diagnóstico ainda não foi gerado.</p>
-        <a href="/" style={{ color: "#c8001e", fontSize: 13, textDecoration: "underline" }}>Voltar à página inicial</a>
+        <h1 style={{ color: "var(--dg-ink)", fontSize: 20, fontWeight: 600 }}>Diagnóstico não encontrado</h1>
+        <p style={{ color: "var(--dg-ink-60)", fontSize: 13 }}>O link pode estar incorreto ou o diagnóstico ainda não foi gerado.</p>
+        <a href="/" style={{ color: "var(--dg-red)", fontSize: 13, textDecoration: "underline" }}>Voltar à página inicial</a>
       </div>
     );
   }
@@ -230,6 +265,7 @@ export default function Diagnostico() {
     maxTese={maxTese}
     multiplier={multiplier}
     barsVisible={barsVisible}
+    relatorio={relatorio}
   />;
 }
 
@@ -241,9 +277,10 @@ interface ContentProps {
   maxTese: number;
   multiplier: string;
   barsVisible: boolean;
+  relatorio: DiagnosticoData["relatorio"];
 }
 
-function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multiplier, barsVisible }: ContentProps) {
+function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multiplier, barsVisible, relatorio }: ContentProps) {
   const animMin = useAnimatedCounter(minTotal);
   const animMax = useAnimatedCounter(maxTotal);
 
@@ -251,191 +288,246 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
   );
   const whatsappUrl = `https://wa.me/5521999999999?text=${whatsappMsg}`;
-
   const segLabel = SEGMENTO_LABELS[lead.segmento] || lead.segmento;
+  const heroImg = NICHE_IMAGES[lead.segmento] || NICHE_IMAGES.outros;
+  const reportDate = relatorio?.criado_em ? new Date(relatorio.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
   return (
-    <div className="diag-page" style={{
+    <div className="dg-page" style={{
       minHeight: "100vh",
-      background: "#060e4a",
-      color: "#fff",
-      fontFamily: "'Barlow', sans-serif",
+      background: "#f7f7f5",
+      color: "var(--dg-ink)",
+      fontFamily: "'DM Sans', sans-serif",
       overflowX: "hidden",
-      position: "relative",
     }}>
-      {/* BG texture */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: `
-          radial-gradient(ellipse 80% 60% at 50% -10%, rgba(13,30,122,0.9) 0%, transparent 70%),
-          radial-gradient(ellipse 40% 40% at 90% 20%, rgba(200,0,30,0.12) 0%, transparent 60%),
-          radial-gradient(ellipse 30% 30% at 10% 80%, rgba(200,0,30,0.08) 0%, transparent 60%)
-        `,
-      }} />
-
       {/* Header */}
-      <header className="diag-header diag-fadeUp" style={{
-        position: "relative", zIndex: 10,
-        padding: "20px 48px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid rgba(255,255,255,0.15)",
-        background: "rgba(6,14,74,0.6)",
-        backdropFilter: "blur(8px)",
+      <header className="dg-header dg-fade-up dg-d1" style={{
+        background: "#0a1564",
+        padding: "16px 48px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <LogoSVG />
           <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-            <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: 1 }}>FOCUS</span>
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#e8001e", letterSpacing: 3, textTransform: "uppercase" as const }}>FinTax</span>
+            <span style={{ fontWeight: 600, fontSize: 18, letterSpacing: 1, color: "#fff" }}>FOCUS</span>
+            <span style={{ fontWeight: 500, fontSize: 11, color: "#c8001e", letterSpacing: 3, textTransform: "uppercase" }}>FinTax</span>
           </div>
         </div>
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
+          background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
           borderRadius: 100, padding: "6px 16px",
-          fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase" as const,
-          color: "rgba(255,255,255,0.7)",
+          fontSize: 10, fontFamily: "'DM Mono', monospace", fontWeight: 500,
+          letterSpacing: 2, textTransform: "uppercase",
+          color: "rgba(255,255,255,0.8)",
         }}>
           <span style={{
-            width: 6, height: 6, borderRadius: "50%", background: "#00e676",
-            animation: "diag-blink 1.8s ease-in-out infinite", display: "inline-block",
+            width: 6, height: 6, borderRadius: "50%", background: "#00c853",
+            display: "inline-block",
           }} />
           Diagnóstico Gerado
         </div>
       </header>
 
-      {/* Wrapper */}
-      <div style={{ position: "relative", zIndex: 5, maxWidth: 860, margin: "0 auto", padding: "48px 24px 80px" }}>
-
-        {/* Intro */}
-        <div className="diag-fadeUp" style={{ textAlign: "center", marginBottom: 40 }}>
+      {/* Hero Image */}
+      <div className="dg-hero-img dg-fade-up dg-d2" style={{
+        position: "relative", height: 240, overflow: "hidden",
+      }}>
+        <img
+          src={heroImg}
+          alt={`Segmento ${segLabel}`}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to bottom, rgba(10,21,100,0.5) 0%, rgba(10,21,100,0.85) 100%)",
+        }} />
+        <div className="dg-hero-text" style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "32px 48px",
+        }}>
           <div style={{
-            display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: 4,
-            textTransform: "uppercase" as const, color: "#e8001e",
-            background: "rgba(200,0,30,0.12)", border: "1px solid rgba(200,0,30,0.3)",
-            borderRadius: 4, padding: "4px 14px", marginBottom: 12,
+            fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 500,
+            letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.7)",
+            marginBottom: 8,
           }}>
             Diagnóstico Tributário · Estimativa Preliminar
           </div>
           <h1 style={{
-            fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(26px, 5vw, 38px)",
-            fontWeight: 700, lineHeight: 1.2, marginBottom: 8,
+            fontFamily: "'DM Serif Display', serif", fontSize: 36,
+            fontWeight: 400, lineHeight: 1.15, color: "#fff", marginBottom: 4,
           }}>
-            {lead.empresa}<br />
-            identificamos <span style={{ color: "#f5c842" }}>oportunidades reais</span>
+            {lead.empresa}
           </h1>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-            Análise baseada no faturamento declarado · {lead.regime_tributario} · Período de 60 meses
+          <p style={{
+            fontFamily: "'DM Serif Display', serif", fontStyle: "italic",
+            fontSize: 18, color: "rgba(255,255,255,0.8)", marginBottom: 8,
+          }}>
+            identificamos <span style={{ color: "#f5c842" }}>oportunidades reais</span>
+          </p>
+          <p style={{
+            fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1,
+            color: "rgba(255,255,255,0.6)", textTransform: "uppercase",
+          }}>
+            {lead.regime_tributario} · Período de 60 meses
           </p>
         </div>
+      </div>
 
-        {/* Hero total */}
+      {/* Content */}
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px 80px" }}>
+
+        {/* Total card */}
         {maxTotal > 0 && (
-          <div className="diag-hero diag-fadeUp" style={{
-            background: "linear-gradient(135deg, rgba(200,0,30,0.18) 0%, rgba(13,30,122,0.4) 100%)",
-            border: "1px solid rgba(200,0,30,0.4)", borderRadius: 20,
-            padding: "40px 48px", textAlign: "center", marginBottom: 32,
-            position: "relative", overflow: "hidden", animationDelay: "0.1s",
+          <div className="dg-total-card dg-fade-up dg-d3" style={{
+            background: "#0a1564", borderRadius: 16, padding: "36px 40px",
+            marginBottom: 32, color: "#fff",
           }}>
-            {/* Decorative circles */}
-            <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(200,0,30,0.2) 0%, transparent 70%)" }} />
-            <div style={{ position: "absolute", bottom: -40, left: -40, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(200,0,30,0.1) 0%, transparent 70%)" }} />
-
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 4, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.7)", marginBottom: 16 }}>
-              Potencial total de recuperação tributária estimado
-            </div>
-
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(42px, 8vw, 72px)", lineHeight: 1, marginBottom: 10, position: "relative", zIndex: 1 }}>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "0.45em", fontWeight: 700, verticalAlign: "top", marginTop: "0.2em", display: "inline-block", color: "#e8001e" }}>R$</span>
-              <span style={{ color: "rgba(255,255,255,0.7)" }}>{formatHeroNumber(animMin)}{heroSuffix(minTotal)}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.6em", margin: "0 8px" }}>→</span>
-              <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "0.45em", fontWeight: 700, verticalAlign: "top", marginTop: "0.2em", display: "inline-block", color: "#e8001e" }}>R$</span>
-              <span style={{ color: "#fff" }}>{formatHeroNumber(animMax)}{heroSuffix(maxTotal)}</span>
-            </div>
-
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 20, position: "relative", zIndex: 1 }}>
-              Estimativa conservadora a agressiva — {teses.length} teses identificadas para o seu perfil
-            </p>
-
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              background: "rgba(245,200,66,0.12)", border: "1px solid rgba(245,200,66,0.35)",
-              borderRadius: 8, padding: "10px 20px", position: "relative", zIndex: 1,
+            <div className="dg-total-inner" style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
             }}>
-              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#f5c842" }}>{multiplier}×</span>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", textAlign: "left" as const, lineHeight: 1.3 }}>
-                <strong style={{ display: "block", color: "#f5c842", fontWeight: 700 }}>faturamentos mensais</strong>
-                média recuperada por {segLabel.toLowerCase()}s similares ao seu
+              <div>
+                <div style={{
+                  fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 500,
+                  letterSpacing: 3, textTransform: "uppercase", color: "rgba(255,255,255,0.6)",
+                  marginBottom: 12,
+                }}>
+                  Potencial total de recuperação tributária estimado
+                </div>
+                <div style={{
+                  fontFamily: "'DM Serif Display', serif", fontSize: 44,
+                  lineHeight: 1, marginBottom: 8,
+                }}>
+                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 20, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, verticalAlign: "top", marginRight: 4 }}>R$</span>
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>{formatHeroNumber(animMin)}{heroSuffix(minTotal)}</span>
+                  <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 24, margin: "0 12px" }}>→</span>
+                  <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 20, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, verticalAlign: "top", marginRight: 4 }}>R$</span>
+                  <span>{formatHeroNumber(animMax)}{heroSuffix(maxTotal)}</span>
+                </div>
+                <div style={{
+                  fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5,
+                }}>
+                  Estimativa conservadora a agressiva — {teses.length} teses identificadas
+                </div>
+              </div>
+              <div style={{
+                background: "rgba(184,134,11,0.15)", border: "1px solid rgba(184,134,11,0.4)",
+                borderRadius: 12, padding: "16px 24px", textAlign: "center",
+                flexShrink: 0,
+              }}>
+                <div style={{
+                  fontFamily: "'DM Serif Display', serif", fontSize: 36,
+                  color: "#f5c842", lineHeight: 1,
+                }}>
+                  {multiplier}×
+                </div>
+                <div style={{
+                  fontSize: 10, fontFamily: "'DM Mono', monospace", fontWeight: 500,
+                  color: "rgba(255,255,255,0.6)", marginTop: 4, letterSpacing: 0.5,
+                }}>
+                  faturamentos<br />mensais
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Section label */}
+        {/* Section row */}
         {teses.length > 0 && (
-          <div className="diag-fadeUp" style={{
-            display: "flex", alignItems: "center", gap: 12, marginBottom: 16, animationDelay: "0.2s",
+          <div className="dg-fade-up dg-d4" style={{
+            display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
           }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" as const }}>
+            <span style={{
+              fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 500,
+              letterSpacing: 3, textTransform: "uppercase", color: "var(--dg-ink-60)",
+              whiteSpace: "nowrap",
+            }}>
               {teses.length} teses identificadas
             </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.15)" }} />
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" as const }}>
+            <div style={{ flex: 1, height: 1, background: "var(--dg-ink-10)" }} />
+            <span style={{
+              fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 500,
+              letterSpacing: 3, textTransform: "uppercase", color: "var(--dg-ink-60)",
+              whiteSpace: "nowrap",
+            }}>
               {lead.regime_tributario} · {segLabel}
             </span>
           </div>
         )}
 
         {/* Tese cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 36 }}>
           {teses.map((t, i) => {
             const barWidth = Math.round((t.estimativa_maxima / maxTese) * 100);
             const desc = t.descricao_comercial || TESE_DESCRICOES_FALLBACK[t.tese_nome] || "Tese tributária com potencial de recuperação de créditos para o seu segmento.";
+            const stripeColor = i === 0 ? "#c8001e" : i === 1 ? "#0a1564" : "var(--dg-ink-10)";
+
             return (
-              <div key={i} className="diag-tese-card diag-fadeUp" style={{
-                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 14, padding: "22px 28px",
-                display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "center",
-                transition: "border-color 0.3s, background 0.3s",
-                animationDelay: `${0.25 + i * 0.07}s`,
-                cursor: "default",
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(200,0,30,0.4)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-              >
-                <div style={{ minWidth: 0 }}>
+              <div key={i} className={`dg-tese-card dg-fade-up`} style={{
+                background: "#ffffff",
+                border: "1px solid rgba(17,24,39,0.09)",
+                borderLeft: `4px solid ${stripeColor}`,
+                borderRadius: 12,
+                padding: "20px 24px",
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 16,
+                alignItems: "center",
+                animationDelay: `${0.35 + i * 0.08}s`,
+              }}>
+                <div className="dg-tese-grid" style={{ minWidth: 0 }}>
                   <div style={{
-                    fontFamily: "'Bebas Neue', sans-serif", fontSize: 11, letterSpacing: 3,
-                    color: "#e8001e", marginBottom: 4, display: "flex", alignItems: "center", gap: 8,
+                    fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 500,
+                    letterSpacing: 2, color: "#c8001e", marginBottom: 4,
+                    display: "flex", alignItems: "center", gap: 8,
                   }}>
                     TESE {String(i + 1).padStart(2, "0")}
-                    <span style={{ display: "block", width: 24, height: 1, background: "rgba(200,0,30,0.5)" }} />
+                    <span style={{ display: "block", width: 20, height: 1, background: "rgba(200,0,30,0.3)" }} />
                   </div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 17, fontWeight: 700, lineHeight: 1.2, marginBottom: 6 }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 600, lineHeight: 1.3,
+                    color: "var(--dg-ink)", marginBottom: 4,
+                  }}>
                     {t.tese_nome}
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, maxWidth: 520 }}>
+                  <div style={{
+                    fontSize: 12, color: "var(--dg-ink-60)", lineHeight: 1.6,
+                    maxWidth: 480,
+                  }}>
                     {desc}
                   </div>
-                  <div style={{ marginTop: 12, height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{
+                    marginTop: 12, height: 3, background: "var(--dg-ink-10)",
+                    borderRadius: 2, overflow: "hidden",
+                  }}>
                     <div style={{
                       height: "100%",
                       background: "linear-gradient(90deg, #c8001e 0%, #e8001e 100%)",
                       borderRadius: 2,
                       width: barsVisible ? `${barWidth}%` : "0%",
-                      transition: `width 1.4s cubic-bezier(0.16,1,0.3,1)`,
+                      transition: "width 1.4s cubic-bezier(0.16,1,0.3,1)",
                       transitionDelay: `${0.3 + i * 0.12}s`,
                     }} />
                   </div>
                 </div>
-                <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>
+                <div className="dg-tese-right" style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{
+                    fontSize: 9, fontFamily: "'DM Mono', monospace", fontWeight: 500,
+                    letterSpacing: 2, textTransform: "uppercase",
+                    color: "var(--dg-ink-30)", marginBottom: 4,
+                  }}>
                     Estimativa 5 anos
                   </div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, lineHeight: 1.1 }}>
-                    <div style={{ fontSize: 15, color: "rgba(255,255,255,0.7)" }}>{formatValue(t.estimativa_minima)}</div>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "block", margin: "1px 0" }}>até</span>
-                    <div style={{ fontSize: 20, color: "#fff" }}>{formatValue(t.estimativa_maxima)}</div>
+                  <div style={{ lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 14, color: "var(--dg-ink-60)", fontWeight: 500 }}>
+                      {formatValue(t.estimativa_minima)}
+                    </div>
+                    <span style={{ fontSize: 11, color: "var(--dg-ink-30)", display: "block", margin: "1px 0" }}>até</span>
+                    <div style={{ fontSize: 18, color: "var(--dg-ink)", fontWeight: 600 }}>
+                      {formatValue(t.estimativa_maxima)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -444,54 +536,61 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         </div>
 
         {/* Disclaimer */}
-        <div className="diag-disclaimer diag-fadeUp" style={{
-          background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-          borderLeft: "3px solid rgba(245,200,66,0.5)", borderRadius: 10,
-          padding: "16px 20px", marginBottom: 36,
-          display: "flex", gap: 14, alignItems: "flex-start",
-          animationDelay: "0.6s",
+        <div className="dg-disclaimer dg-fade-up dg-d6" style={{
+          background: "rgba(184,134,11,0.08)",
+          border: "1px solid rgba(184,134,11,0.2)",
+          borderLeft: "4px solid var(--dg-gold)",
+          borderRadius: 10,
+          padding: "16px 20px",
+          marginBottom: 40,
+          display: "flex",
+          gap: 14,
+          alignItems: "flex-start",
         }}>
           <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚠</div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.65 }}>
-            <strong style={{ color: "#f5c842", fontWeight: 600 }}>Análise Estimada · Dados Declarados</strong><br />
-            Os valores acima são projeções preliminares com base no faturamento e regime informados, calculadas a partir de médias históricas de empresas do mesmo segmento. A análise completa e definitiva requer acesso às declarações fiscais, Speds e balancetes contábeis. Prazo legal para recuperação: <strong style={{ color: "#f5c842", fontWeight: 600 }}>5 anos retroativos</strong>. Cada mês sem análise reduz o período recuperável.
+          <p style={{ fontSize: 12, color: "var(--dg-ink-60)", lineHeight: 1.7 }}>
+            <strong style={{ color: "var(--dg-gold)", fontWeight: 600 }}>Análise Estimada · Dados Declarados</strong><br />
+            Os valores acima são projeções preliminares com base no faturamento e regime informados, calculadas a partir de médias históricas de empresas do mesmo segmento. A análise completa e definitiva requer acesso às declarações fiscais, Speds e balancetes contábeis. Prazo legal para recuperação: <strong style={{ color: "var(--dg-gold)", fontWeight: 600 }}>5 anos retroativos</strong>. Cada mês sem análise reduz o período recuperável.
           </p>
         </div>
 
         {/* CTA Section */}
-        <div className="diag-cta-section diag-fadeUp" style={{ textAlign: "center", animationDelay: "0.7s" }}>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, fontWeight: 700, marginBottom: 6 }}>
+        <div className="dg-cta-section dg-fade-up dg-d7" style={{ textAlign: "center", marginBottom: 40 }}>
+          <p style={{
+            fontFamily: "'DM Serif Display', serif", fontSize: 26,
+            color: "var(--dg-ink)", marginBottom: 6, lineHeight: 1.3,
+          }}>
             Transforme esse potencial em caixa real.
           </p>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 28 }}>
+          <p style={{ fontSize: 13, color: "var(--dg-ink-60)", marginBottom: 28 }}>
             Avaliamos seus documentos em 48h. Se não recuperarmos, você não paga nada.
           </p>
-          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" as const }}>
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="diag-btn" style={{
+          <div className="dg-cta-buttons" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" style={{
               display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "16px 28px", borderRadius: 10,
-              fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 14,
+              padding: "14px 28px", borderRadius: 10,
+              fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
               background: "#c8001e", color: "#fff",
-              boxShadow: "0 4px 24px rgba(200,0,30,0.4)",
+              boxShadow: "0 4px 20px rgba(200,0,30,0.3)",
               textDecoration: "none", border: "none", cursor: "pointer",
               transition: "transform 0.2s, box-shadow 0.2s",
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(200,0,30,0.6)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(200,0,30,0.4)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
             >
               <WhatsAppSVG />
               Quero minha análise completa
             </a>
-            <button className="diag-btn" onClick={() => window.print()} style={{
+            <button onClick={() => window.print()} style={{
               display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "16px 28px", borderRadius: 10,
-              fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 14,
-              background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
-              transition: "transform 0.2s, background 0.2s, color 0.2s",
+              padding: "14px 28px", borderRadius: 10,
+              fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
+              background: "transparent", color: "var(--dg-ink-60)",
+              border: "1px solid var(--dg-ink-10)", cursor: "pointer",
+              transition: "transform 0.2s, background 0.2s",
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.background = "var(--dg-ink-10)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.background = "transparent"; }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -501,14 +600,16 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
           </div>
         </div>
 
-        {/* Stamps */}
-        <div className="diag-fadeUp" style={{
-          display: "flex", justifyContent: "center", gap: 32, marginTop: 36, flexWrap: "wrap" as const,
-          animationDelay: "0.8s",
+        {/* Trust stamps */}
+        <div className="dg-stamps dg-fade-up dg-d8" style={{
+          display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap",
         }}>
           {["Processos amparados pelo STF", "Sem custo inicial · Só no sucesso", "Prazo legal: 5 anos retroativos", "Confidencialidade total"].map((text) => (
-            <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: 0.5 }}>
-              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(200,0,30,0.6)" }} />
+            <div key={text} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              fontSize: 11, color: "var(--dg-ink-30)", fontWeight: 500, letterSpacing: 0.5,
+            }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--dg-ink-30)" }} />
               {text}
             </div>
           ))}
@@ -516,12 +617,18 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
       </div>
 
       {/* Footer */}
-      <footer style={{
-        position: "relative", zIndex: 5, textAlign: "center", padding: 24,
-        borderTop: "1px solid rgba(255,255,255,0.08)", fontSize: 11,
-        color: "rgba(255,255,255,0.4)", letterSpacing: 0.5,
+      <footer className="dg-footer" style={{
+        background: "#0a1564",
+        padding: "20px 48px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontSize: 11,
+        color: "rgba(255,255,255,0.5)",
+        letterSpacing: 0.5,
       }}>
-        Focus FinTax LTDA · Grupo Focus · A Contabilidade do Supermercado
+        <span>Focus FinTax LTDA · Grupo Focus · A Contabilidade do Supermercado</span>
+        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10 }}>{reportDate}</span>
       </footer>
     </div>
   );
