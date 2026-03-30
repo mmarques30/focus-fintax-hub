@@ -35,6 +35,9 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   const [obs, setObs] = useState("");
   const [historico, setHistorico] = useState<HistoricoEntry[]>([]);
   const [showConvert, setShowConvert] = useState(false);
+  const [showException, setShowException] = useState(false);
+  const [exceptionReason, setExceptionReason] = useState("");
+  const [exceptionSaving, setExceptionSaving] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
