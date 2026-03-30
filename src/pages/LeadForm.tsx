@@ -37,6 +37,8 @@ export default function LeadForm() {
   const [regimeTributario, setRegimeTributario] = useState("");
   const [segmento, setSegmento] = useState("");
 
+  const isSimplesNacional = regimeTributario === "Simples Nacional";
+
   const handleSubmit = async () => {
     const parsed = leadSchema.safeParse({
       nome, whatsapp, email, empresa, cnpj,
