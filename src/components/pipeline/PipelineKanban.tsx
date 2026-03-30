@@ -1,15 +1,15 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
-import { PIPELINE_STAGES, SEGMENTO_COLORS, SEGMENTO_LABELS, SCORE_CONFIG, getScoreLabel, formatCurrency, daysSince } from "@/lib/pipeline-constants";
+import { AlertTriangle, ChevronRight, ChevronDown } from "lucide-react";
+import { PIPELINE_STAGES, STAGE_MERGE_MAP, SEGMENTO_COLORS, SEGMENTO_LABELS, SCORE_CONFIG, getScoreLabel, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import type { PipelineLead } from "@/pages/Pipeline";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
 import { ConvertClientModal } from "./ConvertClientModal";
 import { canEditLead, canDragInPipeline } from "@/lib/role-permissions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 interface Props {
   leads: PipelineLead[];
   onLeadClick: (id: string) => void;
@@ -20,13 +20,24 @@ interface Props {
 export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds = new Set() }: Props) {
   const { user, userRole } = useAuth();
   const [convertLead, setConvertLead] = useState<PipelineLead | null>(null);
+  const [collapsedStages, setCollapsedStages] = useState<Set<string>>(new Set());
   const dragEnabled = canDragInPipeline(userRole);
+
+  const toggleCollapse = (stage: string) => {
+    setCollapsedStages((prev) => {
+      const next = new Set(prev);
+      if (next.has(stage)) next.delete(stage);
+      else next.add(stage);
+      return next;
+    });
+  };
 
   const grouped = useMemo(() => {
     const map: Record<string, PipelineLead[]> = {};
     PIPELINE_STAGES.forEach((s) => (map[s.value] = []));
     leads.forEach((l) => {
-      const stage = l.status_funil || "novo";
+      const raw = l.status_funil || "novo";
+      const stage = STAGE_MERGE_MAP[raw] || raw;
       if (map[stage]) map[stage].push(l);
       else map["novo"].push(l);
     });
@@ -39,7 +50,9 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
     const leadId = result.draggableId;
     const newStage = result.destination.droppableId;
     const lead = leads.find((l) => l.id === leadId);
-    if (!lead || lead.status_funil === newStage) return;
+    if (!lead) return;
+    const currentMapped = STAGE_MERGE_MAP[lead.status_funil] || lead.status_funil;
+    if (currentMapped === newStage) return;
 
     if (newStage === "cliente_ativo") {
       setConvertLead(lead);
@@ -75,10 +88,28 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 500 }}>
+        <div className="flex gap-3 overflow-x-auto pb-4 h-[calc(100vh-280px)]">
           {PIPELINE_STAGES.map((stage) => {
             const stageLeads = grouped[stage.value] || [];
             const totalPotencial = stageLeads.reduce((s, l) => s + (l.relatorios_leads?.[0]?.estimativa_total_maxima || 0), 0);
+            const isCollapsed = collapsedStages.has(stage.value);
+
+            if (isCollapsed) {
+              return (
+                <div
+                  key={stage.value}
+                  onClick={() => toggleCollapse(stage.value)}
+                  className="flex-shrink-0 w-[44px] rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors flex flex-col items-center py-3 gap-2"
+                >
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wide [writing-mode:vertical-lr] rotate-180">
+                    {stage.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium">{stageLeads.length}</span>
+                </div>
+              );
+            }
+
             return (
               <Droppable key={stage.value} droppableId={stage.value}>
                 {(provided, snapshot) => (
@@ -89,17 +120,21 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
                       snapshot.isDraggingOver ? "bg-primary/5 border-primary/30" : "bg-muted/30"
                     }`}
                   >
-                    <div className="px-1 py-1">
-                      <div className="flex items-center justify-between">
+                    <div
+                      className="px-1 py-1 cursor-pointer select-none flex items-center gap-1"
+                      onClick={() => toggleCollapse(stage.value)}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <div className="flex-1 flex items-center justify-between">
                         <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">{stage.label}</h3>
                         <span className="text-xs text-muted-foreground font-medium">{stageLeads.length}</span>
                       </div>
-                      {totalPotencial > 0 && (
-                        <p className="text-[10px] text-[#0a1564] font-medium">{formatCurrency(totalPotencial)}</p>
-                      )}
                     </div>
+                    {totalPotencial > 0 && (
+                      <p className="text-[10px] text-primary font-medium px-1 -mt-1">{formatCurrency(totalPotencial)}</p>
+                    )}
 
-                    <div className="flex-1 flex flex-col gap-2 min-h-[60px]">
+                    <div className="flex-1 flex flex-col gap-2 min-h-[60px] overflow-y-auto">
                       {stageLeads.map((lead, index) => (
                         <LeadCard key={lead.id} lead={lead} index={index} onClick={() => onLeadClick(lead.id)} isException={exceptionLeadIds.has(lead.id)} userRole={userRole} isDragDisabled={!dragEnabled || !canEditLead(userRole, lead.status_funil)} />
                       ))}
@@ -128,7 +163,7 @@ function LeadCard({ lead, index, onClick, isException, userRole, isDragDisabled 
   const showTooltip = isClienteAtivo && userRole === "comercial";
 
   let borderClass = "";
-  if (isNew && days > 3) borderClass = "border-l-4 border-l-red-500";
+  if (isNew && days > 3) borderClass = "border-l-4 border-l-destructive";
   else if (isNew && days > 1) borderClass = "border-l-4 border-l-orange-400";
 
   const card = (
