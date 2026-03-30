@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
+import { canEditLead } from "@/lib/role-permissions";
 import type { PipelineLead } from "@/pages/Pipeline";
 import { ConvertClientModal } from "./ConvertClientModal";
 
