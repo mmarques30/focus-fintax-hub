@@ -8,10 +8,11 @@
   body * {
     visibility: hidden;
   }
-  #report-content, #report-content * {
+  #report-content, #report-content *,
+  #mapa-tributario, #mapa-tributario * {
     visibility: visible;
   }
-  #report-content {
+  #report-content, #mapa-tributario {
     position: absolute;
     left: 0;
     top: 0;
