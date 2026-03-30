@@ -321,8 +321,8 @@ export default function Dashboard() {
 
       <div className="px-3 py-3 space-y-3">
         {loading ? (
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg p-4 flex gap-4">
+          <div className="space-y-3">
+            <div className="bg-white rounded-lg p-4 flex gap-3">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 flex-1" />)}
             </div>
             <Skeleton className="h-64 w-full rounded-lg" />
