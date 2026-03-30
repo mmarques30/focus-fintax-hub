@@ -343,7 +343,7 @@ export default function Dashboard() {
             </div>
 
             {/* Row 2 — 60/40 */}
-            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-3">
               {/* LEFT — Funil */}
               <div className="bg-white rounded-lg shadow-sm px-5 py-4">
                 <p className="text-sm font-bold text-gray-900 mb-3">Funil comercial</p>
