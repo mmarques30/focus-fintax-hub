@@ -30,6 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Login />} />
+            <Route path="/diagnostico/:token" element={<Diagnostico />} />
             <Route
               path="/*"
               element={
