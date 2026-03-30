@@ -14,9 +14,22 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Montserrat", "sans-serif"],
+        sans: ['Barlow', 'sans-serif'],
+        display: ['"Barlow Condensed"', 'sans-serif'],
+        'mono-dm': ['"DM Mono"', 'monospace'],
       },
       colors: {
+        navy: '#0a1564',
+        'dash-red': '#c8001e',
+        'dash-green': '#0f7b4e',
+        'dash-amber': '#b45309',
+        ink: {
+          DEFAULT: '#0f1117',
+          60: 'rgba(15,17,23,0.60)',
+          35: 'rgba(15,17,23,0.35)',
+          12: 'rgba(15,17,23,0.12)',
+          '06': 'rgba(15,17,23,0.05)',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
