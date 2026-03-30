@@ -8,18 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, FileText, MessageCircle, Printer, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrencyBR, getStatusPagamentoConfig, STATUS_PAGAMENTO } from "@/lib/clientes-constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import logoFintax from "@/assets/logo-focus-fintax.svg";
+
+const TRIBUTO_OPTIONS = ["INSS", "PIS/COFINS", "IRPJ", "CSLL", "Outros"];
+const MESES_PT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
 interface Props {
   clienteId: string;
+  cliente?: { empresa: string; cnpj: string };
   onTotalChange?: (total: number) => void;
 }
 
-export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
+export function CompensacoesTab({ clienteId, cliente, onTotalChange }: Props) {
   const [compensacoes, setCompensacoes] = useState<any[]>([]);
   const [processos, setProcessos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +37,25 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
     status_pagamento: "pendente",
     valor_nf_servico: "",
     observacao: "",
+    tributo: "",
   });
 
-  const fetch = useCallback(async () => {
+  // Mapa Tributário state
+  const [mapaOpen, setMapaOpen] = useState(false);
+  const [mapaMes, setMapaMes] = useState("");
+
+  // WhatsApp state
+  const [whatsOpen, setWhatsOpen] = useState(false);
+  const [whatsMes, setWhatsMes] = useState("");
+
+  const fetchData = useCallback(async () => {
     const [{ data: comp }, { data: proc }] = await Promise.all([
       supabase
         .from("compensacoes_mensais")
         .select("*, processos_teses(nome_exibicao, tese)")
         .eq("cliente_id", clienteId)
         .order("mes_referencia", { ascending: false }),
-      supabase.from("processos_teses").select("id, nome_exibicao, tese").eq("cliente_id", clienteId),
+      supabase.from("processos_teses").select("id, nome_exibicao, tese, valor_credito, percentual_honorario").eq("cliente_id", clienteId),
     ]);
     setCompensacoes(comp || []);
     setProcessos(proc || []);
@@ -50,10 +64,13 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
     onTotalChange?.(total);
   }, [clienteId, onTotalChange]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filtered = filterTese === "all" ? compensacoes : compensacoes.filter((c) => c.processo_tese_id === filterTese);
   const totalFiltered = filtered.reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
+
+  // Available months
+  const availableMonths = [...new Set(compensacoes.map((c) => (c.mes_referencia as string).slice(0, 7)))].sort().reverse();
 
   const handleSave = async () => {
     if (!form.processo_tese_id || !form.mes_referencia) {
@@ -68,17 +85,77 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
       status_pagamento: form.status_pagamento,
       valor_nf_servico: Number(form.valor_nf_servico) || 0,
       observacao: form.observacao,
+      tributo: form.tributo || null,
     });
     if (error) { toast.error("Erro ao registrar."); return; }
     toast.success("Compensação registrada!");
     setModalOpen(false);
-    setForm({ processo_tese_id: "", mes_referencia: "", valor_compensado: "", status_pagamento: "pendente", valor_nf_servico: "", observacao: "" });
-    fetch();
+    setForm({ processo_tese_id: "", mes_referencia: "", valor_compensado: "", status_pagamento: "pendente", valor_nf_servico: "", observacao: "", tributo: "" });
+    fetchData();
+  };
+
+  // ——— Mapa Tributário helpers ———
+  const mesComps = mapaMes ? compensacoes.filter((c) => (c.mes_referencia as string).startsWith(mapaMes)) : [];
+  const mesProcessoIds = [...new Set(mesComps.map((c) => c.processo_tese_id))];
+  const mesProcessos = processos.filter((p) => mesProcessoIds.includes(p.id));
+
+  const formatMesPT = (mesStr: string) => {
+    const [y, m] = mesStr.split("-");
+    return `${MESES_PT[parseInt(m, 10) - 1]}/${y}`;
+  };
+
+  const getCompensacoesAteOmes = (processoId: string, mesRef: string) => {
+    return compensacoes
+      .filter((c) => c.processo_tese_id === processoId && (c.mes_referencia as string).slice(0, 7) <= mesRef)
+      .reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
+  };
+
+  const getTributo = (c: any) => (c as any).tributo || c.observacao || "INSS";
+
+  const isSubvencao = (tese: string) => tese?.toLowerCase().includes("subven");
+
+  // ——— WhatsApp helpers ———
+  const whatsComps = whatsMes ? compensacoes.filter((c) => (c.mes_referencia as string).startsWith(whatsMes)) : [];
+
+  const buildWhatsMessage = (comp: any, proc: any) => {
+    const honorario = Math.round(Number(comp.valor_compensado || 0) * Number(proc.percentual_honorario || 0) * 100) / 100;
+    const economia = Number(comp.valor_compensado || 0) - honorario;
+    const tributo = getTributo(comp);
+    const mesLabel = formatMesPT(whatsMes);
+    const percLabel = `${((Number(proc.percentual_honorario || 0)) * 100).toFixed(0)}%`;
+
+    return `${cliente?.empresa || ""} ${cliente?.cnpj || ""}
+Prestação de serviços de COMPLIANCE TRIBUTÁRIO – ${proc.nome_exibicao}
+${tributo} – ${formatCurrencyBR(Number(comp.valor_compensado || 0))}
+Valor utilizado como compensação no mês: ${formatCurrencyBR(Number(comp.valor_compensado || 0))}
+Honorários na razão de ${percLabel}
+Valor: ${formatCurrencyBR(honorario)}
+Competência: ${mesLabel}
+ECONOMIA NO MÊS: ${formatCurrencyBR(economia)}
+Pix: financeiro@focusfintax.com.br
+Quaisquer dúvidas estamos à disposição,
+Equipe Focus.`;
+  };
+
+  const fullWhatsMessage = whatsComps.map((comp) => {
+    const proc = processos.find((p) => p.id === comp.processo_tese_id);
+    if (!proc) return "";
+    return buildWhatsMessage(comp, proc);
+  }).filter(Boolean).join("\n\n---\n\n");
+
+  const totalHonorarios = whatsComps.reduce((s, comp) => {
+    const proc = processos.find((p) => p.id === comp.processo_tese_id);
+    return s + Math.round(Number(comp.valor_compensado || 0) * Number(proc?.percentual_honorario || 0) * 100) / 100;
+  }, 0);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(fullWhatsMessage);
+    toast.success("Copiado!");
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <Select value={filterTese} onValueChange={setFilterTese}>
           <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por tese" /></SelectTrigger>
           <SelectContent>
@@ -86,7 +163,15 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
             {processos.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome_exibicao}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Registrar compensação</Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => { setMapaMes(""); setMapaOpen(true); }}>
+            <FileText className="h-4 w-4 mr-1" /> Mapa Tributário
+          </Button>
+          <Button size="sm" variant="outline" className="text-green-700 border-green-300 hover:bg-green-50" onClick={() => { setWhatsMes(""); setWhatsOpen(true); }}>
+            <MessageCircle className="h-4 w-4 mr-1" /> Comunicado WhatsApp
+          </Button>
+          <Button size="sm" onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Registrar compensação</Button>
+        </div>
       </div>
 
       <Table>
@@ -94,6 +179,7 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
           <TableRow>
             <TableHead>Mês Ref.</TableHead>
             <TableHead>Tese</TableHead>
+            <TableHead>Tributo</TableHead>
             <TableHead>Valor Compensado</TableHead>
             <TableHead>Pagamento</TableHead>
             <TableHead>NF Serviço</TableHead>
@@ -102,15 +188,16 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+            <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : filtered.length === 0 ? (
-            <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma compensação registrada.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhuma compensação registrada.</TableCell></TableRow>
           ) : filtered.map((c) => {
             const sp = getStatusPagamentoConfig(c.status_pagamento);
             return (
               <TableRow key={c.id}>
                 <TableCell>{format(new Date(c.mes_referencia), "MMM/yyyy", { locale: ptBR })}</TableCell>
                 <TableCell>{c.processos_teses?.nome_exibicao || "—"}</TableCell>
+                <TableCell className="text-xs">{(c as any).tributo || "—"}</TableCell>
                 <TableCell className="font-medium">{formatCurrencyBR(Number(c.valor_compensado || 0))}</TableCell>
                 <TableCell><Badge variant="outline" className={sp.color}>{sp.label}</Badge></TableCell>
                 <TableCell>{formatCurrencyBR(Number(c.valor_nf_servico || 0))}</TableCell>
@@ -122,7 +209,7 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
         {filtered.length > 0 && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2} className="font-medium">Total</TableCell>
+              <TableCell colSpan={3} className="font-medium">Total</TableCell>
               <TableCell className="font-bold">{formatCurrencyBR(totalFiltered)}</TableCell>
               <TableCell colSpan={3}></TableCell>
             </TableRow>
@@ -130,7 +217,7 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
         )}
       </Table>
 
-      {/* Modal */}
+      {/* Registration Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Registrar Compensação</DialogTitle></DialogHeader>
@@ -146,9 +233,21 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
               <Label>Mês de Referência *</Label>
               <Input type="month" value={form.mes_referencia} onChange={(e) => setForm((p) => ({ ...p, mes_referencia: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Valor Compensado (R$)</Label>
-              <Input type="number" value={form.valor_compensado} onChange={(e) => setForm((p) => ({ ...p, valor_compensado: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Valor Compensado (R$)</Label>
+                <Input type="number" value={form.valor_compensado} onChange={(e) => setForm((p) => ({ ...p, valor_compensado: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tributo</Label>
+                <Select value={form.tributo} onValueChange={(v) => setForm((p) => ({ ...p, tributo: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Nenhum —</SelectItem>
+                    {TRIBUTO_OPTIONS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Status Pagamento</Label>
@@ -170,6 +269,225 @@ export function CompensacoesTab({ clienteId, onTotalChange }: Props) {
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave}>Salvar</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mapa Tributário Modal */}
+      <Dialog open={mapaOpen} onOpenChange={setMapaOpen}>
+        <DialogContent className="max-w-[900px] h-[90vh] overflow-auto print:shadow-none print:border-none">
+          <DialogHeader className="flex flex-row items-center justify-between gap-4 print:hidden">
+            <DialogTitle>Mapa Tributário</DialogTitle>
+            <div className="flex items-center gap-3">
+              <Select value={mapaMes} onValueChange={setMapaMes}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Selecionar mês" /></SelectTrigger>
+                <SelectContent>
+                  {availableMonths.map((m) => <SelectItem key={m} value={m}>{formatMesPT(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {mapaMes && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
+                  <Printer className="h-4 w-4" /> Baixar PDF
+                </Button>
+              )}
+            </div>
+          </DialogHeader>
+
+          {!mapaMes ? (
+            <p className="text-center text-muted-foreground py-12">Selecione um mês para gerar o mapa tributário.</p>
+          ) : (
+            <div id="mapa-tributario-pdf" className="mapa-tributario-report">
+              {/* Cover Page */}
+              <div className="mapa-cover" style={{ background: "#0a1564", color: "white", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pageBreakAfter: "always", padding: "3rem" }}>
+                <p style={{ fontSize: "14px", letterSpacing: "4px", textTransform: "uppercase", marginBottom: "2rem" }}>Grupo Focus</p>
+                <p style={{ fontSize: "18px", marginBottom: "0.5rem" }}>Grupo FOCUS — A Contabilidade do Supermercado</p>
+                <img src={logoFintax} alt="Focus FinTax" style={{ height: "60px", marginBottom: "3rem", filter: "brightness(0) invert(1)" }} />
+                <div style={{ background: "#080f4a", border: "1px solid rgba(255,255,255,0.2)", padding: "1.5rem 3rem", borderRadius: "8px", marginTop: "auto" }}>
+                  <p style={{ fontSize: "22px", fontWeight: "bold", textAlign: "center", letterSpacing: "2px" }}>MAPA TRIBUTÁRIO DAS COMPENSAÇÕES</p>
+                </div>
+              </div>
+
+              {/* Report Pages — one per processo */}
+              {mesProcessos.map((proc) => {
+                const procComps = mesComps.filter((c) => c.processo_tese_id === proc.id);
+                const valorComp = procComps.reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
+                const acumulado = getCompensacoesAteOmes(proc.id, mapaMes);
+                const saldo = Number(proc.valor_credito || 0) - acumulado;
+                const isSub = isSubvencao(proc.tese);
+
+                return (
+                  <div key={proc.id} style={{ pageBreakBefore: "always", padding: "2rem", fontFamily: "sans-serif", fontSize: "13px", lineHeight: "1.6" }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #0a1564", paddingBottom: "12px", marginBottom: "24px" }}>
+                      <div>
+                        <p style={{ fontWeight: "bold", fontSize: "16px", color: "#0a1564" }}>MAPA TRIBUTÁRIO DAS COMPENSAÇÕES</p>
+                        <p style={{ fontSize: "11px", color: "#666" }}>Competência: {formatMesPT(mapaMes)}</p>
+                      </div>
+                      <img src={logoFintax} alt="Focus FinTax" style={{ height: "36px" }} />
+                    </div>
+
+                    {/* Section 1 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>1. IDENTIFICAÇÃO DO CONTRIBUINTE</h3>
+                    <p><strong>Razão Social:</strong> {cliente?.empresa}</p>
+                    <p style={{ marginBottom: "16px" }}><strong>CNPJ:</strong> {cliente?.cnpj}</p>
+
+                    {/* Section 2 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>2. DADOS GERAIS DO TRABALHO</h3>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#0a1564", color: "white" }}>
+                          <th style={{ padding: "6px 10px", textAlign: "left", fontSize: "11px" }}>Descrição</th>
+                          <th style={{ padding: "6px 10px", textAlign: "right", fontSize: "11px" }}>Detalhe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Escopo do Trabalho", proc.nome_exibicao],
+                          ["Competência", formatMesPT(mapaMes)],
+                          ["Modalidade do Benefício", "Compensação"],
+                          ["Valor Total do Benefício Tributário", formatCurrencyBR(Number(proc.valor_credito || 0))],
+                          ["Valor Utilizado na Compensação do Mês", formatCurrencyBR(valorComp)],
+                          ["Saldo Disp. para Compensações Futuras", formatCurrencyBR(saldo)],
+                        ].map(([desc, val], i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #eee", background: i % 2 === 0 ? "#f9f9f9" : "white" }}>
+                            <td style={{ padding: "6px 10px", fontSize: "12px" }}>{desc}</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px", fontWeight: i >= 3 ? "bold" : "normal" }}>{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Section 3 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>3. DÉBITOS COMPENSADOS</h3>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#0a1564", color: "white" }}>
+                          {["Tributo", "Cód. DARF", "Valor Débito", "Multa", "Juros"].map((h) => (
+                            <th key={h} style={{ padding: "6px 10px", textAlign: h === "Tributo" ? "left" : "right", fontSize: "11px" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {procComps.map((c, i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                            <td style={{ padding: "6px 10px", fontSize: "12px" }}>{getTributo(c)}</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px" }}>—</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px", fontWeight: "bold" }}>{formatCurrencyBR(Number(c.valor_compensado || 0))}</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px" }}>—</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px" }}>—</td>
+                          </tr>
+                        ))}
+                        <tr style={{ background: "#f0f0f0", fontWeight: "bold" }}>
+                          <td style={{ padding: "6px 10px", fontSize: "12px" }}>Total</td>
+                          <td style={{ padding: "6px 10px" }}></td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px" }}>{formatCurrencyBR(valorComp)}</td>
+                          <td style={{ padding: "6px 10px" }}></td>
+                          <td style={{ padding: "6px 10px" }}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* Section 4 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>4. CONTROLE DOS CRÉDITOS — 4.1 Créditos Apurados</h3>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#0a1564", color: "white" }}>
+                          <th style={{ padding: "6px 10px", textAlign: "left", fontSize: "11px" }}>Descrição</th>
+                          <th style={{ padding: "6px 10px", textAlign: "right", fontSize: "11px" }}>Valor R$</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Total de Créditos Apurados", formatCurrencyBR(Number(proc.valor_credito || 0)), false],
+                          ["Total de Créditos Utilizados", formatCurrencyBR(acumulado), false],
+                          ["Total de Créditos a Compensar", formatCurrencyBR(saldo), false],
+                          ["Saldo Final de Créditos", formatCurrencyBR(saldo), true],
+                        ].map(([desc, val, bold], i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #eee", fontWeight: bold ? "bold" : "normal", background: bold ? "#f0f0f0" : i % 2 === 0 ? "#f9f9f9" : "white" }}>
+                            <td style={{ padding: "6px 10px", fontSize: "12px" }}>{desc as string}</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", fontSize: "12px" }}>{val as string}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Section 5 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>5. RESUMO DE COMPLIANCE FISCAL</h3>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#0a1564", color: "white" }}>
+                          <th style={{ padding: "6px 10px", textAlign: "left", fontSize: "11px" }}>Item</th>
+                          <th style={{ padding: "6px 10px", textAlign: "left", fontSize: "11px" }}>Detalhe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ["Natureza da Operação", isSub ? "Subvenção para Investimento" : "Crédito Tributário"],
+                          ["Base Legal", isSub ? "Lei Nº 12.973/2014 e LC 160/2017" : proc.tese?.toLowerCase().includes("icms") ? "RE 574.706 — STF Tema 69" : "Legislação Tributária Vigente"],
+                          ["Tributos Envolvidos", isSub ? "IRPJ e CSLL" : "PIS e COFINS"],
+                          ["Obrigações Retificadas", isSub ? "ECF e DCTF" : "EFD Contribuições"],
+                          ["Procedimento Adotado", isSub ? "Exclusão da Base de Cálculo" : "Compensação Administrativa"],
+                          ["Situação Fiscal", "Regular e em Conformidade"],
+                          ["Crédito Tributário", "Formalmente Constituído"],
+                        ].map(([item, detail], i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #eee", background: i % 2 === 0 ? "#f9f9f9" : "white" }}>
+                            <td style={{ padding: "6px 10px", fontSize: "12px", fontWeight: "600" }}>{item}</td>
+                            <td style={{ padding: "6px 10px", fontSize: "12px" }}>{detail}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Section 6 */}
+                    <h3 style={{ fontSize: "13px", fontWeight: "bold", color: "#0a1564", marginBottom: "8px", borderBottom: "1px solid #ddd", paddingBottom: "4px" }}>6. CONSIDERAÇÕES FINAIS</h3>
+                    <p style={{ fontSize: "12px", textAlign: "justify", marginBottom: "16px" }}>
+                      O trabalho realizado assegura que: Os créditos foram aproveitados em conformidade com a legislação vigente; As obrigações acessórias foram devidamente retificadas, refletindo a realidade fiscal da empresa; A empresa encontra-se em situação de compliance tributário, com redução de riscos fiscais e segurança jurídica quanto ao aproveitamento dos créditos. Sem mais para o momento, consideramos encerrado o trabalho de auditoria técnica e compliance fiscal, permanecendo à disposição para eventuais fiscalizações, esclarecimentos ou suportes futuros.
+                    </p>
+
+                    {/* Footer */}
+                    <div style={{ textAlign: "center", borderTop: "2px solid #0a1564", paddingTop: "16px", marginTop: "32px" }}>
+                      <p style={{ fontWeight: "bold", color: "#0a1564", fontSize: "14px" }}>GRUPO FOCUS FINTAX</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Modal */}
+      <Dialog open={whatsOpen} onOpenChange={setWhatsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Comunicado WhatsApp</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Mês de Referência</Label>
+              <Select value={whatsMes} onValueChange={setWhatsMes}>
+                <SelectTrigger><SelectValue placeholder="Selecionar mês" /></SelectTrigger>
+                <SelectContent>
+                  {availableMonths.map((m) => <SelectItem key={m} value={m}>{formatMesPT(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {whatsMes && whatsComps.length > 0 && (
+              <>
+                <div className="rounded border bg-muted/30 p-3 text-xs font-medium">
+                  Honorários calculados: <span className="text-foreground">{formatCurrencyBR(totalHonorarios)}</span>
+                </div>
+                <div className="rounded border bg-muted/20 p-3 max-h-[300px] overflow-auto">
+                  <pre className="whitespace-pre-wrap text-xs font-mono">{fullWhatsMessage}</pre>
+                </div>
+                <Button className="w-full gap-2 text-white" style={{ background: "#25D366" }} onClick={handleCopy}>
+                  <Copy className="h-4 w-4" /> Copiar mensagem
+                </Button>
+              </>
+            )}
+
+            {whatsMes && whatsComps.length === 0 && (
+              <p className="text-center text-muted-foreground text-sm py-4">Nenhuma compensação neste mês.</p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

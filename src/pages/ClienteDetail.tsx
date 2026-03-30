@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, MessageCircle, FileText, Printer, Upload } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, Upload } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ProcessosTesesTab } from "@/components/clientes/ProcessosTesesTab";
@@ -15,8 +15,7 @@ import { ResumoFinanceiroTab } from "@/components/clientes/ResumoFinanceiroTab";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import logoFintax from "@/assets/logo-focus-fintax.svg";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -26,8 +25,6 @@ export default function ClienteDetail() {
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
   const obsDebounce = useRef<NodeJS.Timeout>();
-  const [mapaOpen, setMapaOpen] = useState(false);
-  const [mapaData, setMapaData] = useState<{ processos: any[]; compensacoes: any[] } | null>(null);
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
@@ -165,15 +162,6 @@ export default function ClienteDetail() {
     }
   };
 
-  const openMapa = async () => {
-    const [{ data: processos }, { data: compensacoes }] = await Promise.all([
-      supabase.from("processos_teses").select("id, tese, nome_exibicao, valor_credito, percentual_honorario, valor_honorario, status_contrato").eq("cliente_id", id!),
-      supabase.from("compensacoes_mensais").select("processo_tese_id, mes_referencia, valor_compensado, status_pagamento").eq("cliente_id", id!),
-    ]);
-    setMapaData({ processos: processos || [], compensacoes: compensacoes || [] });
-    setMapaOpen(true);
-  };
-
   if (loading || !cliente) {
     return <div className="flex items-center justify-center h-full"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   }
@@ -181,29 +169,6 @@ export default function ClienteDetail() {
   const whatsappLink = cliente.whatsapp
     ? `https://wa.me/55${cliente.whatsapp.replace(/\D/g, "")}`
     : null;
-
-  // Mapa data calculations
-  const assinados = mapaData?.processos.filter((p) => p.status_contrato === "assinado") || [];
-  const totalIdentificado = assinados.reduce((s, p) => s + Number(p.valor_credito || 0), 0);
-  const totalHonorarios = assinados.reduce((s, p) => s + Number(p.valor_honorario || 0), 0);
-  const totalCompensado = (mapaData?.compensacoes || []).reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
-  const saldo = totalIdentificado - totalCompensado;
-
-  // Compensações grouped by month
-  const compensacoesByMonth = (() => {
-    if (!mapaData) return [];
-    const map: Record<string, any[]> = {};
-    const processosMap: Record<string, string> = {};
-    (mapaData.processos || []).forEach((p) => { processosMap[p.id] = p.nome_exibicao; });
-    (mapaData.compensacoes || []).forEach((c) => {
-      const mes = c.mes_referencia;
-      if (!map[mes]) map[mes] = [];
-      map[mes].push({ ...c, tese_nome: processosMap[c.processo_tese_id] || "—" });
-    });
-    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
-  })();
-
-  const dataAtual = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
   return (
     <div className="flex h-full">
@@ -214,9 +179,6 @@ export default function ClienteDetail() {
         </Button>
         <h2 className="text-lg font-bold leading-tight">{cliente.empresa}</h2>
 
-        <Button variant="outline" size="sm" className="w-full justify-start gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={openMapa}>
-          <FileText className="h-4 w-4" /> Gerar Mapa Tributário
-        </Button>
         <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
           <Upload className="h-4 w-4" /> Importar dados Laratex
         </Button>
@@ -266,7 +228,7 @@ export default function ClienteDetail() {
             <ProcessosTesesTab clienteId={id!} compensacoesTotal={compensacoesTotal} />
           </TabsContent>
           <TabsContent value="compensacoes">
-            <CompensacoesTab clienteId={id!} onTotalChange={setCompensacoesTotal} />
+            <CompensacoesTab clienteId={id!} cliente={cliente} onTotalChange={setCompensacoesTotal} />
           </TabsContent>
           <TabsContent value="resumo">
             <ResumoFinanceiroTab clienteId={id!} />
@@ -275,135 +237,6 @@ export default function ClienteDetail() {
       </div>
 
       {/* Mapa Tributário Modal */}
-      <Dialog open={mapaOpen} onOpenChange={setMapaOpen}>
-        <DialogContent className="max-w-[900px] h-[90vh] overflow-auto print:shadow-none">
-          <DialogHeader className="flex flex-row items-center justify-between print:hidden">
-            <DialogTitle>Mapa Tributário</DialogTitle>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
-              <Printer className="h-4 w-4" /> Baixar PDF
-            </Button>
-          </DialogHeader>
-
-          <div id="mapa-tributario" className="space-y-8 p-2">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b pb-4">
-              <div className="flex items-center gap-4">
-                <img src={logoFintax} alt="Focus FinTax" className="h-10" />
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">Mapa Tributário — {cliente.empresa}</h1>
-                  <p className="text-sm text-muted-foreground">CNPJ: {cliente.cnpj} · {dataAtual}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 1 */}
-            <div>
-              <h2 className="text-base font-semibold mb-3">1. Oportunidades Identificadas</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tese</TableHead>
-                    <TableHead className="text-right">Valor Identificado</TableHead>
-                    <TableHead className="text-right">% Honorários</TableHead>
-                    <TableHead className="text-right">Valor Honorários</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assinados.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum processo com contrato assinado</TableCell></TableRow>
-                  ) : assinados.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.nome_exibicao}</TableCell>
-                      <TableCell className="text-right">{formatCurrencyBR(Number(p.valor_credito || 0))}</TableCell>
-                      <TableCell className="text-right">{p.percentual_honorario ? `${p.percentual_honorario}%` : "—"}</TableCell>
-                      <TableCell className="text-right">{formatCurrencyBR(Number(p.valor_honorario || 0))}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {assinados.length > 0 && (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell className="font-bold">Total</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrencyBR(totalIdentificado)}</TableCell>
-                      <TableCell />
-                      <TableCell className="text-right font-bold">{formatCurrencyBR(totalHonorarios)}</TableCell>
-                    </TableRow>
-                  </TableFooter>
-                )}
-              </Table>
-            </div>
-
-            {/* Section 2 */}
-            <div>
-              <h2 className="text-base font-semibold mb-3">2. Histórico de Compensações</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mês</TableHead>
-                    <TableHead>Tese</TableHead>
-                    <TableHead className="text-right">Valor Compensado</TableHead>
-                    <TableHead>Status Pagamento</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {compensacoesByMonth.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Nenhuma compensação registrada</TableCell></TableRow>
-                  ) : compensacoesByMonth.map(([mes, items]) =>
-                    items.map((c: any, i: number) => (
-                      <TableRow key={`${mes}-${i}`}>
-                        {i === 0 && <TableCell rowSpan={items.length} className="font-medium align-top">{new Date(mes + "T00:00:00").toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}</TableCell>}
-                        <TableCell>{c.tese_nome}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyBR(Number(c.valor_compensado || 0))}</TableCell>
-                        <TableCell>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${c.status_pagamento === "pago" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}`}>
-                            {c.status_pagamento === "pago" ? "Pago" : "Pendente"}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-                {totalCompensado > 0 && (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={2} className="font-bold">Total Compensado</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrencyBR(totalCompensado)}</TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableFooter>
-                )}
-              </Table>
-            </div>
-
-            {/* Section 3 */}
-            <div>
-              <h2 className="text-base font-semibold mb-3">3. Resumo Executivo</h2>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="rounded-lg border p-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Total Identificado</p>
-                  <p className="text-lg font-bold text-foreground">{formatCurrencyBR(totalIdentificado)}</p>
-                </div>
-                <div className="rounded-lg border p-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Total Compensado</p>
-                  <p className="text-lg font-bold text-green-700">{formatCurrencyBR(totalCompensado)}</p>
-                </div>
-                <div className="rounded-lg border p-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Saldo Restante</p>
-                  <p className="text-lg font-bold text-primary">{formatCurrencyBR(saldo)}</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Você já recuperou <strong>{formatCurrencyBR(totalCompensado)}</strong> de um potencial de <strong>{formatCurrencyBR(totalIdentificado)}</strong>. Saldo disponível para compensação: <strong>{formatCurrencyBR(saldo)}</strong>.
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t pt-4 text-center text-xs text-muted-foreground">
-              Focus FinTax · Grupo Focus · Documento gerado em {dataAtual}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Laratex CSV Import Modal */}
       <Dialog open={laratexOpen} onOpenChange={(v) => { setLatatexOpen(v); if (!v) { setCsvData([]); setCsvHeaders([]); } }}>

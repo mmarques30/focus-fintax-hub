@@ -9,16 +9,22 @@
     visibility: hidden;
   }
   #report-content, #report-content *,
-  #mapa-tributario, #mapa-tributario * {
+  #mapa-tributario, #mapa-tributario *,
+  #mapa-tributario-pdf, #mapa-tributario-pdf * {
     visibility: visible;
   }
-  #report-content, #mapa-tributario {
+  #report-content, #mapa-tributario, #mapa-tributario-pdf {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
   [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+  .print\\:hidden {
     display: none !important;
   }
 }
