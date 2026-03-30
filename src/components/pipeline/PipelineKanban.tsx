@@ -13,6 +13,7 @@ interface Props {
   leads: PipelineLead[];
   onLeadClick: (id: string) => void;
   onRefresh: () => void;
+  exceptionLeadIds?: Set<string>;
 }
 
 export function PipelineKanban({ leads, onLeadClick, onRefresh }: Props) {
