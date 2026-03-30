@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, AlertTriangle, Calculator } from "lucide-react";
+import { Plus, Pencil, Calculator, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface TeseConfig {
   id: string;
@@ -27,6 +27,7 @@ interface TeseConfig {
   ativo: boolean;
   ordem_exibicao: number;
   atualizado_em: string;
+  atualizado_por: string | null;
 }
 
 const REGIMES = [
@@ -49,7 +50,7 @@ const FATURAMENTO_FAIXAS = [
   { value: "acima_15m", label: "Acima R$ 15M/mês", midpoint: 20_000_000 },
 ];
 
-const emptyTese: Omit<TeseConfig, "id" | "atualizado_em"> = {
+const emptyTese: Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> = {
   tese: "",
   nome_exibicao: "",
   descricao_comercial: "",
@@ -71,49 +72,79 @@ export default function MotorConfig() {
   const [teses, setTeses] = useState<TeseConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
-  const [editData, setEditData] = useState<Omit<TeseConfig, "id" | "atualizado_em"> & { id?: string }>(emptyTese);
+  const [editData, setEditData] = useState<Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> & { id?: string }>(emptyTese);
   const [saving, setSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Simulation state
   const [simSegmento, setSimSegmento] = useState("supermercado");
   const [simRegime, setSimRegime] = useState("lucro_real");
   const [simFaturamento, setSimFaturamento] = useState("ate_2m");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   const fetchTeses = async () => {
     const { data } = await supabase
       .from("motor_teses_config")
       .select("*")
       .order("ordem_exibicao", { ascending: true });
-    setTeses((data as any[] || []).map((d) => ({ ...d, percentual_min: Number(d.percentual_min), percentual_max: Number(d.percentual_max) })));
+    setTeses((data as any[] || []).map((d) => ({
+      ...d,
+      percentual_min: Number(d.percentual_min),
+      percentual_max: Number(d.percentual_max),
+    })));
     setLoading(false);
   };
 
   useEffect(() => { fetchTeses(); }, []);
 
-  // Simulation
+  const midpoint = FATURAMENTO_FAIXAS.find((f) => f.value === simFaturamento)?.midpoint || 1_000_000;
+
   const simulation = useMemo(() => {
-    const midpoint = FATURAMENTO_FAIXAS.find((f) => f.value === simFaturamento)?.midpoint || 1_000_000;
     const eligible = teses.filter(
       (t) => t.ativo && t.regimes_elegiveis.includes(simRegime) && t.segmentos_elegiveis.includes(simSegmento)
     );
     const totalMin = eligible.reduce((s, t) => s + Math.round(midpoint * 60 * t.percentual_min), 0);
     const totalMax = eligible.reduce((s, t) => s + Math.round(midpoint * 60 * t.percentual_max), 0);
-    return { eligible: eligible.length, totalMin, totalMax };
-  }, [teses, simSegmento, simRegime, simFaturamento]);
+    const multMin = midpoint > 0 ? totalMin / midpoint : 0;
+    const multMax = midpoint > 0 ? totalMax / midpoint : 0;
+    return { eligible: eligible.length, totalMin, totalMax, multMin, multMax };
+  }, [teses, simSegmento, simRegime, midpoint]);
 
-  // Coverage gaps
-  const gaps = useMemo(() => {
-    const missing: string[] = [];
-    for (const r of REGIMES) {
-      for (const s of SEGMENTOS) {
-        const has = teses.some(
+  // Coverage grid
+  const coverageGrid = useMemo(() => {
+    const grid: Record<string, Record<string, { count: number; teses: string[] }>> = {};
+    for (const s of SEGMENTOS) {
+      grid[s.value] = {};
+      for (const r of REGIMES) {
+        const matching = teses.filter(
           (t) => t.ativo && t.regimes_elegiveis.includes(r.value) && t.segmentos_elegiveis.includes(s.value)
         );
-        if (!has) missing.push(`${r.label} + ${s.label}`);
+        grid[s.value][r.value] = { count: matching.length, teses: matching.map((t) => t.nome_exibicao) };
       }
     }
-    return missing;
+    return grid;
   }, [teses]);
+
+  const inlineSave = useCallback(async (id: string, fields: Record<string, any>) => {
+    await supabase.from("motor_teses_config").update({
+      ...fields,
+      atualizado_em: new Date().toISOString(),
+      atualizado_por: userId,
+    }).eq("id", id);
+    fetchTeses();
+  }, [userId]);
+
+  const toggleArrayField = useCallback(async (t: TeseConfig, field: "regimes_elegiveis" | "segmentos_elegiveis", item: string) => {
+    const arr = t[field];
+    const updated = arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
+    await inlineSave(t.id, { [field]: updated });
+  }, [inlineSave]);
+
+  const toggleAtivo = async (t: TeseConfig) => {
+    await inlineSave(t.id, { ativo: !t.ativo });
+  };
 
   const openCreate = () => {
     setEditData({ ...emptyTese });
@@ -153,6 +184,7 @@ export default function MotorConfig() {
       ativo: editData.ativo,
       ordem_exibicao: editData.ordem_exibicao,
       atualizado_em: new Date().toISOString(),
+      atualizado_por: userId,
     };
 
     let error;
@@ -172,85 +204,80 @@ export default function MotorConfig() {
     setSaving(false);
   };
 
-  const toggleAtivo = async (t: TeseConfig) => {
-    await supabase.from("motor_teses_config").update({ ativo: !t.ativo, atualizado_em: new Date().toISOString() }).eq("id", t.id);
-    fetchTeses();
-  };
-
   const toggleArrayItem = (arr: string[], item: string) =>
     arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 
   if (loading) return <div className="p-8 text-muted-foreground">Carregando...</div>;
+
+  const segLabel = SEGMENTOS.find((s) => s.value === simSegmento)?.label || simSegmento;
+  const regLabel = REGIMES.find((r) => r.value === simRegime)?.label || simRegime;
+  const fatLabel = FATURAMENTO_FAIXAS.find((f) => f.value === simFaturamento)?.label || simFaturamento;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Motor de Cálculo — Configuração de Teses</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Os percentuais abaixo são aplicados sobre o faturamento declarado × 60 meses para gerar a estimativa de cada tese no diagnóstico do lead. Ajuste com base nos casos reais da carteira.
+          Os percentuais abaixo são aplicados sobre o faturamento declarado × 60 meses para gerar a estimativa de cada tese no diagnóstico do lead. Ajuste com base nos casos reais da carteira para manter a precisão das estimativas.
         </p>
       </div>
 
-      {/* Simulation Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2"><Calculator className="h-4 w-4" /> Simulação ao Vivo</CardTitle>
-          <CardDescription>Veja o resultado do diagnóstico para um perfil específico</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-            <div>
-              <Label className="text-xs">Segmento</Label>
-              <Select value={simSegmento} onValueChange={setSimSegmento}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SEGMENTOS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Regime</Label>
-              <Select value={simRegime} onValueChange={setSimRegime}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {REGIMES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Faturamento</Label>
-              <Select value={simFaturamento} onValueChange={setSimFaturamento}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {FATURAMENTO_FAIXAS.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="rounded-lg bg-muted p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-1">{simulation.eligible} teses elegíveis → Estimativa total:</p>
-            <p className="text-xl font-bold text-foreground">
-              {formatCurrency(simulation.totalMin)} — {formatCurrency(simulation.totalMax)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Simulation Card — dark premium */}
+      <div className="rounded-xl bg-[#0a1a6e] text-white p-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Calculator className="h-5 w-5 text-blue-300" />
+          <h2 className="font-semibold text-lg">Simulação ao Vivo</h2>
+        </div>
+        <p className="text-blue-200 text-sm mb-4">
+          Para um <strong>{segLabel}</strong> em <strong>{regLabel}</strong> faturando <strong>{fatLabel}</strong>, o diagnóstico atual geraria:
+        </p>
 
-      {/* Gaps Alert */}
-      {gaps.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Combinações sem tese ativa:</strong> {gaps.join(", ")}. Leads com esses perfis receberão diagnóstico vazio.
-          </AlertDescription>
-        </Alert>
-      )}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div>
+            <Label className="text-xs text-blue-200">Segmento</Label>
+            <Select value={simSegmento} onValueChange={setSimSegmento}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SEGMENTOS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-blue-200">Regime</Label>
+            <Select value={simRegime} onValueChange={setSimRegime}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {REGIMES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-blue-200">Faturamento</Label>
+            <Select value={simFaturamento} onValueChange={setSimFaturamento}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FATURAMENTO_FAIXAS.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-white/10 p-5 text-center">
+          <p className="text-blue-200 text-sm mb-1">{simulation.eligible} teses elegíveis → Estimativa total (5 anos):</p>
+          <p className="text-3xl font-bold">
+            {formatCurrency(simulation.totalMin)} — {formatCurrency(simulation.totalMax)}
+          </p>
+          <p className="text-blue-300 text-sm mt-2">
+            equivale a {simulation.multMin.toFixed(1)}–{simulation.multMax.toFixed(1)} faturamentos mensais
+          </p>
+        </div>
+      </div>
 
       {/* Teses Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">Teses Configuradas</CardTitle>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Adicionar tese</Button>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Nova tese</Button>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -260,8 +287,8 @@ export default function MotorConfig() {
                   <TableHead>Tese</TableHead>
                   <TableHead>Regimes</TableHead>
                   <TableHead>Segmentos</TableHead>
-                  <TableHead className="text-right">% Mín</TableHead>
-                  <TableHead className="text-right">% Máx</TableHead>
+                  <TableHead className="text-right w-[100px]">% Mín</TableHead>
+                  <TableHead className="text-right w-[100px]">% Máx</TableHead>
                   <TableHead className="text-center">Ativo</TableHead>
                   <TableHead>Atualizado</TableHead>
                   <TableHead></TableHead>
@@ -269,45 +296,86 @@ export default function MotorConfig() {
               </TableHeader>
               <TableBody>
                 {teses.map((t) => (
-                  <TableRow key={t.id} className={!t.ativo ? "opacity-50" : ""}>
-                    <TableCell className="font-medium max-w-[200px]">
-                      <div className="truncate">{t.nome_exibicao}</div>
-                      <div className="text-xs text-muted-foreground truncate">{t.tese}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {t.regimes_elegiveis.map((r) => (
-                          <Badge key={r} variant="secondary" className="text-[10px] px-1.5 py-0">
-                            {REGIMES.find((x) => x.value === r)?.label || r}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {t.segmentos_elegiveis.map((s) => (
-                          <Badge key={s} variant="outline" className="text-[10px] px-1.5 py-0">
-                            {SEGMENTOS.find((x) => x.value === s)?.label || s}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm">{(t.percentual_min * 100).toFixed(2)}%</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{(t.percentual_max * 100).toFixed(2)}%</TableCell>
-                    <TableCell className="text-center">
-                      <Switch checked={t.ativo} onCheckedChange={() => toggleAtivo(t)} />
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(t.atualizado_em).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                    <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>
-                    </TableCell>
-                  </TableRow>
+                  <TeseRow
+                    key={t.id}
+                    tese={t}
+                    onToggleAtivo={() => toggleAtivo(t)}
+                    onToggleRegime={(r) => toggleArrayField(t, "regimes_elegiveis", r)}
+                    onToggleSegmento={(s) => toggleArrayField(t, "segmentos_elegiveis", s)}
+                    onInlineSave={inlineSave}
+                    onEdit={() => openEdit(t)}
+                  />
                 ))}
               </TableBody>
             </Table>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Coverage Panel */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Cobertura por Perfil de Lead</CardTitle>
+          <CardDescription>Cada célula mostra quantas teses ativas cobrem aquela combinação. Vermelho = diagnóstico vazio.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TooltipProvider>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left p-2 font-medium text-muted-foreground">Segmento</th>
+                    {REGIMES.map((r) => (
+                      <th key={r.value} className="p-2 font-medium text-muted-foreground text-center">{r.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {SEGMENTOS.map((s) => (
+                    <tr key={s.value}>
+                      <td className="p-2 font-medium">{s.label}</td>
+                      {REGIMES.map((r) => {
+                        const cell = coverageGrid[s.value]?.[r.value];
+                        const count = cell?.count || 0;
+                        const names = cell?.teses || [];
+                        return (
+                          <td key={r.value} className="p-2 text-center">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold cursor-default ${
+                                  count > 0
+                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                }`}>
+                                  {count > 0 ? (
+                                    <><CheckCircle2 className="h-3.5 w-3.5" />{count}</>
+                                  ) : (
+                                    <><AlertTriangle className="h-3.5 w-3.5" />0</>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[220px]">
+                                {count > 0 ? (
+                                  <div>
+                                    <p className="font-medium mb-1">{count} tese(s) ativa(s):</p>
+                                    <ul className="text-xs space-y-0.5">
+                                      {names.map((n) => <li key={n}>• {n}</li>)}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <p>Nenhuma tese ativa. Leads com esse perfil receberão diagnóstico vazio.</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TooltipProvider>
         </CardContent>
       </Card>
 
@@ -384,5 +452,105 @@ export default function MotorConfig() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/* ─── Inline-editable row component ─── */
+function TeseRow({
+  tese: t,
+  onToggleAtivo,
+  onToggleRegime,
+  onToggleSegmento,
+  onInlineSave,
+  onEdit,
+}: {
+  tese: TeseConfig;
+  onToggleAtivo: () => void;
+  onToggleRegime: (r: string) => void;
+  onToggleSegmento: (s: string) => void;
+  onInlineSave: (id: string, fields: Record<string, any>) => Promise<void>;
+  onEdit: () => void;
+}) {
+  const [minVal, setMinVal] = useState(String((t.percentual_min * 100).toFixed(2)));
+  const [maxVal, setMaxVal] = useState(String((t.percentual_max * 100).toFixed(2)));
+
+  useEffect(() => {
+    setMinVal(String((t.percentual_min * 100).toFixed(2)));
+    setMaxVal(String((t.percentual_max * 100).toFixed(2)));
+  }, [t.percentual_min, t.percentual_max]);
+
+  const saveMin = () => {
+    const v = parseFloat(minVal) / 100;
+    if (!isNaN(v) && v !== t.percentual_min) onInlineSave(t.id, { percentual_min: v });
+  };
+  const saveMax = () => {
+    const v = parseFloat(maxVal) / 100;
+    if (!isNaN(v) && v !== t.percentual_max) onInlineSave(t.id, { percentual_max: v });
+  };
+
+  return (
+    <TableRow className={!t.ativo ? "opacity-50" : ""}>
+      <TableCell className="font-medium max-w-[200px]">
+        <div className="truncate">{t.nome_exibicao}</div>
+        <div className="text-xs text-muted-foreground truncate">{t.tese}</div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-1">
+          {REGIMES.map((r) => (
+            <Badge
+              key={r.value}
+              variant={t.regimes_elegiveis.includes(r.value) ? "default" : "outline"}
+              className="text-[10px] px-1.5 py-0 cursor-pointer select-none"
+              onClick={() => onToggleRegime(r.value)}
+            >
+              {r.label}
+            </Badge>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-1">
+          {SEGMENTOS.map((s) => (
+            <Badge
+              key={s.value}
+              variant={t.segmentos_elegiveis.includes(s.value) ? "default" : "outline"}
+              className="text-[10px] px-1.5 py-0 cursor-pointer select-none"
+              onClick={() => onToggleSegmento(s.value)}
+            >
+              {s.label}
+            </Badge>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <Input
+          type="number"
+          step="0.01"
+          value={minVal}
+          onChange={(e) => setMinVal(e.target.value)}
+          onBlur={saveMin}
+          className="w-20 text-right text-sm h-8 ml-auto"
+        />
+      </TableCell>
+      <TableCell className="text-right">
+        <Input
+          type="number"
+          step="0.01"
+          value={maxVal}
+          onChange={(e) => setMaxVal(e.target.value)}
+          onBlur={saveMax}
+          className="w-20 text-right text-sm h-8 ml-auto"
+        />
+      </TableCell>
+      <TableCell className="text-center">
+        <Switch checked={t.ativo} onCheckedChange={onToggleAtivo} />
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+        {new Date(t.atualizado_em).toLocaleDateString("pt-BR")}
+      </TableCell>
+      <TableCell>
+        <Button size="icon" variant="ghost" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
+      </TableCell>
+    </TableRow>
   );
 }
