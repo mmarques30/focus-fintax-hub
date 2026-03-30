@@ -1,7 +1,9 @@
 export const FATURAMENTO_FAIXAS = [
-  { value: "ate_2m", label: "Até R$ 2 milhões (Pequeno)" },
-  { value: "2m_15m", label: "De R$ 2M a R$ 15 milhões (Médio)" },
-  { value: "acima_15m", label: "Acima de R$ 15 milhões (Grande)" },
+  { value: "ate_500k", label: "Até R$ 500 mil" },
+  { value: "500k_2m", label: "R$ 500 mil – R$ 2 milhões" },
+  { value: "2m_5m", label: "R$ 2 milhões – R$ 5 milhões" },
+  { value: "5m_15m", label: "R$ 5 milhões – R$ 15 milhões" },
+  { value: "acima_15m", label: "Acima de R$ 15 milhões" },
 ] as const;
 
 export const REGIMES = [
