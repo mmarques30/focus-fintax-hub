@@ -115,9 +115,8 @@ export default function Pipeline() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Pipeline de Leads <span className="text-muted-foreground font-normal text-lg">({activeLeads.length})</span>
-          </h1>
+          <h1 className="font-display text-xl font-bold text-navy">Pipeline de Leads</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">gerenciamento de leads e oportunidades</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex border rounded-md overflow-hidden">
