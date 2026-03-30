@@ -1,24 +1,28 @@
 
 
-## Cobertura por Perfil — Remover espaço lateral
+## Inserir dados reais de compensação + usuário do Paulo
 
-### Problema
-O grid "Cobertura por Perfil" tem `maxWidth: 400` hardcoded (linha 408), deixando ~70% do card vazio à direita.
+### Análise do schema atual
 
-### Solução
-Expandir o card para layout de 2 colunas: grid de cobertura à esquerda + resumo útil à direita com estatísticas das teses por regime e segmento.
+A coluna no banco já se chama `valor_nf_servico` (confirmado no types.ts e em todo o código). **Não precisa renomear.** O SQL do prompt usa `valor_nfse` — vou corrigir para `valor_nf_servico` nos INSERTs. A coluna `tributo` já existe na tabela.
 
-### Mudança (`src/pages/MotorConfig.tsx`, linhas 400-467)
+### Execução
 
-**Layout**: Card com `grid grid-cols-2 gap-6` interno:
-- **Coluna esquerda**: Grid de cobertura atual, remover `maxWidth: 400`, manter `grid-cols-4`
-- **Coluna direita**: "Resumo por Regime" — 3 mini-cards (LR, LP, SN) mostrando quantas teses ativas cobrem cada regime, e abaixo "Resumo por Segmento" — lista dos 5 segmentos com count de teses e barra de progresso (count / total teses ativas)
+**1. Insert processos_teses (27 clientes)**
+Usar o SQL fornecido, sem alterações — a estrutura da tabela bate.
 
-Isso preenche o espaço vazio com dados úteis e complementares ao grid de cobertura.
+**2. Insert compensações (3 meses)**
+Corrigir `valor_nfse` → `valor_nf_servico` nos 3 INSERTs (Dez/Jan/Fev). O cálculo de honorários `ROUND(v.val * pt.percentual_honorario, 2)` vai para `valor_nf_servico`.
 
-### Detalhes
-- Remover `style={{ maxWidth: 400 }}` da linha 408
-- Envolver conteúdo do CardContent em `grid grid-cols-1 lg:grid-cols-2 gap-6`
-- Coluna direita: calcular counts a partir do `coverageGrid` já existente — sem novas queries
-- Texto footer "X de 15 combinações" move para abaixo do grid esquerdo
+**3. Sem migration de schema**
+Nenhuma alteração de schema necessária — `tributo` e `valor_nf_servico` já existem. Tudo é INSERT de dados via ferramenta de insert.
+
+**4. Sem alteração no Dashboard**
+O código já usa `valor_nf_servico` corretamente. Após os inserts, os KPIs vão refletir os ~R$ 8,09M automaticamente.
+
+**5. Usuário do Paulo**
+Preciso do email do Paulo para criar via edge function `manage-users`. Vou perguntar.
+
+### Pergunta pendente
+Qual o email do Paulo Marcos para criar o usuário com role `pmo`?
 
