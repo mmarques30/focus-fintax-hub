@@ -110,10 +110,14 @@ export default function ClientesList() {
           <Badge variant="secondary">{totalClientes}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setReportOpen(true)}>
-            <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
-          </Button>
-          <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+          {!isComercial && (
+            <Button variant="outline" onClick={() => setReportOpen(true)}>
+              <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
+            </Button>
+          )}
+          {!isComercial && (
+            <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+          )}
         </div>
       </div>
 
