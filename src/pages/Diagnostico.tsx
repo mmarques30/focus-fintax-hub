@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import logoFocus from "@/assets/logo-focus-fintax.svg";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
