@@ -34,7 +34,7 @@ export function ChartEvolucao({ monthlyBars, avgMensal, nextMonthLabel, periodLa
                 <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--ink-35)", fontFamily: "'DM Mono', monospace", fontWeight: 500 } as any} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: "var(--ink-35)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => compactCurrency(v)} width={60} />
                 <RechartsTooltip formatter={(v: number) => fullCurrency(v)} />
-                <Bar dataKey="valor" name="Compensado" fill="var(--navy)" radius={[3, 3, 0, 0]} maxBarSize={36} label={{ position: "top", fontSize: 9, fill: "var(--ink-60)", ...fontMono, formatter: (v: number) => compactCurrency(v) }} />
+                <Bar dataKey="valor" name="Compensado" fill="var(--navy)" radius={[3, 3, 0, 0]} maxBarSize={36} label={{ position: "top" as const, fontSize: 9, fill: "var(--ink-60)", fontFamily: "'DM Mono', monospace", formatter: (v: number) => compactCurrency(v) }} />
                 <Bar dataKey="honorarios" name="Honorários" fill="var(--dash-red)" radius={[3, 3, 0, 0]} maxBarSize={28} opacity={0.65} />
               </BarChart>
             </ResponsiveContainer>

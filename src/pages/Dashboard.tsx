@@ -227,7 +227,7 @@ export default function Dashboard() {
   const maxSegCount = Math.max(...segmentoData.map(s => s.count), 1);
 
   return (
-    <div style={{ background: "var(--dash-page)", fontFamily: "'Barlow', sans-serif", WebkitFontSmoothing: "antialiased" }} className="-m-4 min-h-[calc(100vh-64px)]">
+    <div className="-m-4 min-h-[calc(100vh-64px)] bg-[#f2f3f7] font-sans antialiased">
       <DashboardHeader
         profileName={profile?.full_name?.split(" ")[0] || "usuário"}
         role={role}
