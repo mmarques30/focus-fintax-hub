@@ -309,14 +309,6 @@ export default function MotorConfig() {
             <span className="text-amber-800 dark:text-amber-200 text-sm">
               <strong>{uncoveredCount} combinação{uncoveredCount > 1 ? "ões" : ""}</strong> sem cobertura — leads com esse perfil receberão diagnóstico vazio.
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-3 text-xs border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50"
-              onClick={() => coverageRef.current?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Ver quais
-            </Button>
           </AlertDescription>
         </Alert>
       )}
