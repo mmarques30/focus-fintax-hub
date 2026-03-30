@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PIPELINE_STAGES, ACTIVE_STAGES, formatCurrency, daysSince, SEGMENTO_LABELS, getScoreLabel, SCORE_CONFIG } from "@/lib/pipeline-constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /* ─── helpers ─── */
