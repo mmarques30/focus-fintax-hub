@@ -62,6 +62,7 @@ export type Database = {
           score_lead: number | null
           segmento: string
           status: string
+          token: string
           whatsapp: string
         }
         Insert: {
@@ -78,6 +79,7 @@ export type Database = {
           score_lead?: number | null
           segmento?: string
           status?: string
+          token?: string
           whatsapp?: string
         }
         Update: {
@@ -94,6 +96,7 @@ export type Database = {
           score_lead?: number | null
           segmento?: string
           status?: string
+          token?: string
           whatsapp?: string
         }
         Relationships: []
@@ -204,6 +207,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_diagnostico_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -205,7 +205,7 @@ REGRAS VISUAIS E DE CONTEÚDO:
       .eq("id", lead_id);
 
     return new Response(
-      JSON.stringify({ success: true, score, estimativa_total_minima, estimativa_total_maxima, teses_count: teses.length }),
+      JSON.stringify({ success: true, score, estimativa_total_minima, estimativa_total_maxima, teses_count: teses.length, token: lead.token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
