@@ -37,6 +37,7 @@ export interface PipelineLead {
 }
 
 export default function Pipeline() {
+  const { userRole } = useAuth();
   const [leads, setLeads] = useState<PipelineLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"kanban" | "list">("kanban");
