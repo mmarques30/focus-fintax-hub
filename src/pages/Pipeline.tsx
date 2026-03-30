@@ -42,17 +42,26 @@ export default function Pipeline() {
   const [showForm, setShowForm] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  const fetchLeads = async () => {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*, relatorios_leads(estimativa_total_minima, estimativa_total_maxima, teses_identificadas)")
-      .order("criado_em", { ascending: false });
+  const [exceptionLeadIds, setExceptionLeadIds] = useState<Set<string>>(new Set());
 
-    if (error) {
+  const fetchLeads = async () => {
+    const [leadsRes, histRes] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("*, relatorios_leads(estimativa_total_minima, estimativa_total_maxima, teses_identificadas)")
+        .order("criado_em", { ascending: false }),
+      supabase
+        .from("lead_historico")
+        .select("lead_id")
+        .ilike("anotacao", "⚠ EXCEÇÃO:%"),
+    ]);
+
+    if (leadsRes.error) {
       toast.error("Erro ao carregar leads");
       return;
     }
-    setLeads((data as any) || []);
+    setLeads((leadsRes.data as any) || []);
+    setExceptionLeadIds(new Set(histRes.data?.map((h) => h.lead_id) || []));
     setLoading(false);
   };
 
@@ -176,7 +185,7 @@ export default function Pipeline() {
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Carregando...</div>
       ) : view === "kanban" ? (
-        <PipelineKanban leads={leads} onLeadClick={setSelectedLeadId} onRefresh={fetchLeads} />
+        <PipelineKanban leads={leads} onLeadClick={setSelectedLeadId} onRefresh={fetchLeads} exceptionLeadIds={exceptionLeadIds} />
       ) : (
         <PipelineList leads={leads} onLeadClick={setSelectedLeadId} />
       )}
