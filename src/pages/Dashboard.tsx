@@ -238,7 +238,11 @@ export default function Dashboard() {
     // Top clients by compensado
     const clienteMap = Object.fromEntries(clientes.map(c => [c.id, c.empresa]));
     const compByClient: Record<string, number> = {};
-    allComp.forEach(c => { compByClient[c.cliente_id] = (compByClient[c.cliente_id] ?? 0) + Number(c.valor_compensado ?? 0); });
+    const honByClient: Record<string, number> = {};
+    allComp.forEach(c => {
+      compByClient[c.cliente_id] = (compByClient[c.cliente_id] ?? 0) + Number(c.valor_compensado ?? 0);
+      honByClient[c.cliente_id] = (honByClient[c.cliente_id] ?? 0) + Number(c.valor_nf_servico ?? 0);
+    });
     const creditByClient: Record<string, number> = {};
     allProc.forEach(p => { creditByClient[p.cliente_id] = (creditByClient[p.cliente_id] ?? 0) + Number(p.valor_credito ?? 0); });
 
@@ -247,6 +251,7 @@ export default function Dashboard() {
       id,
       empresa: clienteMap[id] ?? "—",
       compensado: compByClient[id] ?? 0,
+      honorarios: honByClient[id] ?? 0,
       identificado: creditByClient[id] ?? 0,
       saldo: (creditByClient[id] ?? 0) - (compByClient[id] ?? 0),
     }));
