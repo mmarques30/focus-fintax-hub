@@ -1,80 +1,123 @@
 
 
-## Motor de Teses — Tabela `motor_teses_config` + Painel de Configuração + Refatorar Edge Functions
+## Pipeline de Leads — Modulo Completo
 
-### Visão geral
+### Contexto
 
-Criar a tabela `motor_teses_config` como fonte única de verdade para as teses tributárias (substituindo a dependência de `benchmarks_teses` para elegibilidade). Criar o painel `/configuracoes/motor` para admins/PMOs calibrarem percentuais. Refatorar as edge functions para usar a nova tabela.
+O sistema atual tem uma tela simples de leads em `/leads` (tabela com filtros). O prompt pede um pipeline completo com kanban, lista, painel lateral, historico, e conversao para cliente. A tabela `leads` usa `status` com valores simples — precisamos de novos valores de funil e novas tabelas.
 
-### 1. Migração — Tabela `motor_teses_config`
+### 1. Migracao SQL
 
+**Adicionar campo `observacoes` e `status_funil` na tabela `leads`:**
 ```sql
-CREATE TABLE public.motor_teses_config (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tese text NOT NULL,
-  nome_exibicao text NOT NULL,
-  descricao_comercial text,
-  regimes_elegiveis text[] NOT NULL DEFAULT '{}',
-  segmentos_elegiveis text[] NOT NULL DEFAULT '{}',
-  percentual_min numeric(6,4) NOT NULL,
-  percentual_max numeric(6,4) NOT NULL,
-  ativo boolean DEFAULT true,
-  ordem_exibicao int DEFAULT 0,
-  atualizado_em timestamptz DEFAULT now(),
-  atualizado_por uuid
-);
-
-ALTER TABLE public.motor_teses_config ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admin CRUD motor_teses" ON public.motor_teses_config
-  FOR ALL TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-
-CREATE POLICY "PMO select motor_teses" ON public.motor_teses_config
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'pmo'::app_role));
+ALTER TABLE public.leads ADD COLUMN status_funil text NOT NULL DEFAULT 'novo';
+ALTER TABLE public.leads ADD COLUMN observacoes text DEFAULT '';
+ALTER TABLE public.leads ADD COLUMN status_funil_atualizado_em timestamptz DEFAULT now();
 ```
 
-Inserir os 5 registros iniciais com os percentuais do PDF.
+**Tabela `lead_historico`** para rastrear mudancas de etapa:
+```sql
+CREATE TABLE public.lead_historico (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  de_etapa text,
+  para_etapa text NOT NULL,
+  anotacao text,
+  criado_em timestamptz DEFAULT now(),
+  criado_por uuid
+);
+-- RLS: admin/comercial/pmo podem inserir e ler
+```
 
-### 2. Refatorar `submit-lead-public` edge function
+**Tabela `clientes`** para leads convertidos:
+```sql
+CREATE TABLE public.clientes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid REFERENCES leads(id),
+  empresa text NOT NULL,
+  cnpj text NOT NULL,
+  nome_contato text,
+  email text,
+  whatsapp text,
+  segmento text,
+  regime_tributario text,
+  faturamento_faixa text,
+  status text DEFAULT 'ativo',
+  criado_em timestamptz DEFAULT now(),
+  atualizado_em timestamptz DEFAULT now()
+);
+-- RLS: admin/gestor_tributario/pmo CRUD
+```
 
-Substituir a consulta a `benchmarks_teses` por `motor_teses_config`:
-- Filtrar teses onde `ativo = true`, `regimes_elegiveis @> ARRAY[regime]`, `segmentos_elegiveis @> ARRAY[segmento]`
-- Calcular: `faturamento_mensal_midpoint × 60 × percentual` por tese
-- Incluir `descricao_comercial` e `ordem_exibicao` nos dados salvos em `relatorios_leads.teses_identificadas`
+**Habilitar realtime** na tabela leads:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.leads;
+```
 
-Midpoints: `ate_2m=1000000, 2m_15m=3500000, acima_15m=20000000`
+### 2. Novos Arquivos
 
-### 3. Refatorar `analyze-lead` edge function
+**`src/pages/Pipeline.tsx`** — Componente principal com:
+- Header: titulo com contador realtime, toggle kanban/lista, botao "Novo Lead"
+- Stats cards: total ativos, novos hoje, potencial total (R$ mi), leads sem contato >1 dia
+- Renderiza `<PipelineKanban>` ou `<PipelineList>` conforme toggle
 
-Mesma lógica — consultar `motor_teses_config` em vez de `benchmarks_teses`.
+**`src/components/pipeline/PipelineKanban.tsx`**:
+- 9 colunas: novo, qualificado, em_negociacao, levantamento_teses, em_apresentacao, contrato_emitido, cliente_ativo, nao_vai_fazer, perdido
+- Drag-and-drop com `@hello-pangea/dnd` (fork mantido do react-beautiful-dnd)
+- Cards com: empresa, segmento (chip colorido), potencial max, score badge (A/B/C/D), dias na etapa
+- Borda laranja/vermelha em "novo" com >1/>3 dias
+- Ao dropar em "cliente_ativo" abre modal de confirmacao de conversao
 
-### 4. Nova página `src/pages/MotorConfig.tsx`
+**`src/components/pipeline/PipelineList.tsx`**:
+- Tabela com colunas: Empresa, Segmento, Regime, Score, Potencial, Etapa, Fonte, Criado em, Dias na etapa
+- Filtros: busca, segmento, regime, score, etapa, fonte
+- Paginacao 25/pagina, ordenacao clicavel
 
-Painel com:
-- **Card de simulação ao vivo** no topo: selects para segmento/regime/faturamento, calcula totais em tempo real com os percentuais da tabela
-- **Tabela** com colunas: Tese, Regimes (chips), Segmentos (chips), % Mín, % Máx, Ativo (toggle), Última atualização
-- **Edição via modal**: ao clicar "Editar" abre dialog com todos os campos (nome, descrição comercial, regimes checkboxes, segmentos checkboxes, percentuais, ativo, ordem)
-- **Botão "Adicionar nova tese"**: mesmo modal em modo criação
-- **Alerta** se alguma combinação regime+segmento não tem tese ativa
+**`src/components/pipeline/LeadSidePanel.tsx`**:
+- Sheet (480px) com 3 abas (Dados, Diagnostico, Historico)
+- Dados: campos editaveis, select de etapa, observacoes com auto-save (debounce 1s)
+- Diagnostico: teses do relatorio em formato compacto, link para /diagnostico/:token
+- Historico: timeline vertical de mudancas de etapa + anotacoes
+- Footer: Editar, Converter em cliente, Marcar como perdido
 
-### 5. Rota e navegação
+**`src/components/pipeline/LeadFormModal.tsx`**:
+- Dialog para criar/editar lead (campos identicos ao LeadForm atual)
+- Ao salvar novo lead, chama edge function analyze-lead
+- Campo origem com opcoes: manual, referencia, prospeccao_ativa, meta_ads
 
-- Adicionar rota `/configuracoes/motor` no `App.tsx` (dentro do bloco protegido)
-- Adicionar item "Configurações" no sidebar com ícone Settings, roles `["admin", "pmo"]`, url `/configuracoes/motor`
+**`src/lib/pipeline-constants.ts`**:
+- Etapas do funil com labels, cores, ordem
+- Cores de segmento (supermercado azul, farmacia verde, pet laranja, materiais cinza, outros roxo)
+- Score labels (A/B/C/D) com faixas e cores
 
-### 6. Atualizar `Diagnostico.tsx`
+### 3. Alteracoes em Arquivos Existentes
 
-Usar `descricao_comercial` e `ordem_exibicao` vindos do `teses_identificadas` JSONB (já salvo pela edge function refatorada) em vez do mapa hardcoded `TESE_DESCRICOES`.
+**`src/App.tsx`**: Adicionar rota `/pipeline` com `<Pipeline />`
 
-### Arquivos alterados
-1. **Migração SQL** — `motor_teses_config` + seed + RLS
-2. `supabase/functions/submit-lead-public/index.ts` — consultar nova tabela
-3. `supabase/functions/analyze-lead/index.ts` — consultar nova tabela
-4. `src/pages/MotorConfig.tsx` — novo
-5. `src/App.tsx` — rota `/configuracoes/motor`
-6. `src/components/AppSidebar.tsx` — item "Configurações"
-7. `src/pages/Diagnostico.tsx` — usar descrições dinâmicas
+**`src/components/AppSidebar.tsx`**: Alterar "Pipeline de Leads" de `/leads` para `/pipeline`
+
+**`src/lib/lead-constants.ts`**: Adicionar constantes de `STATUS_FUNIL` com labels e cores
+
+### 4. Dependencia NPM
+
+Instalar `@hello-pangea/dnd` para drag-and-drop no kanban.
+
+### 5. Fluxo de conversao para cliente
+
+Ao confirmar conversao:
+1. Inserir na tabela `clientes` com dados do lead
+2. Atualizar `status_funil` do lead para `cliente_ativo`
+3. Registrar no `lead_historico`
+4. Redirecionar para `/clientes/:id`
+
+### Arquivos
+1. **Migracao SQL** — leads (novos campos), lead_historico, clientes, realtime
+2. `src/pages/Pipeline.tsx` — novo
+3. `src/components/pipeline/PipelineKanban.tsx` — novo
+4. `src/components/pipeline/PipelineList.tsx` — novo
+5. `src/components/pipeline/LeadSidePanel.tsx` — novo
+6. `src/components/pipeline/LeadFormModal.tsx` — novo
+7. `src/lib/pipeline-constants.ts` — novo
+8. `src/App.tsx` — rota
+9. `src/components/AppSidebar.tsx` — url do menu
 
