@@ -1,33 +1,37 @@
 
 
-## Relatório Consolidado da Carteira
+## Mapa Tributário — Relatório PDF por cliente
 
 ### Arquivo alterado
-`src/pages/ClientesList.tsx` — adicionar botão + modal de relatório
+`src/pages/ClienteDetail.tsx` — adicionar botão + modal + print styles
 
 ### Plano
 
-**1. Botão "Relatório da Carteira"** ao lado do "Cadastrar cliente" no header (ícone FileText, variant outline)
+**1. Estado e dados**
+- `mapaOpen` state para controlar modal
+- Ao abrir modal, buscar `processos_teses` (select id, tese, nome_exibicao, valor_credito, percentual_honorario, valor_honorario, status_contrato) e `compensacoes_mensais` (select processo_tese_id, mes_referencia, valor_compensado, status_pagamento) para o cliente
+- Calcular totais: identificado (sum valor_credito onde status_contrato=assinado), compensado, saldo
 
-**2. Estado `reportOpen`** para controlar modal fullscreen
+**2. Botão "Gerar Mapa Tributário"** na sidebar, abaixo do nome do cliente (ícone FileText, variant outline, destaque visual)
 
-**3. Modal fullscreen** (Dialog com `max-w-[95vw] h-[90vh] overflow-auto`) com classes `print:` para ocupar tela toda no print
+**3. Modal fullscreen** (Dialog max-w-[900px] h-[90vh] overflow-auto, print-ready)
 
-**4. Conteúdo do relatório** (usa dados já carregados em `allStats`, `processos`, `compensacoes`):
+**4. Conteúdo do relatório** (div `id="mapa-tributario"`):
 
-- **Título**: "Carteira Focus FinTax — Visão Consolidada" + data atual formatada
-- **Summary row**: 4 cards — Total clientes / Total identificado / Total compensado / Saldo total
-- **Tabela de clientes**: ordenada por totalCredito desc. Colunas: Empresa, CNPJ, Teses ativas, Total Identificado, Total Compensado, Saldo, % Recuperado (progress bar + percentual). Grand total row no `TableFooter`.
-- **Breakdown por tese**: segunda tabela agrupando `processos` (status_contrato=assinado) por `tese`. Colunas: Tese (nome_exibicao), Clientes (count distinct cliente_id), Total Identificado, Total Compensado, Saldo. Precisa buscar `tese, nome_exibicao` no select de processos_teses (já busca parcial, adicionar esses campos).
+- **Header**: Logo Focus FinTax (import existente `logo-focus-fintax.svg`) + título "Mapa Tributário — {empresa}" + CNPJ + data atual
+- **Section 1 "Oportunidades Identificadas"**: Table com Tese, Valor Identificado, % Honorários, Valor Honorários. Total row no footer. Apenas processos com status_contrato=assinado.
+- **Section 2 "Histórico de Compensações"**: Table com Mês, Tese, Valor Compensado, Status Pagamento. Agrupado por mês (mais recente primeiro). Join com processos_teses para nome da tese. Total compensado no footer.
+- **Section 3 "Resumo Executivo"**: 3 métricas lado a lado (Total Identificado / Total Compensado / Saldo). Frase: "Você já recuperou R$ X de um potencial de R$ Y. Saldo disponível para compensação: R$ Z."
+- **Footer**: "Focus FinTax · Grupo Focus · Documento gerado em [data]"
 
-**5. Botão "Imprimir / Exportar PDF"** no header do modal → `window.print()`
+**5. Botão "Baixar PDF"** no header do modal → `window.print()`
 
-**6. Print CSS** (via `@media print`): ocultar sidebar, header, botões do modal; mostrar só o conteúdo do relatório.
+**6. Print CSS**: Reutilizar o `@media print` já existente em `index.css` com target no `#mapa-tributario` (adicionar regra similar ao `#report-content` já implementado)
 
-### Query adjustment
-Linha 29: adicionar `tese, nome_exibicao` ao select de `processos_teses` para poder agrupar por tese no breakdown.
-
-Linha 30: adicionar `processo_tese_id` ao select de `compensacoes_mensais` para vincular compensações a teses.
-
-### Sem novos arquivos — tudo inline no ClientesList.tsx
+### Imports adicionais
+- `FileText, Printer` de lucide-react
+- `Dialog, DialogContent, DialogHeader, DialogTitle` de ui/dialog
+- `Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow` de ui/table
+- `formatCurrencyBR` de clientes-constants
+- Logo SVG existente
 
