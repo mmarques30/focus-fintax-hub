@@ -199,19 +199,21 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Etapa</Label>
-                    <Select value={lead.status_funil} onValueChange={handleStageChange}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PIPELINE_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {!isFullReadOnly && isEditable && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Etapa</Label>
+                      <Select value={lead.status_funil} onValueChange={handleStageChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PIPELINE_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div>
                     <Label className="text-xs text-muted-foreground">Observações internas</Label>
-                    <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." />
+                    <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." disabled={isFullReadOnly} />
                   </div>
                 </TabsContent>
 
