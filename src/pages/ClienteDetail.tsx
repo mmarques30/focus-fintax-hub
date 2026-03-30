@@ -326,6 +326,36 @@ export default function ClienteDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Modal */}
+      <ClienteFormModal open={editOpen} onOpenChange={setEditOpen} onSuccess={() => {
+        supabase.from("clientes").select("*").eq("id", id!).single().then(({ data }) => { if (data) setCliente(data); });
+      }} cliente={cliente} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertTitle>Excluir cliente</AlertTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{cliente.empresa}</strong>? Todos os processos e compensações associados serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingCliente}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={deletingCliente} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              setDeletingCliente(true);
+              await supabase.from("compensacoes_mensais").delete().eq("cliente_id", id!);
+              await supabase.from("processos_teses").delete().eq("cliente_id", id!);
+              const { error } = await supabase.from("clientes").delete().eq("id", id!);
+              setDeletingCliente(false);
+              if (error) { toast.error("Erro ao excluir cliente."); return; }
+              toast.success("Cliente excluído com sucesso!");
+              navigate("/clientes");
+            }}>{deletingCliente ? "Excluindo..." : "Excluir"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
