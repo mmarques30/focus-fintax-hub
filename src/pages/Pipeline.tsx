@@ -185,7 +185,7 @@ export default function Pipeline() {
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Carregando...</div>
       ) : view === "kanban" ? (
-        <PipelineKanban leads={leads} onLeadClick={setSelectedLeadId} onRefresh={fetchLeads} />
+        <PipelineKanban leads={leads} onLeadClick={setSelectedLeadId} onRefresh={fetchLeads} exceptionLeadIds={exceptionLeadIds} />
       ) : (
         <PipelineList leads={leads} onLeadClick={setSelectedLeadId} />
       )}
