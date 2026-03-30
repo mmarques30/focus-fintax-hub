@@ -95,7 +95,7 @@ const MONTH_ABBR: Record<string, string> = {
 /* ─── types ─── */
 interface FunnelRow { stage: string; label: string; count: number; potencial: number; avgDays: number }
 interface RecentLead { id: string; empresa: string; segmento: string; criado_em: string; potencial: number; score: number | null }
-interface MonthBar { month: string; label: string; valor: number }
+interface MonthBar { month: string; label: string; valor: number; honorarios: number }
 interface ClientRank { id: string; empresa: string; compensado: number; saldo: number; identificado: number }
 
 export default function Dashboard() {
