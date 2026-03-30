@@ -1,15 +1,18 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Users, FileText, TrendingUp, TrendingDown, BarChart3, AlertTriangle,
-  CheckCircle2, ArrowRight, DollarSign, Briefcase, Receipt,
+  Users, TrendingUp, TrendingDown, AlertTriangle,
+  ArrowRight, DollarSign, Briefcase, Receipt, Info,
+  CheckCircle2, BarChart3,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PIPELINE_STAGES, ACTIVE_STAGES, formatCurrency, daysSince, SEGMENTO_LABELS } from "@/lib/pipeline-constants";
+import { PIPELINE_STAGES, ACTIVE_STAGES, formatCurrency, daysSince, SEGMENTO_LABELS, getScoreLabel, SCORE_CONFIG } from "@/lib/pipeline-constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /* ─── helpers ─── */
 function greeting() {
@@ -56,258 +59,206 @@ const SEGMENTO_CHIP: Record<string, string> = {
   outros: "bg-purple-100 text-purple-700",
 };
 
+const compactCurrency = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: 1 }).format(v);
+
+const fullCurrency = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+const FUNNEL_STAGES = [
+  { value: "novo", label: "Prospecção" },
+  { value: "qualificado", label: "Qualificado" },
+  { value: "levantamento_teses", label: "Levantamento" },
+  { value: "em_apresentacao", label: "Apresentação" },
+  { value: "contrato_emitido", label: "Contrato Emitido" },
+  { value: "contrato_assinado", label: "Contrato Assinado" },
+];
+
+const FUNNEL_BORDER: Record<string, string> = {
+  novo: "border-l-[8px]",
+  qualificado: "border-l-[6px]",
+  levantamento_teses: "border-l-[4px]",
+  em_apresentacao: "border-l-[3px]",
+  contrato_emitido: "border-l-[2px]",
+  contrato_assinado: "border-l-[1px]",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin", pmo: "PMO", gestor_tributario: "Gestor Tributário", comercial: "Comercial", cliente: "Cliente",
+};
+
+const MONTH_ABBR: Record<string, string> = {
+  "01": "Jan", "02": "Fev", "03": "Mar", "04": "Abr", "05": "Mai", "06": "Jun",
+  "07": "Jul", "08": "Ago", "09": "Set", "10": "Out", "11": "Nov", "12": "Dez",
+};
+
 /* ─── types ─── */
-interface KPI {
-  label: string;
-  value: number;
-  prev: number;
-  icon: React.ElementType;
-  prefix?: string;
-  roles: string[];
-  color?: string;
-}
-
-interface Alert {
-  type: "lead" | "processo";
-  empresa: string;
-  detail: string;
-  days: number;
-  link: string;
-}
-
-const FUNNEL_STAGES = ACTIVE_STAGES.filter(s => s.value !== "cliente_ativo");
-const STAGE_LABEL: Record<string, string> = Object.fromEntries(PIPELINE_STAGES.map(s => [s.value, s.label]));
+interface FunnelRow { stage: string; label: string; count: number; potencial: number; avgDays: number }
+interface RecentLead { id: string; empresa: string; segmento: string; criado_em: string; potencial: number; score: number | null }
+interface MonthBar { month: string; label: string; valor: number }
+interface ClientRank { id: string; empresa: string; compensado: number; saldo: number; identificado: number }
 
 export default function Dashboard() {
   const { profile, userRole } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState<KPI[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [funnelData, setFunnelData] = useState<{ stage: string; label: string; count: number; potencial: number }[]>([]);
-  const [recentLeads, setRecentLeads] = useState<any[]>([]);
-  const [monthCompensations, setMonthCompensations] = useState<{ empresa: string; tese: string; valor: number }[]>([]);
-  const [monthTotal, setMonthTotal] = useState(0);
-  const [motorStats, setMotorStats] = useState({ totalDiag: 0, lpLeads30d: 0, conversionRate: 0 });
-  const [bottomStats, setBottomStats] = useState({ clientes: 0, teses: 0, combinacoes: 0 });
-
   const role = userRole ?? "comercial";
-  const showLeads = ["admin", "pmo", "comercial"].includes(role);
-  const showClientes = ["admin", "pmo", "gestor_tributario"].includes(role);
+
+  // Tab state
+  const defaultTab = role === "comercial" ? "comercial" : role === "gestor_tributario" ? "operacional" : (localStorage.getItem("dash_tab") ?? "comercial");
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const switchTab = (t: string) => { setActiveTab(t); localStorage.setItem("dash_tab", t); };
+
+  const [loading, setLoading] = useState(true);
+
+  // Commercial state
+  const [comLeads, setComLeads] = useState(0);
+  const [comNewWeek, setComNewWeek] = useState(0);
+  const [comPotencial, setComPotencial] = useState(0);
+  const [comContratos, setComContratos] = useState(0);
+  const [funnelData, setFunnelData] = useState<FunnelRow[]>([]);
+  const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
+  const [stalledLeads, setStalledLeads] = useState<{ empresa: string; days: number; id: string }[]>([]);
+
+  // Operational state
+  const [opClientes, setOpClientes] = useState(0);
+  const [opCompensado, setOpCompensado] = useState(0);
+  const [opHonorarios, setOpHonorarios] = useState(0);
+  const [opSaldo, setOpSaldo] = useState(0);
+  const [monthlyBars, setMonthlyBars] = useState<MonthBar[]>([]);
+  const [topCompensado, setTopCompensado] = useState<ClientRank[]>([]);
+  const [topSaldo, setTopSaldo] = useState<ClientRank[]>([]);
+  const [currentMonthComp, setCurrentMonthComp] = useState(0);
+  const [currentMonthHon, setCurrentMonthHon] = useState(0);
+  const [currentMonthClientes, setCurrentMonthClientes] = useState(0);
 
   const fetchData = useCallback(async () => {
     const now = new Date();
-    const d30 = new Date(now.getTime() - 30 * 86400000).toISOString();
     const d7 = new Date(now.getTime() - 7 * 86400000).toISOString();
     const d1 = new Date(now.getTime() - 1 * 86400000).toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
-    const results: KPI[] = [];
-
-    // ─── Leads KPIs ───
-    if (showLeads) {
-      const [pipelineRes, pipelinePrev, newRes, newPrev, potRes] = await Promise.all([
-        supabase.from("leads").select("id", { count: "exact", head: true })
-          .not("status_funil", "in", "(perdido,nao_vai_fazer)"),
-        supabase.from("leads").select("id", { count: "exact", head: true })
-          .not("status_funil", "in", "(perdido,nao_vai_fazer)")
-          .lt("criado_em", d30),
-        supabase.from("leads").select("id", { count: "exact", head: true })
-          .gte("criado_em", d7),
-        supabase.from("leads").select("id", { count: "exact", head: true })
-          .gte("criado_em", new Date(now.getTime() - 14 * 86400000).toISOString())
-          .lt("criado_em", d7),
-        supabase.from("relatorios_leads").select("estimativa_total_maxima, lead_id")
-          .then(async ({ data: rels }) => {
-            if (!rels?.length) return 0;
-            const leadIds = [...new Set(rels.map(r => r.lead_id))];
-            const { data: activeLeads } = await supabase.from("leads").select("id")
-              .in("id", leadIds)
-              .not("status_funil", "in", "(perdido,nao_vai_fazer)");
-            const activeIds = new Set(activeLeads?.map(l => l.id) ?? []);
-            const byLead: Record<string, number> = {};
-            rels.forEach(r => {
-              if (activeIds.has(r.lead_id)) {
-                byLead[r.lead_id] = Math.max(byLead[r.lead_id] ?? 0, Number(r.estimativa_total_maxima));
-              }
-            });
-            return Object.values(byLead).reduce((s, v) => s + v, 0);
-          }),
-      ]);
-
-      results.push(
-        { label: "Leads no pipeline", value: pipelineRes.count ?? 0, prev: pipelinePrev.count ?? 0, icon: Users, roles: ["admin", "pmo", "comercial"] },
-        { label: "Novos leads (7d)", value: newRes.count ?? 0, prev: newPrev.count ?? 0, icon: TrendingUp, roles: ["admin", "pmo", "comercial"] },
-        { label: "Potencial da carteira", value: potRes as number, prev: 0, icon: DollarSign, prefix: "R$ ", roles: ["admin", "pmo", "comercial"], color: "text-red-600" },
-      );
-    }
-
-    // ─── Clientes KPIs ───
-    if (showClientes) {
-      const [clientesRes, clientesPrev, compRes, compPrev, honRes] = await Promise.all([
-        supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-        supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("criado_em", d30),
-        supabase.from("compensacoes_mensais").select("valor_compensado"),
-        supabase.from("compensacoes_mensais").select("valor_compensado").lt("criado_em", d30),
-        supabase.from("processos_teses").select("valor_honorario")
-          .in("status_processo", ["compensando", "pedido_feito_receita"]),
-      ]);
-
-      const compTotal = (compRes.data ?? []).reduce((s, r) => s + Number(r.valor_compensado ?? 0), 0);
-      const compPrevTotal = (compPrev.data ?? []).reduce((s, r) => s + Number(r.valor_compensado ?? 0), 0);
-      const honTotal = (honRes.data ?? []).reduce((s, r) => s + Number(r.valor_honorario ?? 0), 0);
-
-      results.push(
-        { label: "Clientes ativos", value: clientesRes.count ?? 0, prev: clientesPrev.count ?? 0, icon: Briefcase, roles: ["admin", "pmo", "gestor_tributario"] },
-        { label: "Total compensado", value: compTotal, prev: compPrevTotal, icon: CheckCircle2, prefix: "R$ ", roles: ["admin", "pmo", "gestor_tributario"], color: "text-green-700" },
-        { label: "Honorários a receber", value: honTotal, prev: 0, icon: Receipt, prefix: "R$ ", roles: ["admin", "pmo", "gestor_tributario"] },
-      );
-    }
-
-    setKpis(results);
-
-    // ─── Alerts ───
-    const alertItems: Alert[] = [];
-    if (showLeads) {
-      const { data: stalledLeads } = await supabase.from("leads").select("empresa, status_funil_atualizado_em, id")
-        .eq("status_funil", "novo").lt("status_funil_atualizado_em", d1);
-      (stalledLeads ?? []).forEach(l => {
-        alertItems.push({
-          type: "lead", empresa: l.empresa || "Sem empresa",
-          detail: "Lead parado em Novo",
-          days: daysSince(l.status_funil_atualizado_em!),
-          link: "/pipeline",
-        });
-      });
-    }
-    if (showClientes) {
-      const d15 = new Date(now.getTime() - 15 * 86400000).toISOString();
-      const d7ago = new Date(now.getTime() - 7 * 86400000).toISOString();
-      const { data: stalledProc } = await supabase.from("processos_teses")
-        .select("tese, nome_exibicao, atualizado_em, status_processo, status_contrato, cliente_id")
-        .or(`and(status_processo.eq.nao_protocolado,atualizado_em.lt.${d15}),and(status_contrato.eq.aguardando_assinatura,atualizado_em.lt.${d7ago})`);
-      if (stalledProc?.length) {
-        const clienteIds = [...new Set(stalledProc.map(p => p.cliente_id))];
-        const { data: clientes } = await supabase.from("clientes").select("id, empresa").in("id", clienteIds);
-        const map = Object.fromEntries((clientes ?? []).map(c => [c.id, c.empresa]));
-        stalledProc.forEach(p => {
-          alertItems.push({
-            type: "processo",
-            empresa: map[p.cliente_id] ?? "—",
-            detail: p.nome_exibicao,
-            days: daysSince(p.atualizado_em!),
-            link: `/clientes/${p.cliente_id}`,
-          });
-        });
-      }
-    }
-    alertItems.sort((a, b) => b.days - a.days);
-    setAlerts(alertItems.slice(0, 5));
-
-    // ─── Funnel with potencial ───
-    if (showLeads) {
-      const { data: leads } = await supabase.from("leads").select("status_funil, id")
-        .not("status_funil", "in", "(perdido,nao_vai_fazer,cliente_ativo)");
-      const counts: Record<string, number> = {};
-      const leadsByStage: Record<string, string[]> = {};
-      FUNNEL_STAGES.forEach(s => { counts[s.value] = 0; leadsByStage[s.value] = []; });
-      (leads ?? []).forEach(l => {
-        if (counts[l.status_funil] !== undefined) {
-          counts[l.status_funil]++;
-          leadsByStage[l.status_funil].push(l.id);
-        }
-      });
-
-      // Get potentials for all active leads
-      const allIds = (leads ?? []).map(l => l.id);
-      const { data: rels } = allIds.length
-        ? await supabase.from("relatorios_leads").select("lead_id, estimativa_total_maxima").in("lead_id", allIds)
-        : { data: [] };
-      const potMap: Record<string, number> = {};
-      (rels ?? []).forEach(r => { potMap[r.lead_id] = Math.max(potMap[r.lead_id] ?? 0, Number(r.estimativa_total_maxima)); });
-
-      setFunnelData(FUNNEL_STAGES.map(s => ({
-        stage: s.value,
-        label: s.label,
-        count: counts[s.value] ?? 0,
-        potencial: leadsByStage[s.value].reduce((sum, id) => sum + (potMap[id] ?? 0), 0),
-      })));
-    }
-
-    // ─── Recent Leads ───
-    if (showLeads) {
-      const { data: recent } = await supabase.from("leads").select("empresa, segmento, criado_em, id")
-        .not("status_funil", "in", "(perdido,nao_vai_fazer)")
-        .order("criado_em", { ascending: false }).limit(5);
-      const ids = (recent ?? []).map(r => r.id);
-      const { data: rels } = ids.length
-        ? await supabase.from("relatorios_leads").select("lead_id, estimativa_total_maxima").in("lead_id", ids)
-        : { data: [] };
-      const potMap: Record<string, number> = {};
-      (rels ?? []).forEach(r => { potMap[r.lead_id] = Math.max(potMap[r.lead_id] ?? 0, Number(r.estimativa_total_maxima)); });
-      setRecentLeads((recent ?? []).map(r => ({ ...r, potencial: potMap[r.id] ?? 0 })));
-    }
-
-    // ─── Month compensations ───
-    if (showClientes) {
-      const { data: comp } = await supabase.from("compensacoes_mensais")
-        .select("valor_compensado, processo_tese_id, cliente_id")
-        .gte("mes_referencia", monthStart);
-      if (comp?.length) {
-        const ptIds = [...new Set(comp.map(c => c.processo_tese_id))];
-        const cIds = [...new Set(comp.map(c => c.cliente_id))];
-        const [{ data: pts }, { data: cls }] = await Promise.all([
-          supabase.from("processos_teses").select("id, nome_exibicao").in("id", ptIds),
-          supabase.from("clientes").select("id, empresa").in("id", cIds),
-        ]);
-        const ptMap = Object.fromEntries((pts ?? []).map(p => [p.id, p.nome_exibicao]));
-        const clMap = Object.fromEntries((cls ?? []).map(c => [c.id, c.empresa]));
-        const items = comp.map(c => ({
-          empresa: clMap[c.cliente_id] ?? "—",
-          tese: ptMap[c.processo_tese_id] ?? "—",
-          valor: Number(c.valor_compensado ?? 0),
-        }));
-        setMonthCompensations(items.slice(0, 5));
-        setMonthTotal(items.reduce((s, i) => s + i.valor, 0));
-      } else {
-        setMonthCompensations([]);
-        setMonthTotal(0);
-      }
-    }
-
-    // ─── Motor stats ───
-    if (showLeads) {
-      const [{ count: totalDiag }, { count: lpLeads }, { count: lpClientes }, { count: totalLp }] = await Promise.all([
-        supabase.from("relatorios_leads").select("id", { count: "exact", head: true }),
-        supabase.from("leads").select("id", { count: "exact", head: true }).eq("origem", "formulario_lp").gte("criado_em", d30),
-        supabase.from("leads").select("id", { count: "exact", head: true }).eq("origem", "formulario_lp").eq("status_funil", "cliente_ativo"),
-        supabase.from("leads").select("id", { count: "exact", head: true }).eq("origem", "formulario_lp"),
-      ]);
-      setMotorStats({
-        totalDiag: totalDiag ?? 0,
-        lpLeads30d: lpLeads ?? 0,
-        conversionRate: totalLp ? Math.round(((lpClientes ?? 0) / totalLp) * 100) : 0,
-      });
-    }
-
-    // ─── Bottom stats ───
-    const [{ count: totalClientes }, { data: motorTeses }] = await Promise.all([
-      supabase.from("clientes").select("id", { count: "exact", head: true }),
-      supabase.from("motor_teses_config").select("regimes_elegiveis, segmentos_elegiveis").eq("ativo", true),
+    // ═══ COMMERCIAL TAB DATA ═══
+    const [pipelineRes, newWeekRes, contratosRes] = await Promise.all([
+      supabase.from("leads").select("id", { count: "exact", head: true }).not("status_funil", "in", "(perdido,nao_vai_fazer)"),
+      supabase.from("leads").select("id", { count: "exact", head: true }).gte("criado_em", d7),
+      supabase.from("leads").select("id", { count: "exact", head: true }).eq("status_funil", "contrato_emitido"),
     ]);
-    const tesesAtivas = motorTeses?.length ?? 0;
-    const combSet = new Set<string>();
-    (motorTeses ?? []).forEach(t => {
-      (t.regimes_elegiveis ?? []).forEach((r: string) => {
-        (t.segmentos_elegiveis ?? []).forEach((s: string) => {
-          combSet.add(`${r}:${s}`);
-        });
-      });
+    setComLeads(pipelineRes.count ?? 0);
+    setComNewWeek(newWeekRes.count ?? 0);
+    setComContratos(contratosRes.count ?? 0);
+
+    // Potencial total
+    const { data: allActiveLeads } = await supabase.from("leads").select("id").not("status_funil", "in", "(perdido,nao_vai_fazer)");
+    const activeIds = (allActiveLeads ?? []).map(l => l.id);
+    let potTotal = 0;
+    if (activeIds.length) {
+      const { data: rels } = await supabase.from("relatorios_leads").select("lead_id, estimativa_total_maxima").in("lead_id", activeIds);
+      const byLead: Record<string, number> = {};
+      (rels ?? []).forEach(r => { byLead[r.lead_id] = Math.max(byLead[r.lead_id] ?? 0, Number(r.estimativa_total_maxima)); });
+      potTotal = Object.values(byLead).reduce((s, v) => s + v, 0);
+    }
+    setComPotencial(potTotal);
+
+    // Funnel data with avg days
+    const { data: funnelLeads } = await supabase.from("leads").select("id, status_funil, status_funil_atualizado_em").not("status_funil", "in", "(perdido,nao_vai_fazer,cliente_ativo)");
+    const fCounts: Record<string, { count: number; ids: string[]; totalDays: number }> = {};
+    FUNNEL_STAGES.forEach(s => { fCounts[s.value] = { count: 0, ids: [], totalDays: 0 }; });
+    (funnelLeads ?? []).forEach(l => {
+      if (fCounts[l.status_funil]) {
+        fCounts[l.status_funil].count++;
+        fCounts[l.status_funil].ids.push(l.id);
+        fCounts[l.status_funil].totalDays += l.status_funil_atualizado_em ? daysSince(l.status_funil_atualizado_em) : 0;
+      }
     });
-    setBottomStats({ clientes: totalClientes ?? 0, teses: tesesAtivas, combinacoes: combSet.size });
+    // Get potentials per stage
+    const allFunnelIds = (funnelLeads ?? []).map(l => l.id);
+    let fPotMap: Record<string, number> = {};
+    if (allFunnelIds.length) {
+      const { data: fRels } = await supabase.from("relatorios_leads").select("lead_id, estimativa_total_maxima").in("lead_id", allFunnelIds);
+      (fRels ?? []).forEach(r => { fPotMap[r.lead_id] = Math.max(fPotMap[r.lead_id] ?? 0, Number(r.estimativa_total_maxima)); });
+    }
+    setFunnelData(FUNNEL_STAGES.map(s => ({
+      stage: s.value, label: s.label,
+      count: fCounts[s.value]?.count ?? 0,
+      potencial: (fCounts[s.value]?.ids ?? []).reduce((sum, id) => sum + (fPotMap[id] ?? 0), 0),
+      avgDays: fCounts[s.value]?.count ? Math.round(fCounts[s.value].totalDays / fCounts[s.value].count) : 0,
+    })));
+
+    // Recent leads with score
+    const { data: recent } = await supabase.from("leads").select("empresa, segmento, criado_em, id, score_lead")
+      .not("status_funil", "in", "(perdido,nao_vai_fazer)").order("criado_em", { ascending: false }).limit(5);
+    const recentIds = (recent ?? []).map(r => r.id);
+    let rPotMap: Record<string, number> = {};
+    if (recentIds.length) {
+      const { data: rRels } = await supabase.from("relatorios_leads").select("lead_id, estimativa_total_maxima").in("lead_id", recentIds);
+      (rRels ?? []).forEach(r => { rPotMap[r.lead_id] = Math.max(rPotMap[r.lead_id] ?? 0, Number(r.estimativa_total_maxima)); });
+    }
+    setRecentLeads((recent ?? []).map(r => ({ id: r.id, empresa: r.empresa, segmento: r.segmento, criado_em: r.criado_em, potencial: rPotMap[r.id] ?? 0, score: r.score_lead })));
+
+    // Stalled leads (>1 day in novo)
+    const { data: stalled } = await supabase.from("leads").select("empresa, status_funil_atualizado_em, id").eq("status_funil", "novo").lt("status_funil_atualizado_em", d1);
+    setStalledLeads((stalled ?? []).map(l => ({ empresa: l.empresa || "Sem empresa", days: daysSince(l.status_funil_atualizado_em!), id: l.id })).sort((a, b) => b.days - a.days));
+
+    // ═══ OPERATIONAL TAB DATA ═══
+    const [clientesRes, allCompRes, allProcRes] = await Promise.all([
+      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("status", "ativo"),
+      supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id"),
+      supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario"),
+    ]);
+    const clientes = clientesRes.data ?? [];
+    const allComp = allCompRes.data ?? [];
+    const allProc = allProcRes.data ?? [];
+    setOpClientes(clientesRes.count ?? 0);
+
+    const totalCompensado = allComp.reduce((s, c) => s + Number(c.valor_compensado ?? 0), 0);
+    setOpCompensado(totalCompensado);
+
+    const totalHonorarios = allComp.reduce((s, c) => s + Number(c.valor_nf_servico ?? 0), 0);
+    setOpHonorarios(totalHonorarios);
+
+    const totalCredito = allProc.reduce((s, p) => s + Number(p.valor_credito ?? 0), 0);
+    setOpSaldo(totalCredito - totalCompensado);
+
+    // Monthly bars (last 6 months)
+    const monthMap: Record<string, number> = {};
+    allComp.forEach(c => {
+      const m = String(c.mes_referencia).slice(0, 7); // YYYY-MM
+      monthMap[m] = (monthMap[m] ?? 0) + Number(c.valor_compensado ?? 0);
+    });
+    const sortedMonths = Object.keys(monthMap).sort().slice(-6);
+    setMonthlyBars(sortedMonths.map(m => ({
+      month: m,
+      label: MONTH_ABBR[m.slice(5, 7)] ?? m.slice(5, 7),
+      valor: monthMap[m],
+    })));
+
+    // Top clients by compensado
+    const clienteMap = Object.fromEntries(clientes.map(c => [c.id, c.empresa]));
+    const compByClient: Record<string, number> = {};
+    allComp.forEach(c => { compByClient[c.cliente_id] = (compByClient[c.cliente_id] ?? 0) + Number(c.valor_compensado ?? 0); });
+    const creditByClient: Record<string, number> = {};
+    allProc.forEach(p => { creditByClient[p.cliente_id] = (creditByClient[p.cliente_id] ?? 0) + Number(p.valor_credito ?? 0); });
+
+    const allClientIds = [...new Set([...Object.keys(compByClient), ...Object.keys(creditByClient)])];
+    const rankings: ClientRank[] = allClientIds.map(id => ({
+      id,
+      empresa: clienteMap[id] ?? "—",
+      compensado: compByClient[id] ?? 0,
+      identificado: creditByClient[id] ?? 0,
+      saldo: (creditByClient[id] ?? 0) - (compByClient[id] ?? 0),
+    }));
+
+    setTopCompensado([...rankings].sort((a, b) => b.compensado - a.compensado).slice(0, 8));
+    setTopSaldo([...rankings].sort((a, b) => b.saldo - a.saldo).filter(r => r.saldo > 0).slice(0, 8));
+
+    // Current month summary
+    const curMonthComp = allComp.filter(c => String(c.mes_referencia).startsWith(monthStart.slice(0, 7)));
+    setCurrentMonthComp(curMonthComp.reduce((s, c) => s + Number(c.valor_compensado ?? 0), 0));
+    setCurrentMonthHon(curMonthComp.reduce((s, c) => s + Number(c.valor_nf_servico ?? 0), 0));
+    setCurrentMonthClientes(new Set(curMonthComp.map(c => c.cliente_id)).size);
 
     setLoading(false);
-  }, [showLeads, showClientes]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -320,36 +271,19 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
 
-  const funnelMax = useMemo(() => Math.max(...funnelData.map(f => f.count), 1), [funnelData]);
-  const funnelTotal = useMemo(() => funnelData.reduce((s, f) => s + f.potencial, 0), [funnelData]);
-
-  const variation = (cur: number, prev: number) => {
-    if (!prev) return null;
-    const pct = Math.round(((cur - prev) / prev) * 100);
-    return pct;
-  };
-
-  const visibleKpis = kpis.filter(k => k.roles.includes(role));
   const currentMonth = format(new Date(), "MMMM", { locale: ptBR });
-
-  const ROLE_LABELS: Record<string, string> = {
-    admin: "Admin",
-    pmo: "PMO",
-    gestor_tributario: "Gestor Tributário",
-    comercial: "Comercial",
-    cliente: "Cliente",
-  };
+  const opEconomia = opCompensado - opHonorarios;
 
   return (
     <div className="bg-[#f4f5f7] -m-6 min-h-[calc(100vh-64px)]">
-      {/* SECTION 1 — Header strip */}
-      <div className="bg-[#0a1564] h-[72px] px-6 flex items-center justify-between">
+      {/* ═══ Header ═══ */}
+      <div className="bg-[#0a1564] h-16 px-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-lg font-bold text-white">
             {greeting()}, {profile?.full_name?.split(" ")[0] || "usuário"}
           </h1>
-          <p className="text-xs text-white/60">
-            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })} — Aqui está o resumo do momento.
+          <p className="text-xs text-white/50">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -362,125 +296,87 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ═══ Tab Switcher ═══ */}
+      <div className="flex justify-center border-b border-gray-200 bg-white">
+        {[
+          { key: "comercial", label: "Visão Comercial" },
+          { key: "operacional", label: "Visão Operacional" },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => switchTab(t.key)}
+            className={`px-6 py-3 text-sm font-semibold transition-colors relative ${
+              activeTab === t.key
+                ? "text-[#0a1564]"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            {t.label}
+            {activeTab === t.key && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0a1564]" />
+            )}
+          </button>
+        ))}
+      </div>
+
       <div className="px-4 py-4 space-y-4">
-        {/* SECTION 2 — KPI strip */}
-        <div className="bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] flex divide-x divide-gray-100 overflow-x-auto">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex-1 min-w-[140px] p-4">
-                  <Skeleton className="h-8 w-16 mb-2" /><Skeleton className="h-3 w-24" />
-                </div>
-              ))
-            : visibleKpis.map((k) => {
-                const v = variation(k.value, k.prev);
-                return (
-                  <div key={k.label} className="flex-1 min-w-[140px] px-4 py-3 flex items-center gap-3">
-                    <k.icon className="h-5 w-5 text-[#0a1564] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xl font-extrabold ${k.color ?? "text-[#0a1564]"}`}>
-                        {k.prefix ? (
-                          <AnimatedNumber value={k.value} prefix={k.prefix === "R$ " ? "R$ " : ""} />
-                        ) : (
-                          <AnimatedNumber value={k.value} />
-                        )}
-                      </p>
-                      <p className="text-[11px] text-gray-500 leading-tight truncate">{k.label}</p>
-                    </div>
-                    {v !== null && (
-                      <span className={`text-[11px] font-semibold flex items-center gap-0.5 flex-shrink-0 ${v >= 0 ? "text-[#166534]" : "text-[#991b1b]"}`}>
-                        {v >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                        {v > 0 ? "+" : ""}{v}%
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-          }
-        </div>
-
-        {/* SECTION 3 — Two columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-4">
-          {/* Left column */}
+        {loading ? (
           <div className="space-y-4">
-            {/* Alerts */}
-            {!loading && (showLeads || showClientes) && (
-              <div className={`bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${alerts.length > 0 ? "border-l-[3px] border-l-amber-400" : ""}`}>
-                {alerts.length === 0 ? (
-                  <div className="flex items-center gap-2 text-sm text-green-700 px-5 py-3">
-                    <CheckCircle2 className="h-4 w-4" /> Tudo em ordem — nenhuma ação urgente.
-                  </div>
-                ) : (
-                  <div className="px-5 py-3 space-y-0">
-                    <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5" /> {alerts.length} alerta{alerts.length > 1 ? "s" : ""}
-                    </p>
-                    {alerts.map((a, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
-                        onClick={() => navigate(a.link)}
-                      >
-                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${a.type === "lead" ? "bg-amber-500" : "bg-red-500"}`} />
-                        <span className="text-sm font-semibold text-gray-900 truncate">{a.empresa}</span>
-                        <span className="text-xs text-gray-500 truncate flex-1">{a.detail}</span>
-                        <span className="text-[11px] font-semibold text-red-600 whitespace-nowrap">há {a.days}d</span>
-                        <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Funnel */}
-            {showLeads && !loading && (
-              <div className="bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] px-5 py-4">
-                <p className="text-sm font-bold text-gray-900 mb-3">Funil comercial</p>
-                <div className="space-y-1">
-                  {funnelData
-                    .filter(f => f.count > 0 || f.stage === "novo" || f.stage === "levantamento_teses")
-                    .map((f) => (
-                      <div
-                        key={f.stage}
-                        className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded py-1.5 px-1 -mx-1 transition-colors"
-                        onClick={() => navigate(`/pipeline?etapa=${f.stage}`)}
-                      >
-                        <span className="text-xs text-gray-600 w-32 text-right flex-shrink-0 truncate">{f.label}</span>
-                        <div className="flex-1 bg-gray-100 rounded h-5 relative overflow-hidden">
-                          <div
-                            className="h-full bg-[#0a1564] rounded transition-all duration-700"
-                            style={{ width: `${Math.max((f.count / funnelMax) * 100, f.count > 0 ? 6 : 0)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-bold text-gray-900 w-8 text-right">{f.count}</span>
-                        <span className="text-[11px] text-gray-400 w-20 text-right">{f.potencial > 0 ? formatCurrency(f.potencial) : "—"}</span>
-                      </div>
-                    ))}
-                </div>
-                {funnelTotal > 0 && (
-                  <div className="flex justify-end mt-2 pt-2 border-t border-gray-100">
-                    <span className="text-xs text-gray-500">Total potencial: </span>
-                    <span className="text-xs font-bold text-gray-900 ml-1">{formatCurrency(funnelTotal)}</span>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="bg-white rounded-lg p-4 flex gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 flex-1" />)}
+            </div>
+            <Skeleton className="h-64 w-full rounded-lg" />
           </div>
+        ) : activeTab === "comercial" ? (
+          /* ═══════════════ TAB 1 — VISÃO COMERCIAL ═══════════════ */
+          <>
+            {/* Row 1 — 4 KPIs */}
+            <div className="bg-white rounded-lg shadow-sm flex divide-x divide-gray-100" style={{ height: 80 }}>
+              <KPICell label="Leads no pipeline" value={comLeads} color="text-[#0a1564]" />
+              <KPICell label="Novos esta semana" value={comNewWeek} color="text-[#0a1564]" />
+              <KPICell label="Potencial total" value={comPotencial} color="text-[#c8001e]" format="currency" bold />
+              <KPICell
+                label="Contratos emitidos"
+                value={comContratos}
+                color={comContratos > 0 ? "text-amber-600" : "text-gray-400"}
+              />
+            </div>
 
-          {/* Right column */}
-          <div className="space-y-4">
-            {/* Recent leads */}
-            {showLeads && (
-              <div className="bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] px-5 py-4">
-                <p className="text-sm font-bold text-gray-900 mb-2">Últimos leads</p>
-                {loading ? (
-                  <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-                ) : recentLeads.length === 0 ? (
-                  <p className="text-xs text-gray-500 py-2">Nenhum lead ainda.</p>
-                ) : (
-                  <div className="space-y-0">
-                    {recentLeads.map((l, i) => (
-                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+            {/* Row 2 — 60/40 */}
+            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-4">
+              {/* LEFT — Funil */}
+              <div className="bg-white rounded-lg shadow-sm px-5 py-4">
+                <p className="text-sm font-bold text-gray-900 mb-3">Funil comercial</p>
+                <div className="space-y-0">
+                  {funnelData.filter(f => f.count > 0).map(f => (
+                    <div
+                      key={f.stage}
+                      className={`flex items-center gap-3 py-2 px-2 -mx-2 cursor-pointer hover:bg-gray-50 rounded transition-colors border-l-[#c8001e] ${FUNNEL_BORDER[f.stage] ?? "border-l-[2px]"} ${
+                        f.stage === "contrato_emitido" && f.count > 0 ? "bg-amber-50" : ""
+                      }`}
+                      onClick={() => navigate(`/pipeline?etapa=${f.stage}`)}
+                    >
+                      <span className="text-xs font-medium text-gray-700 w-28 truncate">{f.label}</span>
+                      <span className="text-sm font-bold text-gray-900 w-8 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{f.count}</span>
+                      <span className="text-xs text-gray-500 w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{f.potencial > 0 ? compactCurrency(f.potencial) : "—"}</span>
+                      {f.avgDays > 3 && (
+                        <span className="text-[10px] text-amber-600 font-medium">⏱ {f.avgDays}d</span>
+                      )}
+                      <ArrowRight className="h-3 w-3 text-gray-300 ml-auto" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* RIGHT — Recent leads */}
+              <div className="bg-white rounded-lg shadow-sm px-5 py-4">
+                <p className="text-sm font-bold text-gray-900 mb-2">Leads recentes</p>
+                <div className="space-y-0">
+                  {recentLeads.map(l => {
+                    const scoreLetter = getScoreLabel(l.score);
+                    const scoreConf = SCORE_CONFIG[scoreLetter];
+                    return (
+                      <div key={l.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-gray-900 truncate">{l.empresa || "Sem empresa"}</p>
                           <div className="flex items-center gap-1.5">
@@ -490,94 +386,180 @@ export default function Dashboard() {
                             <span className="text-[10px] text-gray-400">{timeAgo(l.criado_em)}</span>
                           </div>
                         </div>
-                        {l.potencial > 0 && (
-                          <span className="text-sm font-bold text-green-700 ml-2">{formatCurrency(l.potencial)}</span>
-                        )}
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${scoreConf.color}`}>{scoreLetter}</span>
+                          {l.potencial > 0 && (
+                            <span className="text-sm font-bold text-green-700" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(l.potencial)}</span>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={() => navigate("/pipeline")}
-                  className="text-xs font-semibold text-[#0a1564] hover:text-[#0a1564]/80 mt-2 flex items-center gap-1 transition-colors"
-                >
+                    );
+                  })}
+                </div>
+                <button onClick={() => navigate("/pipeline")} className="text-xs font-semibold text-[#0a1564] hover:text-[#0a1564]/80 mt-2 flex items-center gap-1">
                   Ver pipeline <ArrowRight className="h-3 w-3" />
                 </button>
               </div>
-            )}
+            </div>
 
-            {/* Month compensations */}
-            {showClientes && (
-              <div className="bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] px-5 py-4">
-                <p className="text-sm font-bold text-gray-900 mb-2">Compensações do mês</p>
-                {loading ? (
-                  <Skeleton className="h-8 w-full" />
-                ) : monthCompensations.length === 0 ? (
-                  <p className="text-xs text-gray-500">R$ 0 registrado em {currentMonth}</p>
-                ) : (
-                  <>
-                    <p className="text-xl font-extrabold text-green-700 mb-2">{formatCurrency(monthTotal)}</p>
-                    <div className="space-y-0">
-                      {monthCompensations.map((c, i) => (
-                        <div key={i} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-gray-900 truncate">{c.empresa}</p>
-                            <p className="text-[10px] text-gray-400">{c.tese}</p>
-                          </div>
-                          <span className="text-xs font-bold text-gray-700 ml-2">{formatCurrency(c.valor)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+            {/* Row 3 — Alerts */}
+            {stalledLeads.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-3">
+                <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Leads parados
+                </p>
+                {stalledLeads.slice(0, 3).map((l, i) => (
+                  <p key={i} className="text-xs text-amber-800 py-0.5">
+                    • <span className="font-semibold">{l.empresa}</span> — há {l.days} dias sem ação
+                  </p>
+                ))}
+                {stalledLeads.length > 3 && (
+                  <button onClick={() => navigate("/pipeline")} className="text-xs font-semibold text-amber-700 mt-1 hover:underline">
+                    ver todos ({stalledLeads.length})
+                  </button>
                 )}
-                <button
-                  onClick={() => navigate("/clientes")}
-                  className="text-xs font-semibold text-[#0a1564] hover:text-[#0a1564]/80 mt-2 flex items-center gap-1 transition-colors"
-                >
-                  Ver clientes <ArrowRight className="h-3 w-3" />
-                </button>
               </div>
             )}
+          </>
+        ) : (
+          /* ═══════════════ TAB 2 — VISÃO OPERACIONAL ═══════════════ */
+          <>
+            {/* Row 1 — 5 KPIs */}
+            <div className="bg-white rounded-lg shadow-sm flex divide-x divide-gray-100" style={{ height: 72 }}>
+              <KPICell label="Clientes ativos" value={opClientes} color="text-[#0a1564]" />
+              <KPICell label="Compensado total" value={opCompensado} color="text-[#166534]" format="currency" bold />
+              <KPICell label="Honorários gerados" value={opHonorarios} color="text-[#166534]" format="currency" />
+              <KPICell label="Economia líquida clientes" value={opEconomia} color="text-[#166534]" format="currency" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex-1 min-w-[120px] px-4 flex flex-col justify-center cursor-help">
+                      <p className="text-xl font-extrabold text-[#c8001e]" style={{ fontVariantNumeric: "tabular-nums" }}>
+                        {compactCurrency(opSaldo)}
+                      </p>
+                      <p className="text-[11px] text-gray-500 leading-tight flex items-center gap-1">
+                        Saldo de créditos <Info className="h-3 w-3 text-gray-400" />
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs max-w-[240px]">Total de créditos identificados ainda não compensados na carteira ativa.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
-            {/* Motor performance */}
-            {showLeads && !loading && (
-              <div className="bg-[#0a1564] rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] px-5 py-4">
-                <p className="text-[10px] font-semibold text-white/60 uppercase tracking-widest mb-3">Performance do Motor</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <p className="text-xl font-extrabold text-white"><AnimatedNumber value={motorStats.totalDiag} /></p>
-                    <p className="text-[10px] text-white/60">Diagnósticos</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-extrabold text-white"><AnimatedNumber value={motorStats.lpLeads30d} /></p>
-                    <p className="text-[10px] text-white/60">Leads LP 30d</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-extrabold text-white"><AnimatedNumber value={motorStats.conversionRate} /></p>
-                    <p className="text-[10px] text-white/60">Conversão %</p>
-                  </div>
+            {/* Row 2 — Monthly chart */}
+            <div className="bg-white rounded-lg shadow-sm px-5 py-4">
+              <p className="text-sm font-bold text-gray-900 mb-1">Evolução mensal — compensações realizadas</p>
+              {monthlyBars.length === 0 ? (
+                <p className="text-xs text-gray-400 py-8 text-center">Nenhuma compensação registrada. Importe dados ou registre manualmente em Clientes.</p>
+              ) : (
+                <div className="h-[220px] mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyBars} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => compactCurrency(v)} width={70} />
+                      <RechartsTooltip formatter={(v: number) => fullCurrency(v)} labelFormatter={(l) => l} />
+                      <Bar dataKey="valor" radius={[4, 4, 0, 0]} maxBarSize={48} label={{ position: "top", fontSize: 10, fill: "#374151", formatter: (v: number) => compactCurrency(v) }}>
+                        {monthlyBars.map((_, i) => (
+                          <Cell key={i} fill={i === monthlyBars.length - 1 ? "#1e3a8a" : "#0a1564"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Row 3 — Rankings */}
+            <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-4">
+              {/* LEFT — Top compensado */}
+              <div className="bg-white rounded-lg shadow-sm px-5 py-4">
+                <p className="text-sm font-bold text-gray-900 mb-3">Ranking de compensações</p>
+                <div className="space-y-0">
+                  {topCompensado.map((c, i) => {
+                    const ratio = c.identificado > 0 ? (c.compensado / c.identificado) * 100 : 0;
+                    return (
+                      <div
+                        key={c.id}
+                        className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
+                        onClick={() => navigate(`/clientes/${c.id}`)}
+                      >
+                        <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
+                        <span className="text-xs font-semibold text-gray-900 truncate flex-1">{c.empresa}</span>
+                        <span className="text-xs font-bold text-[#166534] w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
+                        <span className={`text-[10px] font-semibold w-20 text-right ${c.saldo > 500000 ? "text-[#c8001e]" : "text-gray-400"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
+                          {compactCurrency(c.saldo)}
+                        </span>
+                        <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#166534] rounded-full" style={{ width: `${Math.min(ratio, 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {topCompensado.length === 0 && <p className="text-xs text-gray-400 py-4 text-center">Nenhuma compensação registrada.</p>}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* SECTION 4 — Bottom strip */}
-        <div className="bg-white rounded-[10px] shadow-[0_1px_3px_rgba(0,0,0,0.08)] h-16 flex items-center divide-x divide-gray-100">
-          <div className="flex-1 text-center">
-            <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Clientes na carteira</p>
-            <p className="text-lg font-extrabold text-gray-900">{bottomStats.clientes}</p>
-          </div>
-          <div className="flex-1 text-center">
-            <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Teses configuradas</p>
-            <p className="text-lg font-extrabold text-gray-900">{bottomStats.teses}</p>
-          </div>
-          <div className="flex-1 text-center">
-            <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Combinações cobertas</p>
-            <p className="text-lg font-extrabold text-gray-900">{bottomStats.combinacoes}</p>
-          </div>
-        </div>
+              {/* RIGHT — Top saldo */}
+              <div className="bg-white rounded-lg shadow-sm px-5 py-4">
+                <p className="text-sm font-bold text-gray-900 mb-0.5">Maior saldo a compensar</p>
+                <p className="text-[11px] text-gray-400 mb-3">Priorize esses clientes</p>
+                <div className="space-y-0">
+                  {topSaldo.map(c => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
+                      onClick={() => navigate(`/clientes/${c.id}`)}
+                    >
+                      <span className="text-xs font-semibold text-gray-900 truncate flex-1">{c.empresa}</span>
+                      <div className="text-right ml-2">
+                        <p className="text-xs font-bold text-[#c8001e]" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.saldo)}</p>
+                        <p className="text-[10px] text-gray-400" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.identificado)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {topSaldo.length === 0 && <p className="text-xs text-gray-400 py-4 text-center">Nenhum saldo pendente.</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4 — Current month strip */}
+            <div className="bg-white rounded-lg shadow-sm h-14 flex items-center px-5">
+              {currentMonthComp > 0 ? (
+                <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  <span className="text-gray-500">Compensado em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthComp)}</span></span>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500">Honorários em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthHon)}</span></span>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500">Clientes com compensação: <span className="font-bold text-gray-900">{currentMonthClientes}</span></span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="h-2 w-2 rounded-full bg-orange-400" />
+                  Nenhuma compensação registrada em <span className="capitalize">{currentMonth}</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Shared KPI Cell ─── */
+function KPICell({ label, value, color, format: fmt, bold }: {
+  label: string; value: number; color: string; format?: "currency"; bold?: boolean;
+}) {
+  return (
+    <div className="flex-1 min-w-[120px] px-4 flex flex-col justify-center">
+      <p className={`text-xl ${bold ? "font-extrabold" : "font-bold"} ${color}`} style={{ fontVariantNumeric: "tabular-nums" }}>
+        {fmt === "currency" ? compactCurrency(value) : <AnimatedNumber value={value} />}
+      </p>
+      <p className="text-[11px] text-gray-500 leading-tight truncate">{label}</p>
     </div>
   );
 }
