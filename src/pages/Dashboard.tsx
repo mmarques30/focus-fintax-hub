@@ -534,20 +534,13 @@ export default function Dashboard() {
 
             {/* Row 4 — Current month strip */}
             <div className="bg-white rounded-lg shadow-sm h-14 flex items-center px-5">
-              {currentMonthComp > 0 ? (
-                <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
-                  <span className="text-gray-500">Compensado em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthComp)}</span></span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">Honorários em <span className="capitalize">{currentMonth}</span>: <span className="font-bold text-gray-900">{fullCurrency(currentMonthHon)}</span></span>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-500">Clientes com compensação: <span className="font-bold text-gray-900">{currentMonthClientes}</span></span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="h-2 w-2 rounded-full bg-orange-400" />
-                  Nenhuma compensação registrada em <span className="capitalize">{currentMonth}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-6 text-xs" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <span className="text-gray-500">{opClientes} clientes na carteira</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500"><span className="font-bold text-gray-900">{compactCurrency(opCompensado)}</span> compensados</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500"><span className="font-bold text-[#c8001e]">{compactCurrency(opSaldo)}</span> saldo disponível</span>
+              </div>
             </div>
           </>
         )}
