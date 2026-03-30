@@ -13,6 +13,7 @@ import UserManagement from "@/pages/UserManagement";
 import LeadQueue from "@/pages/LeadQueue";
 import LeadForm from "@/pages/LeadForm";
 import LeadReport from "@/pages/LeadReport";
+import Pipeline from "@/pages/Pipeline";
 import Benchmarks from "@/pages/Benchmarks";
 import Clientes from "@/pages/Clientes";
 import Diagnostico from "@/pages/Diagnostico";
