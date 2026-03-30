@@ -266,7 +266,7 @@ export default function ClienteDetail() {
             <ProcessosTesesTab clienteId={id!} compensacoesTotal={compensacoesTotal} />
           </TabsContent>
           <TabsContent value="compensacoes">
-            <CompensacoesTab clienteId={id!} onTotalChange={setCompensacoesTotal} />
+            <CompensacoesTab clienteId={id!} cliente={cliente} onTotalChange={setCompensacoesTotal} />
           </TabsContent>
           <TabsContent value="resumo">
             <ResumoFinanceiroTab clienteId={id!} />
