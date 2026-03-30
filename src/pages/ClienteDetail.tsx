@@ -232,22 +232,35 @@ export default function ClienteDetail() {
 
       {/* Main */}
       <div className="flex-1 p-6 overflow-y-auto">
-        <Tabs defaultValue="processos">
-          <TabsList>
-            <TabsTrigger value="processos">Processos por Tese</TabsTrigger>
-            <TabsTrigger value="compensacoes">Compensações</TabsTrigger>
-            <TabsTrigger value="resumo">Resumo Financeiro</TabsTrigger>
-          </TabsList>
-          <TabsContent value="processos">
-            <ProcessosTesesTab clienteId={id!} compensacoesTotal={compensacoesTotal} />
-          </TabsContent>
-          <TabsContent value="compensacoes">
-            <CompensacoesTab clienteId={id!} cliente={cliente} onTotalChange={setCompensacoesTotal} />
-          </TabsContent>
-          <TabsContent value="resumo">
-            <ResumoFinanceiroTab clienteId={id!} />
-          </TabsContent>
-        </Tabs>
+        {(() => {
+          const canTab = (key: string) => {
+            const p = permissions.find((pp) => pp.screen_key === key);
+            return !p || p.can_access;
+          };
+          const tabs = [
+            { value: "processos", label: "Processos por Tese", key: "clientes.processos" },
+            { value: "compensacoes", label: "Compensações", key: "clientes.compensacoes" },
+            { value: "resumo", label: "Resumo Financeiro", key: "clientes.resumo" },
+          ].filter((t) => canTab(t.key));
+          if (tabs.length === 0) return <p className="text-muted-foreground text-sm">Nenhuma aba disponível.</p>;
+          const defaultVal = tabs[0].value;
+          return (
+            <Tabs defaultValue={defaultVal}>
+              <TabsList>
+                {tabs.map((t) => <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>)}
+              </TabsList>
+              {tabs.some((t) => t.value === "processos") && (
+                <TabsContent value="processos"><ProcessosTesesTab clienteId={id!} compensacoesTotal={compensacoesTotal} /></TabsContent>
+              )}
+              {tabs.some((t) => t.value === "compensacoes") && (
+                <TabsContent value="compensacoes"><CompensacoesTab clienteId={id!} cliente={cliente} onTotalChange={setCompensacoesTotal} /></TabsContent>
+              )}
+              {tabs.some((t) => t.value === "resumo") && (
+                <TabsContent value="resumo"><ResumoFinanceiroTab clienteId={id!} /></TabsContent>
+              )}
+            </Tabs>
+          );
+        })()}
       </div>
 
       {/* Mapa Tributário Modal */}

@@ -345,13 +345,15 @@ export default function Dashboard() {
       </div>
 
       {/* ═══ Tab Switcher ═══ */}
-      <div style={{ display: "flex", justifyContent: "center", background: "var(--dash-surface)", borderBottom: "1px solid var(--dash-border)" }}>
-        {[{ key: "comercial", label: "Visão Comercial" }, { key: "operacional", label: "Visão Operacional" }].map(t => (
-          <button key={t.key} onClick={() => switchTab(t.key)} style={{ padding: "14px 28px", fontSize: 13, fontWeight: activeTab === t.key ? 600 : 500, color: activeTab === t.key ? "var(--navy)" : "var(--ink-60)", cursor: "pointer", borderBottom: activeTab === t.key ? "2px solid var(--navy)" : "2px solid transparent", background: "none", border: "none", borderBottomWidth: 2, borderBottomStyle: "solid", borderBottomColor: activeTab === t.key ? "var(--navy)" : "transparent", ...fontBarlow }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {canComercial && canOperacional && (
+        <div style={{ display: "flex", justifyContent: "center", background: "var(--dash-surface)", borderBottom: "1px solid var(--dash-border)" }}>
+          {[{ key: "comercial", label: "Visão Comercial" }, { key: "operacional", label: "Visão Operacional" }].map(t => (
+            <button key={t.key} onClick={() => switchTab(t.key)} style={{ padding: "14px 28px", fontSize: 13, fontWeight: activeTab === t.key ? 600 : 500, color: activeTab === t.key ? "var(--navy)" : "var(--ink-60)", cursor: "pointer", borderBottom: activeTab === t.key ? "2px solid var(--navy)" : "2px solid transparent", background: "none", border: "none", borderBottomWidth: 2, borderBottomStyle: "solid", borderBottomColor: activeTab === t.key ? "var(--navy)" : "transparent", ...fontBarlow }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ padding: "18px 28px 36px", maxWidth: 1400, margin: "0 auto" }}>
         {loading ? (
