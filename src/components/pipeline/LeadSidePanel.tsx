@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight } from "lucide-react";
+import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
 import type { PipelineLead } from "@/pages/Pipeline";
