@@ -45,9 +45,11 @@ const SEGMENTOS = [
 ];
 
 const FATURAMENTO_FAIXAS = [
-  { value: "ate_2m", label: "Até R$ 2M/mês", midpoint: 1_000_000 },
-  { value: "2m_15m", label: "R$ 2M–15M/mês", midpoint: 3_500_000 },
-  { value: "acima_15m", label: "Acima R$ 15M/mês", midpoint: 20_000_000 },
+  { value: "ate_500k", label: "Até R$ 500 mil", midpoint: 250_000 },
+  { value: "500k_2m", label: "R$ 500 mil – R$ 2M", midpoint: 1_250_000 },
+  { value: "2m_5m", label: "R$ 2M – R$ 5M", midpoint: 3_500_000 },
+  { value: "5m_15m", label: "R$ 5M – R$ 15M", midpoint: 10_000_000 },
+  { value: "acima_15m", label: "Acima R$ 15M", midpoint: 20_000_000 },
 ];
 
 const emptyTese: Omit<TeseConfig, "id" | "atualizado_em" | "atualizado_por"> = {
@@ -78,7 +80,7 @@ export default function MotorConfig() {
 
   const [simSegmento, setSimSegmento] = useState("supermercado");
   const [simRegime, setSimRegime] = useState("lucro_real");
-  const [simFaturamento, setSimFaturamento] = useState("ate_2m");
+  const [simFaturamento, setSimFaturamento] = useState("ate_500k");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));

@@ -1,7 +1,9 @@
 export const FATURAMENTO_FAIXAS = [
-  { value: "ate_2m", label: "Até R$ 2 milhões (Pequeno)" },
-  { value: "2m_15m", label: "De R$ 2M a R$ 15 milhões (Médio)" },
-  { value: "acima_15m", label: "Acima de R$ 15 milhões (Grande)" },
+  { value: "ate_500k", label: "Até R$ 500 mil" },
+  { value: "500k_2m", label: "R$ 500 mil – R$ 2 milhões" },
+  { value: "2m_5m", label: "R$ 2 milhões – R$ 5 milhões" },
+  { value: "5m_15m", label: "R$ 5 milhões – R$ 15 milhões" },
+  { value: "acima_15m", label: "Acima de R$ 15 milhões" },
 ] as const;
 
 export const REGIMES = [
@@ -42,7 +44,9 @@ export const LEAD_STATUS_COLORS: Record<string, string> = {
 
 // Map faixa to approximate annual revenue for calculation
 export const FATURAMENTO_VALORES: Record<string, number> = {
-  "ate_2m": 24_000_000,
-  "2m_15m": 102_000_000,
+  "ate_500k": 6_000_000,
+  "500k_2m": 15_000_000,
+  "2m_5m": 42_000_000,
+  "5m_15m": 120_000_000,
   "acima_15m": 300_000_000,
 };

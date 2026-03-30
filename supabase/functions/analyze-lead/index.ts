@@ -14,15 +14,19 @@ const REGIME_MAP: Record<string, string> = {
 };
 
 const FATURAMENTO_MIDPOINTS: Record<string, number> = {
-  "ate_2m": 1_000_000,
-  "2m_15m": 3_500_000,
+  "ate_500k": 250_000,
+  "500k_2m": 1_250_000,
+  "2m_5m": 3_500_000,
+  "5m_15m": 10_000_000,
   "acima_15m": 20_000_000,
 };
 
 const FATURAMENTO_LABELS: Record<string, string> = {
-  "ate_2m": "Até R$ 2 milhões/mês (Pequeno)",
-  "2m_15m": "De R$ 2M a R$ 15 milhões/mês (Médio)",
-  "acima_15m": "Acima de R$ 15 milhões/mês (Grande)",
+  "ate_500k": "Até R$ 500 mil",
+  "500k_2m": "R$ 500 mil – R$ 2 milhões",
+  "2m_5m": "R$ 2 milhões – R$ 5 milhões",
+  "5m_15m": "R$ 5 milhões – R$ 15 milhões",
+  "acima_15m": "Acima de R$ 15 milhões",
 };
 
 const SEGMENTO_LABELS: Record<string, string> = {
