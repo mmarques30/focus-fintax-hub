@@ -1,24 +1,46 @@
 
 
-## Instalar Google Tag de conversão na landing page
+## Ajustar estrutura interna — navegação, perfis e paleta
 
-### Mudança em `public/lp.html`
+O sistema já possui a maior parte da estrutura (login, sidebar, rotas protegidas, roles). As mudanças são ajustes pontuais.
 
-Adicionar o script do Google Tag (gtag.js) no `<head>` do arquivo, antes do fechamento `</head>`:
+### O que já existe e será mantido
+- Login minimalista em `/auth` (email, senha, recuperação)
+- Sidebar colapsável com hover
+- Rotas protegidas via `ProtectedRoute`
+- Roles: admin, pmo, gestor_tributario, comercial, cliente
+- Sem cadastro público
 
-```html
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18023300272"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'AW-18023300272');
-</script>
-```
+### Mudanças necessárias
 
-Também adicionar no `index.html` (pois a rota `/` é servida pelo React que carrega o `lp.html` via fetch, e scripts injetados via innerHTML nem sempre executam corretamente). Colocar no `<head>` do `index.html` garante que o gtag carregue em todas as páginas.
+**1. Renomear e adicionar itens na sidebar** (`src/components/AppSidebar.tsx`)
+- "Leads" → "Pipeline de Leads" (url `/leads`)
+- "Benchmarks" → "Benchmarks e Teses" (url `/benchmarks`)
+- Adicionar "Clientes" (url `/clientes`, ícone `Building2`)
+
+**2. Atualizar permissões por role na sidebar**
+| Seção | admin | comercial | gestor_tributario | pmo |
+|---|---|---|---|---|
+| Dashboard | ✓ | ✓ | ✓ | ✓ |
+| Pipeline de Leads | ✓ | ✓ | — | ✓ |
+| Clientes | ✓ | — | ✓ | ✓ |
+| Benchmarks e Teses | ✓ | — | — | — |
+| Usuários | ✓ | — | — | ✓ |
+
+**3. Criar página placeholder Clientes** (`src/pages/Clientes.tsx`)
+- Página simples com título e mensagem "Em construção"
+- Será expandida em prompts futuros
+
+**4. Adicionar rota `/clientes`** (`src/App.tsx`)
+
+**5. Ajustar cor primária para `#0a1a6e`** (`src/index.css`)
+- `--primary`: de `233 97% 21%` para `233 83% 24%`
+- `--sidebar-background`: mesma atualização
+- Ajustar `--sidebar-accent` proporcionalmente
 
 ### Arquivos alterados
-1. `index.html` — adicionar gtag no `<head>`
-2. `public/lp.html` — adicionar gtag no `<head>`
+1. `src/components/AppSidebar.tsx` — nomes, ícone, roles
+2. `src/App.tsx` — rota `/clientes`
+3. `src/pages/Clientes.tsx` — novo arquivo placeholder
+4. `src/index.css` — ajuste de cor primária
 
