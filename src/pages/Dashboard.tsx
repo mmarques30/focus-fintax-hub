@@ -493,8 +493,9 @@ export default function Dashboard() {
                         onClick={() => navigate(`/clientes/${c.id}`)}
                       >
                         <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
-                        <span className="text-xs font-semibold text-gray-900 truncate flex-1">{c.empresa}</span>
-                        <span className="text-xs font-bold text-[#166534] w-24 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
+                        <span className="text-xs font-semibold text-gray-900 truncate flex-1" style={{ maxWidth: 160 }}>{c.empresa.length > 22 ? c.empresa.slice(0, 22) + "…" : c.empresa}</span>
+                        <span className="text-xs font-bold text-[#166534] w-20 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.compensado)}</span>
+                        <span className="text-[10px] font-medium text-[#0a1564] w-16 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{compactCurrency(c.honorarios)}</span>
                         <span className={`text-[10px] font-semibold w-20 text-right ${c.saldo > 500000 ? "text-[#c8001e]" : "text-gray-400"}`} style={{ fontVariantNumeric: "tabular-nums" }}>
                           {compactCurrency(c.saldo)}
                         </span>
