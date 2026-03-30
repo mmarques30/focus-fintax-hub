@@ -1,76 +1,38 @@
 
 
-## Mapa Tributário (PDF) + Comunicado WhatsApp
+## Dashboard Visão Operacional — Dados reais
 
-### Resumo
-Duas features na aba Compensações do `/clientes/:id`: (1) Mapa Tributário PDF com layout formal por mês, (2) Comunicado WhatsApp com cálculo de honorários. Inclui migration para coluna `tributo` na tabela `compensacoes_mensais`.
+### Arquivo alterado
+`src/pages/Dashboard.tsx` — atualizar queries e visual da tab operacional
 
-### Arquivos alterados
+### Mudanças
 
-**1. Migration — adicionar coluna `tributo`**
-```sql
-ALTER TABLE compensacoes_mensais ADD COLUMN tributo text;
-```
+**1. Queries ajustadas no `fetchData`** (linhas 202-258)
 
-**2. `src/components/clientes/CompensacoesTab.tsx`**
-- Adicionar dois botões no header ao lado de "Registrar compensação": "Gerar Mapa Tributário" (FileText icon) e "Comunicado WhatsApp" (MessageCircle icon, green)
-- Receber `cliente` como prop (empresa, cnpj) para usar nos modais
-- Receber `processos` e `compensacoes` dos dados já carregados (ou fazer fetch com dados extras: `percentual_honorario`, `valor_credito` do processo)
-- Ajustar query de compensacoes para incluir `tributo`
-- No formulário de registro de compensação, adicionar campo opcional "Tributo" (Select com opções: INSS, PIS/COFINS, IRPJ, CSLL, Outros — ou input livre)
-- No insert, incluir `tributo`
-- Na tabela, adicionar coluna "Tributo" mostrando o valor
+- **Card 1**: Mudar de `clientes.status = 'ativo'` para `clientes.compensando_fintax = true` (label "Clientes compensando")
+- **Card 3 "Honorários"**: Já usa `valor_nf_servico` — correto
+- **Card 5 "Saldo"**: Mudar cálculo para usar `clientes.total_credito_identificado - clientes.total_compensado` direto da tabela `clientes` (porém essas colunas não existem no schema). Manter cálculo atual via `processos_teses.valor_credito - sum(compensacoes)`.
+- **Monthly bars**: Mudar para grouped bars — coletar tanto `valor_compensado` quanto `valor_nf_servico` por mês. Novo tipo: `{ month, label, valor, honorarios }`
+- **Top compensado**: Adicionar `honorarios` por cliente (sum `valor_nf_servico` grouped by `cliente_id`)
+- **Tooltip do saldo**: Mudar texto para "Créditos identificados ainda não compensados — potencial de honorários futuros"
 
-**Modal Mapa Tributário:**
-- Month selector mostrando meses distintos das compensacoes do cliente
-- Ao selecionar mês, renderizar report HTML dentro do modal com `id="mapa-tributario-pdf"`
-- Layout conforme especificado:
-  - **Cover page**: bg navy `#0a1564`, "GRUPO FOCUS", "Focus FinTax", "MAPA TRIBUTÁRIO DAS COMPENSAÇÕES" — `page-break-after: always`
-  - **Report page**: header com logo Focus FinTax
-  - Section 1 "IDENTIFICAÇÃO DO CONTRIBUINTE": empresa + CNPJ
-  - Section 2 "DADOS GERAIS DO TRABALHO": tabela 2 colunas com header navy — escopo, competência, modalidade, valor total benefício, valor utilizado, saldo futuro (calculado como `valor_credito - sum(compensações até o mês selecionado)`)
-  - Section 3 "DÉBITOS COMPENSADOS": tabela com Tributo, Cód. DARF, Valor Débito, Multa, Juros — usar `tributo` ou observacao ou default "INSS"
-  - Section 4 "CONTROLE DOS CRÉDITOS": créditos apurados, utilizados (acumulado até o mês), a compensar, saldo final
-  - Section 5 "RESUMO DE COMPLIANCE FISCAL": conteúdo dinâmico baseado no nome da tese (subvenção vs. outros)
-  - Section 6 "CONSIDERAÇÕES FINAIS": texto estático
-  - Footer: "GRUPO FOCUS FINTAX"
-- Botão "Baixar PDF" → `window.print()`
-- Se o cliente tem múltiplos processos com compensações no mês, gerar seções 2-5 para cada processo separadamente
+**2. MonthBar type** (linha 98)
+Adicionar `honorarios: number` ao tipo
 
-**Modal Comunicado WhatsApp:**
-- Month selector (mesmos meses disponíveis)
-- Ao selecionar mês, mostrar preview do texto gerado com cálculos:
-  - `honorario = valor_compensado × percentual_honorario`
-  - `economia = valor_compensado - honorario`
-  - tributo: usar campo `tributo`, ou `observacao`, ou default "INSS"
-  - Mês em português maiúsculo
-- Mostrar "Honorários calculados: R$ X,XX" inline
-- Botão "Copiar mensagem" → `navigator.clipboard.writeText()` + toast "Copiado!"
-- Sem boleto ou instrução bancária além do Pix
+**3. Chart — grouped bar** (linhas 458-473)
+- Adicionar segunda `<Bar>` para honorários: `dataKey="honorarios"`, fill `#c8001e`, maxBarSize 32, radius
+- Navy bar = `valor` (compensado), red bar = `honorarios`
+- Labels de valor em cima de cada barra
+- Y axis formatter em "R$ mil"
 
-**3. `src/index.css`**
-- Atualizar `@media print` para incluir `#mapa-tributario-pdf` com `print-color-adjust: exact` para preservar backgrounds navy
-- Adicionar `page-break` rules
+**4. KPI "Clientes compensando"** (linha 429)
+Mudar label e query
 
-**4. `src/pages/ClienteDetail.tsx`**
-- Remover o modal Mapa Tributário antigo (linhas 278-406) que será substituído pelo novo dentro do CompensacoesTab
-- Remover botão "Gerar Mapa Tributário" da sidebar (será na aba Compensações)
-- Passar `cliente` como prop para `CompensacoesTab`
-- Manter botão Laratex na sidebar
+**5. Top compensado table** (linhas 480-503)
+Adicionar coluna honorários em navy small entre compensado e saldo
 
-### Dados necessários no CompensacoesTab
-- Query processos_teses expandida: `id, nome_exibicao, tese, valor_credito, percentual_honorario`
-- Query compensacoes expandida: incluir `tributo` no select
-- Meses disponíveis: `[...new Set(compensacoes.map(c => c.mes_referencia.slice(0,7)))]` ordenados desc
+**6. Bottom strip** (linhas 530-545)
+Mudar para: "27 clientes na carteira" / "R$ 8,1mi compensados" / "R$ 17,8mi saldo disponível" — usar valores dinâmicos
 
-### Print CSS additions
-```css
-#mapa-tributario-pdf, #mapa-tributario-pdf * {
-  visibility: visible;
-}
-#mapa-tributario-pdf {
-  position: absolute; left: 0; top: 0; width: 100%;
-  print-color-adjust: exact; -webkit-print-color-adjust: exact;
-}
-```
+### Sem migration — usa tabelas existentes
 
