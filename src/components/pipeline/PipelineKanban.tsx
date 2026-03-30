@@ -16,7 +16,7 @@ interface Props {
   exceptionLeadIds?: Set<string>;
 }
 
-export function PipelineKanban({ leads, onLeadClick, onRefresh }: Props) {
+export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds = new Set() }: Props) {
   const { user } = useAuth();
   const [convertLead, setConvertLead] = useState<PipelineLead | null>(null);
 
