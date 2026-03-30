@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, CheckCircle2, AlertTriangle, AlertOctagon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Building2, Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer } from "lucide-react";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
@@ -19,6 +21,7 @@ export default function ClientesList() {
   const [compensacoes, setCompensacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -26,8 +29,8 @@ export default function ClientesList() {
   const fetchAll = async () => {
     const [{ data: c }, { data: p }, { data: comp }] = await Promise.all([
       supabase.from("clientes").select("*").order("criado_em", { ascending: false }),
-      supabase.from("processos_teses").select("id, cliente_id, valor_credito, status_contrato, status_processo, criado_em, atualizado_em"),
-      supabase.from("compensacoes_mensais").select("cliente_id, valor_compensado"),
+      supabase.from("processos_teses").select("id, cliente_id, valor_credito, status_contrato, status_processo, criado_em, atualizado_em, tese, nome_exibicao"),
+      supabase.from("compensacoes_mensais").select("cliente_id, valor_compensado, processo_tese_id"),
     ]);
     setClientes(c || []);
     setProcessos(p || []);
@@ -73,6 +76,27 @@ export default function ClientesList() {
   if (filterStatus === "compensando") filtered = filtered.filter((c) => c.compensando_fintax);
   else if (filterStatus !== "all") filtered = filtered.filter((c) => c.status === filterStatus);
 
+  // Report data
+  const reportClientes = [...allStats].sort((a, b) => b.totalCredito - a.totalCredito);
+  const reportDate = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+  // Breakdown por tese
+  const teseBreakdown = (() => {
+    const assinados = processos.filter((p) => p.status_contrato === "assinado");
+    const map: Record<string, { nome: string; clientes: Set<string>; identificado: number; compensado: number }> = {};
+    assinados.forEach((p) => {
+      const key = p.tese || p.nome_exibicao;
+      if (!map[key]) map[key] = { nome: p.nome_exibicao || p.tese, clientes: new Set(), identificado: 0, compensado: 0 };
+      map[key].clientes.add(p.cliente_id);
+      map[key].identificado += Number(p.valor_credito || 0);
+      // sum compensações for this processo
+      map[key].compensado += compensacoes
+        .filter((c) => c.processo_tese_id === p.id)
+        .reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
+    });
+    return Object.values(map).sort((a, b) => b.identificado - a.identificado);
+  })();
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -82,7 +106,12 @@ export default function ClientesList() {
           <h1 className="text-2xl font-bold">Clientes Ativos</h1>
           <Badge variant="secondary">{totalClientes}</Badge>
         </div>
-        <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setReportOpen(true)}>
+            <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
+          </Button>
+          <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -155,6 +184,137 @@ export default function ClientesList() {
       </Table>
 
       <ClienteFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={fetchAll} />
+
+      {/* Report Modal */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-[95vw] h-[90vh] overflow-auto print:max-w-full print:h-auto print:shadow-none print:border-none">
+          <DialogHeader className="print:hidden">
+            <div className="flex items-center justify-between">
+              <DialogTitle>Relatório da Carteira</DialogTitle>
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div id="report-content" className="space-y-6 print:space-y-4">
+            {/* Title */}
+            <div className="text-center border-b pb-4">
+              <h2 className="text-xl font-bold text-foreground">Carteira Focus FinTax — Visão Consolidada</h2>
+              <p className="text-sm text-muted-foreground mt-1">{reportDate}</p>
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-4 gap-3">
+              <Card><CardContent className="p-3 text-center">
+                <p className="text-xs text-muted-foreground">Total Clientes</p>
+                <p className="text-lg font-bold">{totalClientes}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-3 text-center">
+                <p className="text-xs text-muted-foreground">Total Identificado</p>
+                <p className="text-lg font-bold text-primary">{formatCurrencyBR(globalCredito)}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-3 text-center">
+                <p className="text-xs text-muted-foreground">Total Compensado</p>
+                <p className="text-lg font-bold text-green-700">{formatCurrencyBR(globalCompensado)}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-3 text-center">
+                <p className="text-xs text-muted-foreground">Saldo Total</p>
+                <p className="text-lg font-bold text-amber-600">{formatCurrencyBR(globalCredito - globalCompensado)}</p>
+              </CardContent></Card>
+            </div>
+
+            {/* Client Table */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2 text-foreground">Por Cliente</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>CNPJ</TableHead>
+                    <TableHead className="text-center">Teses</TableHead>
+                    <TableHead className="text-right">Identificado</TableHead>
+                    <TableHead className="text-right">Compensado</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead className="w-[140px]">% Recuperado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportClientes.map((c) => {
+                    const pct = c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) : 0;
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium text-sm">{c.empresa}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{c.cnpj}</TableCell>
+                        <TableCell className="text-center">{c.tesesAtivas}</TableCell>
+                        <TableCell className="text-right text-sm">{formatCurrencyBR(c.totalCredito)}</TableCell>
+                        <TableCell className="text-right text-sm">{formatCurrencyBR(c.totalCompensado)}</TableCell>
+                        <TableCell className="text-right text-sm">{formatCurrencyBR(c.saldo)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={pct} className="h-2 flex-1" />
+                            <span className="text-xs text-muted-foreground w-8 text-right">{pct}%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="font-bold">
+                    <TableCell colSpan={3}>Total Geral</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(globalCredito)}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(globalCompensado)}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(globalCredito - globalCompensado)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={globalCredito > 0 ? Math.round((globalCompensado / globalCredito) * 100) : 0} className="h-2 flex-1" />
+                        <span className="text-xs w-8 text-right">{globalCredito > 0 ? Math.round((globalCompensado / globalCredito) * 100) : 0}%</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+
+            {/* Breakdown por tese */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2 text-foreground">Por Tese</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tese</TableHead>
+                    <TableHead className="text-center">Clientes</TableHead>
+                    <TableHead className="text-right">Identificado</TableHead>
+                    <TableHead className="text-right">Compensado</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {teseBreakdown.map((t, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium text-sm">{t.nome}</TableCell>
+                      <TableCell className="text-center">{t.clientes.size}</TableCell>
+                      <TableCell className="text-right text-sm">{formatCurrencyBR(t.identificado)}</TableCell>
+                      <TableCell className="text-right text-sm">{formatCurrencyBR(t.compensado)}</TableCell>
+                      <TableCell className="text-right text-sm">{formatCurrencyBR(t.identificado - t.compensado)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="font-bold">
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-center">—</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(teseBreakdown.reduce((s, t) => s + t.identificado, 0))}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(teseBreakdown.reduce((s, t) => s + t.compensado, 0))}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyBR(teseBreakdown.reduce((s, t) => s + (t.identificado - t.compensado), 0))}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
