@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 
 export default function ClientesList() {
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+  const isComercial = userRole === "comercial";
   const [clientes, setClientes] = useState<any[]>([]);
   const [processos, setProcessos] = useState<any[]>([]);
   const [compensacoes, setCompensacoes] = useState<any[]>([]);
@@ -107,10 +110,14 @@ export default function ClientesList() {
           <Badge variant="secondary">{totalClientes}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setReportOpen(true)}>
-            <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
-          </Button>
-          <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+          {!isComercial && (
+            <Button variant="outline" onClick={() => setReportOpen(true)}>
+              <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
+            </Button>
+          )}
+          {!isComercial && (
+            <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
+          )}
         </div>
       </div>
 
@@ -165,7 +172,7 @@ export default function ClientesList() {
           ) : filtered.length === 0 ? (
             <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
           ) : filtered.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/clientes/${c.id}`)}>
+            <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
               <TableCell className="font-medium">{c.empresa}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{c.cnpj}</TableCell>
               <TableCell className="text-sm">{SEGMENTO_LABELS[c.segmento] || c.segmento || "—"}</TableCell>

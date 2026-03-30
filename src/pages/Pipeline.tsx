@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Plus, LayoutGrid, List, Users, TrendingUp, AlertTriangle, Sparkles } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { ACTIVE_STAGES, daysSince, formatCurrency } from "@/lib/pipeline-constants";
 import { PipelineKanban } from "@/components/pipeline/PipelineKanban";
 import { PipelineList } from "@/components/pipeline/PipelineList";
@@ -36,6 +37,7 @@ export interface PipelineLead {
 }
 
 export default function Pipeline() {
+  const { userRole } = useAuth();
   const [leads, setLeads] = useState<PipelineLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"kanban" | "list">("kanban");
@@ -135,9 +137,11 @@ export default function Pipeline() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo Lead
-          </Button>
+          {userRole !== "gestor_tributario" && (
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo Lead
+            </Button>
+          )}
         </div>
       </div>
 

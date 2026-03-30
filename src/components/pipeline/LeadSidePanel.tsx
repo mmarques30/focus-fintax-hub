@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
+import { canEditLead } from "@/lib/role-permissions";
 import type { PipelineLead } from "@/pages/Pipeline";
 import { ConvertClientModal } from "./ConvertClientModal";
 
@@ -31,7 +32,9 @@ interface HistoricoEntry {
 }
 
 export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const isEditable = lead ? canEditLead(userRole, lead.status_funil) : false;
+  const isFullReadOnly = userRole === "gestor_tributario";
   const [obs, setObs] = useState("");
   const [historico, setHistorico] = useState<HistoricoEntry[]>([]);
   const [showConvert, setShowConvert] = useState(false);
@@ -196,19 +199,21 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Etapa</Label>
-                    <Select value={lead.status_funil} onValueChange={handleStageChange}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PIPELINE_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {!isFullReadOnly && isEditable && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Etapa</Label>
+                      <Select value={lead.status_funil} onValueChange={handleStageChange}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PIPELINE_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div>
                     <Label className="text-xs text-muted-foreground">Observações internas</Label>
-                    <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." />
+                    <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." disabled={isFullReadOnly} />
                   </div>
                 </TabsContent>
 
@@ -306,24 +311,26 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
               )}
 
               {/* Footer */}
-              <div className="border-t p-4 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
-                  <UserCheck className="h-4 w-4 mr-1" /> Converter
-                </Button>
-                {lead.status_funil === "contrato_emitido" && !showException && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
-                    onClick={() => setShowException(true)}
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+              {!isFullReadOnly && isEditable && (
+                <div className="border-t p-4 flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
+                    <UserCheck className="h-4 w-4 mr-1" /> Converter
                   </Button>
-                )}
-                <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
-                  <XCircle className="h-4 w-4 mr-1" /> Perdido
-                </Button>
-              </div>
+                  {lead.status_funil === "contrato_emitido" && !showException && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+                      onClick={() => setShowException(true)}
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
+                    <XCircle className="h-4 w-4 mr-1" /> Perdido
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>

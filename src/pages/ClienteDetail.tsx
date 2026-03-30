@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ import logoFintax from "@/assets/logo-focus-fintax.svg";
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
   const [cliente, setCliente] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
@@ -35,13 +37,18 @@ export default function ClienteDetail() {
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
+    if (userRole === "comercial") {
+      toast.error("Acesso restrito");
+      navigate("/clientes");
+      return;
+    }
     if (!id) return;
     supabase.from("clientes").select("*").eq("id", id).single().then(({ data, error }) => {
       if (error || !data) { navigate("/clientes"); return; }
       setCliente(data);
       setLoading(false);
     });
-  }, [id, navigate]);
+  }, [id, navigate, userRole]);
 
   const updateField = async (field: string, value: any) => {
     setCliente((prev: any) => ({ ...prev, [field]: value }));
