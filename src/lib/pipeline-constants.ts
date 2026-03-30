@@ -66,7 +66,7 @@ export const ORIGENS = [
 ] as const;
 
 export const ACTIVE_STAGES = PIPELINE_STAGES.filter(
-  (s) => s.value !== "perdido" && s.value !== "nao_vai_fazer"
+  (s) => s.value !== "perdido"
 );
 
 export function formatCurrency(value: number): string {
