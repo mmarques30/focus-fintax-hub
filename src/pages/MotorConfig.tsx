@@ -171,7 +171,7 @@ export default function MotorConfig() {
     return count;
   }, [coverageGrid]);
 
-  const coveredCount = 15 - uncoveredCount;
+  
 
   const activeTesesCount = teses.filter(t => t.ativo).length;
 
