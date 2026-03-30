@@ -161,15 +161,13 @@ function useStyles() {
       .dg-d7 { animation-delay: 0.7s; }
       .dg-d8 { animation-delay: 0.8s; }
       @media print {
+        @page { margin: 0; size: A4; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         .dg-page { background: #fff !important; }
-        .dg-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-hero-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-total-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-cta-section { display: none !important; }
-        .dg-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .dg-fade-up { opacity: 1 !important; animation: none !important; }
-        .dg-tese-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-disclaimer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-cta-section, .dg-cta-buttons { display: none !important; }
+        .dg-hero-img { height: 160px !important; }
+        *, *::before, *::after { transition: none !important; animation: none !important; }
       }
       @media (max-width: 600px) {
         .dg-total-inner { flex-direction: column !important; text-align: center !important; }
