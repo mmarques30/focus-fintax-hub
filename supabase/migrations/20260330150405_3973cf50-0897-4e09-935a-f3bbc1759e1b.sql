@@ -1,0 +1,1 @@
+ALTER TABLE compensacoes_mensais ADD COLUMN tributo text;

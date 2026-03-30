@@ -118,6 +118,7 @@ export type Database = {
           observacao: string | null
           processo_tese_id: string
           status_pagamento: string | null
+          tributo: string | null
           valor_compensado: number | null
           valor_nf_servico: number | null
         }
@@ -129,6 +130,7 @@ export type Database = {
           observacao?: string | null
           processo_tese_id: string
           status_pagamento?: string | null
+          tributo?: string | null
           valor_compensado?: number | null
           valor_nf_servico?: number | null
         }
@@ -140,6 +142,7 @@ export type Database = {
           observacao?: string | null
           processo_tese_id?: string
           status_pagamento?: string | null
+          tributo?: string | null
           valor_compensado?: number | null
           valor_nf_servico?: number | null
         }
