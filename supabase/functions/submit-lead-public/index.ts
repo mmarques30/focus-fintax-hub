@@ -91,51 +91,19 @@ serve(async (req) => {
       );
     }
 
-    // Fetch eligible teses from motor_teses_config
-    const { data: motorTeses } = await supabase
-      .from("motor_teses_config")
-      .select("*")
-      .eq("ativo", true)
-      .contains("regimes_elegiveis", [regimeKey])
-      .contains("segmentos_elegiveis", [segmentoDb])
-      .order("ordem_exibicao", { ascending: true });
-
+    // Call the RPC to calculate diagnostico
     const faturamentoMensal = FATURAMENTO_MIDPOINTS[faturamentoDb] || 1_000_000;
 
-    const teses = (motorTeses || []).map((t: any) => ({
-      tese_nome: t.nome_exibicao,
-      descricao_comercial: t.descricao_comercial || "",
-      ordem_exibicao: t.ordem_exibicao || 0,
-      estimativa_minima: Math.round(faturamentoMensal * 60 * t.percentual_min),
-      estimativa_maxima: Math.round(faturamentoMensal * 60 * t.percentual_max),
-      percentual_minimo: Number(t.percentual_min),
-      percentual_maximo: Number(t.percentual_max),
-    }));
-
-    const estimativa_total_minima = teses.reduce((s: number, t: any) => s + t.estimativa_minima, 0);
-    const estimativa_total_maxima = teses.reduce((s: number, t: any) => s + t.estimativa_maxima, 0);
-    const faturamentoAnual = faturamentoMensal * 12;
-    const score = Math.min(100, Math.round((estimativa_total_maxima / faturamentoAnual) * 100));
-
-    // Insert report
-    const { error: reportErr } = await supabase.from("relatorios_leads").insert({
-      lead_id: lead.id,
-      conteudo_html: "",
-      teses_identificadas: teses,
-      estimativa_total_minima,
-      estimativa_total_maxima,
-      score,
+    const { error: rpcErr } = await supabase.rpc("calcular_diagnostico", {
+      _lead_id: lead.id,
+      _faturamento_mensal: faturamentoMensal,
+      _regime: regimeKey,
+      _segmento: segmentoDb,
     });
 
-    if (reportErr) {
-      console.error("Report insert error:", reportErr);
+    if (rpcErr) {
+      console.error("calcular_diagnostico RPC error:", rpcErr);
     }
-
-    // Update lead status
-    await supabase
-      .from("leads")
-      .update({ status: "relatorio_gerado", score_lead: score })
-      .eq("id", lead.id);
 
     return new Response(
       JSON.stringify({ success: true, token: lead.token }),
