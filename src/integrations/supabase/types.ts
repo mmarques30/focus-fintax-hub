@@ -160,6 +160,53 @@ export type Database = {
           },
         ]
       }
+      diagnosticos_leads: {
+        Row: {
+          criado_em: string | null
+          descricao_comercial: string | null
+          estimativa_maxima: number | null
+          estimativa_minima: number | null
+          id: string
+          lead_id: string
+          ordem_exibicao: number | null
+          percentual_maximo: number | null
+          percentual_minimo: number | null
+          tese_nome: string
+        }
+        Insert: {
+          criado_em?: string | null
+          descricao_comercial?: string | null
+          estimativa_maxima?: number | null
+          estimativa_minima?: number | null
+          id?: string
+          lead_id: string
+          ordem_exibicao?: number | null
+          percentual_maximo?: number | null
+          percentual_minimo?: number | null
+          tese_nome: string
+        }
+        Update: {
+          criado_em?: string | null
+          descricao_comercial?: string | null
+          estimativa_maxima?: number | null
+          estimativa_minima?: number | null
+          id?: string
+          lead_id?: string
+          ordem_exibicao?: number | null
+          percentual_maximo?: number | null
+          percentual_minimo?: number | null
+          tese_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosticos_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_historico: {
         Row: {
           anotacao: string | null
@@ -465,6 +512,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_diagnostico: {
+        Args: {
+          _faturamento_mensal: number
+          _lead_id: string
+          _regime: string
+          _segmento: string
+        }
+        Returns: undefined
+      }
       get_diagnostico_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
