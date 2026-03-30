@@ -1,37 +1,44 @@
 
 
-## Mapa Tributário — Relatório PDF por cliente
+## Importar dados Laratex — CSV temporário
 
 ### Arquivo alterado
-`src/pages/ClienteDetail.tsx` — adicionar botão + modal + print styles
+`src/pages/ClienteDetail.tsx` — adicionar botão + modal de importação CSV
 
 ### Plano
 
-**1. Estado e dados**
-- `mapaOpen` state para controlar modal
-- Ao abrir modal, buscar `processos_teses` (select id, tese, nome_exibicao, valor_credito, percentual_honorario, valor_honorario, status_contrato) e `compensacoes_mensais` (select processo_tese_id, mes_referencia, valor_compensado, status_pagamento) para o cliente
-- Calcular totais: identificado (sum valor_credito onde status_contrato=assinado), compensado, saldo
+**1. Botão "Importar dados Laratex"** na sidebar, abaixo do botão "Gerar Mapa Tributário" (variant ghost, ícone Upload, texto menor)
 
-**2. Botão "Gerar Mapa Tributário"** na sidebar, abaixo do nome do cliente (ícone FileText, variant outline, destaque visual)
+**2. Estado**
+- `laratexOpen` — controla modal
+- `csvData` — array de rows parseados do CSV
+- `csvHeaders` — colunas detectadas
+- `columnMap` — mapeamento do usuário: `{ tese: colIndex, valor_credito: colIndex, mes_referencia: colIndex, valor_compensado: colIndex }`
+- `importing` — loading state
 
-**3. Modal fullscreen** (Dialog max-w-[900px] h-[90vh] overflow-auto, print-ready)
+**3. Modal** (Dialog max-w-[700px])
+- Título: "Importação temporária de dados — aguardando integração direta com Laratex"
+- Área de upload (`<input type="file" accept=".csv">`) estilizada como dropzone
+- Instrução: "Exporte os dados do cliente no Laratex em formato CSV e importe aqui."
 
-**4. Conteúdo do relatório** (div `id="mapa-tributario"`):
+**4. Fluxo após upload**
+- Parse CSV client-side (split por `;` ou `,`, detectar separador automaticamente pela primeira linha)
+- Mostrar preview table com primeiras 5 linhas + headers
+- 4 selects para mapear colunas: Tese, Valor Crédito, Mês Referência, Valor Compensado
+- Cada select lista os headers detectados + opção "— Ignorar —"
 
-- **Header**: Logo Focus FinTax (import existente `logo-focus-fintax.svg`) + título "Mapa Tributário — {empresa}" + CNPJ + data atual
-- **Section 1 "Oportunidades Identificadas"**: Table com Tese, Valor Identificado, % Honorários, Valor Honorários. Total row no footer. Apenas processos com status_contrato=assinado.
-- **Section 2 "Histórico de Compensações"**: Table com Mês, Tese, Valor Compensado, Status Pagamento. Agrupado por mês (mais recente primeiro). Join com processos_teses para nome da tese. Total compensado no footer.
-- **Section 3 "Resumo Executivo"**: 3 métricas lado a lado (Total Identificado / Total Compensado / Saldo). Frase: "Você já recuperou R$ X de um potencial de R$ Y. Saldo disponível para compensação: R$ Z."
-- **Footer**: "Focus FinTax · Grupo Focus · Documento gerado em [data]"
+**5. "Confirmar importação"**
+- Para cada row com tese mapeada e valor_credito: inserir em `processos_teses` (`cliente_id`, `tese`, `nome_exibicao`, `valor_credito`, `status_contrato: 'assinado'`)
+- Para cada row com mes_referencia e valor_compensado: inserir em `compensacoes_mensais` (`cliente_id`, `processo_tese_id`, `mes_referencia`, `valor_compensado`)
+- Lógica: primeiro inserir processos agrupados por tese (deduplica), depois inserir compensações vinculando ao processo_tese_id correto
+- Toast de sucesso com contagem
 
-**5. Botão "Baixar PDF"** no header do modal → `window.print()`
-
-**6. Print CSS**: Reutilizar o `@media print` já existente em `index.css` com target no `#mapa-tributario` (adicionar regra similar ao `#report-content` já implementado)
+**6. Nota no footer do modal**: "Esta importação será substituída pela integração automática com Laratex quando disponível." (texto muted, itálico)
 
 ### Imports adicionais
-- `FileText, Printer` de lucide-react
-- `Dialog, DialogContent, DialogHeader, DialogTitle` de ui/dialog
-- `Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow` de ui/table
-- `formatCurrencyBR` de clientes-constants
-- Logo SVG existente
+- `Upload` de lucide-react
+- `Select, SelectContent, SelectItem, SelectTrigger, SelectValue` de ui/select
+- `Input` de ui/input
+
+### Sem alterações no banco — usa tabelas existentes (`processos_teses`, `compensacoes_mensais`)
 
