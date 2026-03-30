@@ -358,7 +358,7 @@ export default function Dashboard() {
           />
         ) : (
           <OperationalTab
-            opClientes={opClientes} opCompensado={opCompensado} opHonorarios={opHonorarios}
+            opClientes={opClientes} opTotalAtivos={opTotalAtivos} opCompensado={opCompensado} opHonorarios={opHonorarios}
             opSaldo={opSaldo} opEconomia={opEconomia} monthlyBars={monthlyBars}
             topCompensado={topCompensado} topSaldo={topSaldo} navigate={navigate}
           />
