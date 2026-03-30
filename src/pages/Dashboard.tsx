@@ -443,7 +443,7 @@ export default function Dashboard() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="text-xs max-w-[240px]">Total de créditos identificados ainda não compensados na carteira ativa.</p>
+                    <p className="text-xs max-w-[240px]">Créditos identificados ainda não compensados — potencial de honorários futuros</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
