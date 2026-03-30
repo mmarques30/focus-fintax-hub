@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight } from "lucide-react";
+import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
 import type { PipelineLead } from "@/pages/Pipeline";
@@ -35,6 +35,9 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   const [obs, setObs] = useState("");
   const [historico, setHistorico] = useState<HistoricoEntry[]>([]);
   const [showConvert, setShowConvert] = useState(false);
+  const [showException, setShowException] = useState(false);
+  const [exceptionReason, setExceptionReason] = useState("");
+  const [exceptionSaving, setExceptionSaving] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
@@ -81,6 +84,45 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
     await supabase.from("leads").update({ status_funil: "perdido", status_funil_atualizado_em: new Date().toISOString() }).eq("id", lead.id);
     await supabase.from("lead_historico").insert({ lead_id: lead.id, de_etapa: oldStage, para_etapa: "perdido", criado_por: user?.id });
     toast.success("Lead marcado como perdido");
+    onRefresh();
+    onClose();
+  };
+
+  const handleExceptionApproval = async () => {
+    if (!lead || !exceptionReason.trim()) return;
+    setExceptionSaving(true);
+    const { data: cliente, error } = await supabase.from("clientes").insert({
+      lead_id: lead.id,
+      empresa: lead.empresa,
+      cnpj: lead.cnpj,
+      nome_contato: lead.nome,
+      email: lead.email,
+      whatsapp: lead.whatsapp,
+      segmento: lead.segmento,
+      regime_tributario: lead.regime_tributario,
+      faturamento_faixa: lead.faturamento_faixa,
+      status: "ativo",
+    }).select("id").single();
+
+    if (error || !cliente) {
+      toast.error("Erro ao converter lead", { description: error?.message });
+      setExceptionSaving(false);
+      return;
+    }
+
+    await supabase.from("leads").update({ status_funil: "cliente_ativo", status_funil_atualizado_em: new Date().toISOString() }).eq("id", lead.id);
+    await supabase.from("lead_historico").insert({
+      lead_id: lead.id,
+      de_etapa: lead.status_funil,
+      para_etapa: "cliente_ativo",
+      anotacao: `⚠ EXCEÇÃO: ${exceptionReason.trim()}`,
+      criado_por: user?.id,
+    });
+
+    toast.success("Lead aprovado por exceção e convertido em cliente!");
+    setExceptionSaving(false);
+    setShowException(false);
+    setExceptionReason("");
     onRefresh();
     onClose();
   };
@@ -209,31 +251,75 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                     <p className="text-sm text-muted-foreground py-8 text-center">Nenhum evento registrado.</p>
                   ) : (
                     <div className="space-y-0">
-                      {historico.map((h) => (
-                        <div key={h.id} className="flex gap-3 py-3 border-b last:border-0">
-                          <div className="flex flex-col items-center">
-                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
-                            <div className="flex-1 w-px bg-border" />
+                      {historico.map((h) => {
+                        const isException = h.anotacao?.startsWith("⚠ EXCEÇÃO:");
+                        return (
+                          <div key={h.id} className="flex gap-3 py-3 border-b last:border-0">
+                            <div className="flex flex-col items-center">
+                              {isException ? (
+                                <AlertTriangle className="h-3 w-3 text-amber-500 mt-1.5" />
+                              ) : (
+                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
+                              )}
+                              <div className="flex-1 w-px bg-border" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium flex items-center gap-1">
+                                {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
+                              </p>
+                              {h.anotacao && <p className={`text-xs mt-0.5 ${isException ? "text-amber-700 font-medium" : "text-muted-foreground"}`}>{h.anotacao}</p>}
+                              <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium flex items-center gap-1">
-                              {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
-                            </p>
-                            {h.anotacao && <p className="text-xs text-muted-foreground mt-0.5">{h.anotacao}</p>}
-                            <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </TabsContent>
               </Tabs>
+
+              {/* Exception inline form */}
+              {showException && (
+                <div className="border-t p-4 space-y-3 bg-amber-50/50">
+                  <p className="text-xs font-medium text-amber-800">Motivo da aprovação por exceção</p>
+                  <Textarea
+                    value={exceptionReason}
+                    onChange={(e) => setExceptionReason(e.target.value)}
+                    rows={3}
+                    placeholder="Descreva o motivo da exceção..."
+                    className="border-amber-300 focus-visible:ring-amber-400"
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => { setShowException(false); setExceptionReason(""); }}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={handleExceptionApproval}
+                      disabled={!exceptionReason.trim() || exceptionSaving}
+                    >
+                      {exceptionSaving ? "Salvando..." : "Confirmar exceção"}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="border-t p-4 flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
                   <UserCheck className="h-4 w-4 mr-1" /> Converter
                 </Button>
+                {lead.status_funil === "contrato_emitido" && !showException && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+                    onClick={() => setShowException(true)}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
                   <XCircle className="h-4 w-4 mr-1" /> Perdido
                 </Button>
