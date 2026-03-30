@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
-import { MonthBar, compactCurrency, fullCurrency, fontMono } from "../dashboard-utils";
+import { MonthBar, compactCurrency, fullCurrency } from "../dashboard-utils";
 
 interface Props {
   monthlyBars: MonthBar[];
