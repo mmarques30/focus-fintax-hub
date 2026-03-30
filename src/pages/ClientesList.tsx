@@ -172,7 +172,7 @@ export default function ClientesList() {
           ) : filtered.length === 0 ? (
             <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
           ) : filtered.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/clientes/${c.id}`)}>
+            <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
               <TableCell className="font-medium">{c.empresa}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{c.cnpj}</TableCell>
               <TableCell className="text-sm">{SEGMENTO_LABELS[c.segmento] || c.segmento || "—"}</TableCell>
