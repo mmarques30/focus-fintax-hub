@@ -192,6 +192,9 @@ export default function ClienteDetail() {
             <Trash2 className="h-3.5 w-3.5" /> Excluir
           </Button>
         </div>
+
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
+          <Upload className="h-4 w-4" /> Importar dados Laratex
         </Button>
 
         <div className="space-y-3 text-sm">
