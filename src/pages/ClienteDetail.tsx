@@ -37,13 +37,18 @@ export default function ClienteDetail() {
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
+    if (userRole === "comercial") {
+      toast.error("Acesso restrito");
+      navigate("/clientes");
+      return;
+    }
     if (!id) return;
     supabase.from("clientes").select("*").eq("id", id).single().then(({ data, error }) => {
       if (error || !data) { navigate("/clientes"); return; }
       setCliente(data);
       setLoading(false);
     });
-  }, [id, navigate]);
+  }, [id, navigate, userRole]);
 
   const updateField = async (field: string, value: any) => {
     setCliente((prev: any) => ({ ...prev, [field]: value }));
