@@ -18,8 +18,9 @@ interface Props {
 }
 
 export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds = new Set() }: Props) {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [convertLead, setConvertLead] = useState<PipelineLead | null>(null);
+  const dragEnabled = canDragInPipeline(userRole);
 
   const grouped = useMemo(() => {
     const map: Record<string, PipelineLead[]> = {};
