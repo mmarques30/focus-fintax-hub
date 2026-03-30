@@ -157,7 +157,7 @@ export default function ClientesList() {
 
       {/* Table */}
       <Table>
-        <TableHeader>
+         <TableHeader>
           <TableRow>
             <TableHead>Empresa</TableHead>
             <TableHead>CNPJ</TableHead>
@@ -168,6 +168,7 @@ export default function ClientesList() {
             <TableHead>Compensado</TableHead>
             <TableHead>Saldo</TableHead>
             <TableHead>Alerta</TableHead>
+            {!isComercial && <TableHead className="w-[80px]">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
