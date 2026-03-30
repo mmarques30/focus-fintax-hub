@@ -1,4 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap');
+
+:root {
+  --navy: #0a1564;
+  --navy-10: rgba(10,21,100,0.08);
+  --navy-06: rgba(10,21,100,0.05);
+  --dash-red: #c8001e;
+  --dash-green: #0f7b4e;
+  --dash-green-10: rgba(15,123,78,0.10);
+  --dash-amber: #b45309;
+  --dash-amber-bg: rgba(251,191,36,0.12);
+  --dash-amber-10: rgba(180,83,9,0.10);
+  --ink: #0f1117;
+  --ink-60: rgba(15,17,23,0.60);
+  --ink-35: rgba(15,17,23,0.35);
+  --ink-12: rgba(15,17,23,0.12);
+  --ink-06: rgba(15,17,23,0.05);
+  --dash-surface: #fff;
+  --dash-page: #f2f3f7;
+  --dash-border: rgba(10,21,100,0.10);
+}
+
+@keyframes fu { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
 
 @tailwind base;
 @tailwind components;
