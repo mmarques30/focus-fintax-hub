@@ -1,46 +1,76 @@
 
 
-## Ajustar estrutura interna — navegação, perfis e paleta
+## Criar página pública de diagnóstico — `/diagnostico/:token`
 
-O sistema já possui a maior parte da estrutura (login, sidebar, rotas protegidas, roles). As mudanças são ajustes pontuais.
+### Visão geral
+Página pública (sem login) que exibe o resultado do diagnóstico tributário para o lead. O acesso é controlado por um token UUID na URL.
 
-### O que já existe e será mantido
-- Login minimalista em `/auth` (email, senha, recuperação)
-- Sidebar colapsável com hover
-- Rotas protegidas via `ProtectedRoute`
-- Roles: admin, pmo, gestor_tributario, comercial, cliente
-- Sem cadastro público
+### 1. Migração de banco de dados
 
-### Mudanças necessárias
+**Adicionar coluna `token` na tabela `leads`:**
+```sql
+ALTER TABLE public.leads ADD COLUMN token uuid DEFAULT gen_random_uuid() UNIQUE;
+UPDATE public.leads SET token = gen_random_uuid() WHERE token IS NULL;
+ALTER TABLE public.leads ALTER COLUMN token SET NOT NULL;
+```
 
-**1. Renomear e adicionar itens na sidebar** (`src/components/AppSidebar.tsx`)
-- "Leads" → "Pipeline de Leads" (url `/leads`)
-- "Benchmarks" → "Benchmarks e Teses" (url `/benchmarks`)
-- Adicionar "Clientes" (url `/clientes`, ícone `Building2`)
+**Criar função `get_diagnostico_by_token` (security definer)** para acesso público sem RLS:
+```sql
+CREATE OR REPLACE FUNCTION public.get_diagnostico_by_token(_token uuid)
+RETURNS json
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result json;
+BEGIN
+  SELECT json_build_object(
+    'lead', row_to_json(l),
+    'relatorio', row_to_json(r)
+  ) INTO result
+  FROM leads l
+  LEFT JOIN relatorios_leads r ON r.lead_id = l.id
+  WHERE l.token = _token
+  ORDER BY r.criado_em DESC
+  LIMIT 1;
+  
+  RETURN result;
+END;
+$$;
+```
 
-**2. Atualizar permissões por role na sidebar**
-| Seção | admin | comercial | gestor_tributario | pmo |
-|---|---|---|---|---|
-| Dashboard | ✓ | ✓ | ✓ | ✓ |
-| Pipeline de Leads | ✓ | ✓ | — | ✓ |
-| Clientes | ✓ | — | ✓ | ✓ |
-| Benchmarks e Teses | ✓ | — | — | — |
-| Usuários | ✓ | — | — | ✓ |
+### 2. Página `src/pages/Diagnostico.tsx`
 
-**3. Criar página placeholder Clientes** (`src/pages/Clientes.tsx`)
-- Página simples com título e mensagem "Em construção"
-- Será expandida em prompts futuros
+Componente React que:
+- Extrai o `:token` da URL via `useParams`
+- Chama `supabase.rpc('get_diagnostico_by_token', { _token: token })` no `useEffect`
+- Renderiza sem layout interno (sem sidebar) — página standalone
 
-**4. Adicionar rota `/clientes`** (`src/App.tsx`)
+**Estrutura visual:**
+- **Topo**: Logo Focus FinTax, titulo "Diagnóstico Focus FinTax — [Empresa]", data, badge "Análise estimada · Dados declarados"
+- **Card destaque**: "Sua empresa pode recuperar entre R$ X e R$ Y em créditos tributários" com valores formatados em vermelho da marca
+- **Tabela de teses**: Itera `teses_identificadas` do relatório, exibe apenas teses com valores > 0 (nome, descrição comercial, intervalo)
+- **Disclaimer**: Texto obrigatório sobre estimativas
+- **CTAs**: Botão primário "Quero minha análise completa" → abre WhatsApp com mensagem pré-formatada. Botão secundário "Baixar diagnóstico em PDF" → usa `window.print()` com CSS de impressão
 
-**5. Ajustar cor primária para `#0a1a6e`** (`src/index.css`)
-- `--primary`: de `233 97% 21%` para `233 83% 24%`
-- `--sidebar-background`: mesma atualização
-- Ajustar `--sidebar-accent` proporcionalmente
+Paleta: azul `#0a1a6e`, vermelho `#d04545`, fundo branco/cinza claro.
+
+### 3. Rota pública em `src/App.tsx`
+
+Adicionar antes da rota protegida `/*`:
+```tsx
+<Route path="/diagnostico/:token" element={<Diagnostico />} />
+```
+
+### 4. Atualizar edge function `analyze-lead`
+
+Incluir o `token` do lead no retorno da função para que o sistema possa gerar o link `/diagnostico/{token}` após a análise.
 
 ### Arquivos alterados
-1. `src/components/AppSidebar.tsx` — nomes, ícone, roles
-2. `src/App.tsx` — rota `/clientes`
-3. `src/pages/Clientes.tsx` — novo arquivo placeholder
-4. `src/index.css` — ajuste de cor primária
+1. **Migração SQL** — nova coluna `token` + função `get_diagnostico_by_token`
+2. `src/pages/Diagnostico.tsx` — novo arquivo
+3. `src/App.tsx` — rota pública
+4. `supabase/functions/analyze-lead/index.ts` — retornar token
 
