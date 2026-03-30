@@ -1,8 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { routeToScreenKey } from "@/lib/screen-permissions";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, permissions } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -14,6 +16,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Check screen-level access
+  const screenKey = routeToScreenKey(location.pathname);
+  if (screenKey) {
+    const perm = permissions.find((p) => p.screen_key === screenKey);
+    if (perm && !perm.can_access) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

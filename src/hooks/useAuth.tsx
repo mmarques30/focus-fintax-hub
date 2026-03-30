@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { getDefaultPermissions, type ScreenPermission } from "@/lib/screen-permissions";
 
 interface AuthContextType {
   user: User | null;
@@ -8,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   profile: { full_name: string; email: string; cargo: string } | null;
+  permissions: ScreenPermission[];
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   userRole: null,
   profile: null,
+  permissions: [],
   signOut: async () => {},
 });
 
@@ -26,14 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ full_name: string; email: string; cargo: string } | null>(null);
+  const [permissions, setPermissions] = useState<ScreenPermission[]>([]);
 
   const fetchUserMeta = async (userId: string) => {
     const [{ data: roles }, { data: prof }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
       supabase.from("profiles").select("full_name, email, cargo").eq("user_id", userId).single(),
     ]);
-    setUserRole(roles?.[0]?.role ?? null);
+    const role = roles?.[0]?.role ?? null;
+    setUserRole(role);
     setProfile(prof ?? null);
+
+    // Load screen permissions
+    const { data: perms } = await supabase
+      .from("user_permissions")
+      .select("screen_key, can_access, read_only")
+      .eq("user_id", userId);
+
+    if (perms && perms.length > 0) {
+      setPermissions(perms as ScreenPermission[]);
+    } else {
+      // Fallback to role defaults
+      setPermissions(getDefaultPermissions(role ?? "cliente"));
+    }
   };
 
   useEffect(() => {
@@ -51,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else {
         setUserRole(null);
         setProfile(null);
+        setPermissions([]);
       }
       setLoading(false);
     });
@@ -63,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, profile, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, profile, permissions, signOut }}>
       {children}
     </AuthContext.Provider>
   );
