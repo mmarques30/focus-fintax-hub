@@ -278,11 +278,48 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                 </TabsContent>
               </Tabs>
 
+              {/* Exception inline form */}
+              {showException && (
+                <div className="border-t p-4 space-y-3 bg-amber-50/50">
+                  <p className="text-xs font-medium text-amber-800">Motivo da aprovação por exceção</p>
+                  <Textarea
+                    value={exceptionReason}
+                    onChange={(e) => setExceptionReason(e.target.value)}
+                    rows={3}
+                    placeholder="Descreva o motivo da exceção..."
+                    className="border-amber-300 focus-visible:ring-amber-400"
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => { setShowException(false); setExceptionReason(""); }}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={handleExceptionApproval}
+                      disabled={!exceptionReason.trim() || exceptionSaving}
+                    >
+                      {exceptionSaving ? "Salvando..." : "Confirmar exceção"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Footer */}
               <div className="border-t p-4 flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowConvert(true)}>
                   <UserCheck className="h-4 w-4 mr-1" /> Converter
                 </Button>
+                {lead.status_funil === "contrato_emitido" && !showException && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-amber-400 text-amber-700 hover:bg-amber-50"
+                    onClick={() => setShowException(true)}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
                   <XCircle className="h-4 w-4 mr-1" /> Perdido
                 </Button>
