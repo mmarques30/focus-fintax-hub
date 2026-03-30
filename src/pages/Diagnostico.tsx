@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import logoFocus from "@/assets/logo-focus-fintax.svg";
 import { useParams } from "react-router-dom";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Tese {
@@ -159,15 +161,13 @@ function useStyles() {
       .dg-d7 { animation-delay: 0.7s; }
       .dg-d8 { animation-delay: 0.8s; }
       @media print {
+        @page { margin: 0; size: A4; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         .dg-page { background: #fff !important; }
-        .dg-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-hero-img { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-total-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-cta-section { display: none !important; }
-        .dg-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .dg-fade-up { opacity: 1 !important; animation: none !important; }
-        .dg-tese-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .dg-disclaimer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .dg-cta-section, .dg-cta-buttons { display: none !important; }
+        .dg-hero-img { height: 160px !important; }
+        *, *::before, *::after { transition: none !important; animation: none !important; }
       }
       @media (max-width: 600px) {
         .dg-total-inner { flex-direction: column !important; text-align: center !important; }
@@ -274,6 +274,67 @@ interface ContentProps {
 function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multiplier, barsVisible, relatorio }: ContentProps) {
   const animMin = useAnimatedCounter(minTotal);
   const animMax = useAnimatedCounter(maxTotal);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const element = document.querySelector('.dg-page') as HTMLElement;
+    if (!element || downloading) return;
+    setDownloading(true);
+
+    // Hide CTA section and disable animations for capture
+    const ctaSection = element.querySelector('.dg-cta-section') as HTMLElement;
+    const fadeEls = element.querySelectorAll('.dg-fade-up') as NodeListOf<HTMLElement>;
+    
+    if (ctaSection) ctaSection.style.display = 'none';
+    fadeEls.forEach(el => {
+      el.style.opacity = '1';
+      el.style.animation = 'none';
+    });
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f7f7f5',
+        logging: false,
+        allowTaint: false,
+      });
+
+      const imgWidth = 210; // A4 mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297; // A4 mm
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const empresa = lead.empresa.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      pdf.save(`diagnostico-${empresa}.pdf`);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      // Fallback to print
+      window.print();
+    } finally {
+      // Restore elements
+      if (ctaSection) ctaSection.style.display = '';
+      fadeEls.forEach(el => {
+        el.style.opacity = '';
+        el.style.animation = '';
+      });
+      setDownloading(false);
+    }
+  }, [downloading, lead.empresa]);
 
   const whatsappMsg = encodeURIComponent(
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
@@ -566,7 +627,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
               <WhatsAppSVG />
               Quero minha análise completa
             </a>
-            <button onClick={() => window.print()} style={{
+            <button onClick={handleDownloadPDF} disabled={downloading} style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "14px 28px", borderRadius: 10,
               fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
@@ -580,7 +641,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Baixar diagnóstico
+              {downloading ? 'Gerando PDF…' : 'Baixar diagnóstico'}
             </button>
           </div>
         </div>
