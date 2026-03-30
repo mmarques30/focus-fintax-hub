@@ -274,6 +274,67 @@ interface ContentProps {
 function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multiplier, barsVisible, relatorio }: ContentProps) {
   const animMin = useAnimatedCounter(minTotal);
   const animMax = useAnimatedCounter(maxTotal);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const element = document.querySelector('.dg-page') as HTMLElement;
+    if (!element || downloading) return;
+    setDownloading(true);
+
+    // Hide CTA section and disable animations for capture
+    const ctaSection = element.querySelector('.dg-cta-section') as HTMLElement;
+    const fadeEls = element.querySelectorAll('.dg-fade-up') as NodeListOf<HTMLElement>;
+    
+    if (ctaSection) ctaSection.style.display = 'none';
+    fadeEls.forEach(el => {
+      el.style.opacity = '1';
+      el.style.animation = 'none';
+    });
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f7f7f5',
+        logging: false,
+        allowTaint: false,
+      });
+
+      const imgWidth = 210; // A4 mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297; // A4 mm
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const empresa = lead.empresa.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      pdf.save(`diagnostico-${empresa}.pdf`);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      // Fallback to print
+      window.print();
+    } finally {
+      // Restore elements
+      if (ctaSection) ctaSection.style.display = '';
+      fadeEls.forEach(el => {
+        el.style.opacity = '';
+        el.style.animation = '';
+      });
+      setDownloading(false);
+    }
+  }, [downloading, lead.empresa]);
 
   const whatsappMsg = encodeURIComponent(
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
