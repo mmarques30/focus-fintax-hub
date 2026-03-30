@@ -251,21 +251,28 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                     <p className="text-sm text-muted-foreground py-8 text-center">Nenhum evento registrado.</p>
                   ) : (
                     <div className="space-y-0">
-                      {historico.map((h) => (
-                        <div key={h.id} className="flex gap-3 py-3 border-b last:border-0">
-                          <div className="flex flex-col items-center">
-                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
-                            <div className="flex-1 w-px bg-border" />
+                      {historico.map((h) => {
+                        const isException = h.anotacao?.startsWith("⚠ EXCEÇÃO:");
+                        return (
+                          <div key={h.id} className="flex gap-3 py-3 border-b last:border-0">
+                            <div className="flex flex-col items-center">
+                              {isException ? (
+                                <AlertTriangle className="h-3 w-3 text-amber-500 mt-1.5" />
+                              ) : (
+                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
+                              )}
+                              <div className="flex-1 w-px bg-border" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium flex items-center gap-1">
+                                {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
+                              </p>
+                              {h.anotacao && <p className={`text-xs mt-0.5 ${isException ? "text-amber-700 font-medium" : "text-muted-foreground"}`}>{h.anotacao}</p>}
+                              <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium flex items-center gap-1">
-                              {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
-                            </p>
-                            {h.anotacao && <p className="text-xs text-muted-foreground mt-0.5">{h.anotacao}</p>}
-                            <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </TabsContent>
