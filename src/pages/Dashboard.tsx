@@ -285,20 +285,20 @@ export default function Dashboard() {
   return (
     <div className="bg-[#f4f5f7] -m-4 min-h-[calc(100vh-64px)]">
       {/* ═══ Header ═══ */}
-      <div className="bg-[#0a1564] h-16 px-6 flex items-center justify-between">
+      <div className="bg-white h-16 px-6 flex items-center justify-between border-b border-gray-200">
         <div>
-          <h1 className="text-lg font-bold text-white">
+          <h1 className="text-lg font-bold text-gray-900">
             {greeting()}, {profile?.full_name?.split(" ")[0] || "usuário"}
           </h1>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-gray-500">
             {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-white/80 bg-white/10 rounded-full px-3 py-1 font-medium">
+          <span className="text-[11px] text-[#0a1564] border border-gray-200 rounded-full px-3 py-1 font-medium">
             {ROLE_LABELS[role] ?? role}
           </span>
-          <span className="text-[11px] text-white/60 bg-white/10 rounded-full px-3 py-1">
+          <span className="text-[11px] text-gray-500 border border-gray-200 rounded-full px-3 py-1">
             {format(new Date(), "HH:mm")}
           </span>
         </div>
