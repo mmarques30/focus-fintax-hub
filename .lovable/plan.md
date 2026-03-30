@@ -1,78 +1,54 @@
 
 
-## Redesign Visão Comercial — Replicar HTML de referência
+## Redesign Visão Operacional — Replicar HTML de referência
 
 ### Resumo
-Reescrever completamente a tab "Visão Comercial" do Dashboard para replicar fielmente o layout do HTML `dashboard-comercial-v2-2.html`. A tab Operacional permanece intacta.
+Reescrever completamente a função `OperationalTab` no Dashboard para replicar fielmente o layout do HTML `dashboard-operacional-v2.html`, usando o mesmo design system (CSS vars, fontes) já aplicado na tab comercial.
 
-### Mudanças
+### Dados já disponíveis vs novos
+Os dados atuais (`opClientes`, `opCompensado`, `opHonorarios`, `opSaldo`, `monthlyBars`, `topCompensado`, `topSaldo`) cobrem ~80% do que o HTML precisa. Faltam:
+- **Total de clientes ativos** (para "de X ativos" no KPI) — query adicional no fetchData
+- **Saldo por cliente** para distribuição por faixas e clientes prioritários — já temos via `topSaldo`
+- **Projeções** — calculadas client-side a partir dos dados existentes
 
-**1. `src/index.css` — Fontes e variáveis CSS**
-- Importar Google Fonts: `DM Mono 400/500`, `Barlow 300-700`, `Barlow Condensed 600/700/800`
-- Declarar custom properties: `--navy`, `--red`, `--green`, `--amber`, `--ink-*`, `--border`, `--page`, `--surface` etc.
+### Mudanças em `src/pages/Dashboard.tsx`
 
-**2. `src/pages/Dashboard.tsx` — Tab Comercial reescrita**
+**1. Novo state + fetchData**
+- Adicionar `opTotalAtivos` (count de todos clientes ativos, não só compensando)
+- Todos os cálculos de projeção são client-side no render da tab
 
-Substituir todo o bloco `activeTab === "comercial"` por:
+**2. Reescrever `OperationalTab` com estas seções (na ordem do HTML):**
 
-**KPI Strip (5 cards em grid 5 colunas)**
-- Leads no pipeline / Novos esta semana / Potencial total (red) / Contratos emitidos (amber) / Taxa de conversão (green)
-- Sub-labels descritivos. Trend badge no KPI "Novos" (comparação vs semana anterior — query adicional para `criado_em >= now()-14d AND criado_em < now()-7d`)
-- Tipografia: label uppercase 10px `DM Mono`-like, valor 26px `Barlow Condensed 700`
+**KPI Strip** (5 cards, grid 5 cols) — mesma tipografia da tab comercial:
+- Clientes compensando (navy) / sub "de X ativos"
+- Total compensado (green) / trend badge com variação mês anterior
+- Honorários gerados (navy) / sub "taxa média X%"
+- Economia líquida (green) / sub "líquido de honorários"
+- Saldo de créditos (red) / sub "disponível para compensar"
 
-**Alertas banner (amber)**
-- Query: leads em `contrato_emitido` com `status_funil_atualizado_em < now()-3d`
-- Header amber com dot + título uppercase
-- Rows: empresa (bold), descrição, badge "há X dias"
-- Renderizar somente se houver resultados
+**Projection Band** (navy bar, grid 5 cols com dividers):
+- Projeção anual: `(compensado / meses_distintos) * 12` — cor accent (#fca5a5)
+- Honorários projetados/ano: `(honorarios / meses) * 12` — green-light (#6ee7b7)
+- Prazo do saldo: `saldo / média_mensal` — amber-light (#fcd34d), em "X meses"
+- Honorários futuros no saldo: `saldo * (hon/comp)` — green-light
+- Média mensal: `compensado / meses` — white
 
-**Main Grid (2 colunas: 1fr 320px)**
+**Chart + Distribuição** (grid 1.6fr 1fr):
+- Esquerda: Recharts BarChart (compensado navy + honorários red) + barra projeção (próximo mês, opacity reduzida) + legend + insight strip (3 métricas: variação mês, taxa hon. média, média mensal)
+- Direita: Distribuição do saldo por faixas (>1M red, 500k-1M amber, <500k navy, zerado gray) com barras proporcionais + callout estratégico red (quando prazo < 9 meses) + honorários futuros box (green)
 
-Coluna esquerda — Card "Funil Comercial":
-- Funil com layout **flexbox** idêntico ao HTML: color bar (5px), stage name (flex:1 truncate), count (32px DM Mono bold), value (60px DM Mono green), progress bar (100px track), arrow (14px)
-- Stages: novo, qualificado, levantamento_teses, em_apresentacao, contrato_emitido, cliente_ativo
-- `contrato_emitido` com background amber quando count > 0
-- `cliente_ativo`: count = clientes ativos no banco (query `clientes` com status ativo), cor green, checkmark
-- Total row com fundo navy-06, border-top 2px
-- Progress bar width = `(stage_count / max_count) * 100%`
-- Seção "Distribuição por segmento": query group by segmento, barras horizontais proporcionais
-- Seção "Origem dos leads": 3 boxes (Formulário LP, Manual, Meta Ads) — query group by `origem`
+**Urgency Card** (red-tinted): Top 5 clientes com saldo > 1M, mostrando empresa, saldo, hon. potencial
 
-Coluna direita — Sidebar com 3 cards:
-1. **Leads recentes**: avatar (iniciais em box navy-10), empresa, chips segmento coloridos, score badge (A/B/C/D), "quando", valor potencial em green. Link "Ver pipeline completo →"
-2. **Qualidade da carteira**: 4 rows Score A/B/C/D com contagem — query `score_lead` ranges agrupadas
-3. **Performance do motor** (card navy escuro): 3 métricas — total diagnósticos (count `diagnosticos_leads` distintos por lead), teses ativas (count `motor_teses_config` ativo), sem cobertura (0 ou calculado)
+**Ranking Table** (full HTML table): 8 colunas — #, Empresa, Total compensado (green), Honorários (muted), Economia líquida (navy), % utilizado (muted), Progresso (bar), Saldo restante (red if > 0)
 
-**Bottom Strip (5 items)**
-- Leads pipeline / Contratos emitidos (amber) / Clientes ativos (green) / Potencial total (red) / Taxa conversão (green)
-- Tipografia: valor 20px Barlow Condensed 700, label 9px uppercase
+**Bottom Strip** (7 items): Clientes compensando / Compensado 3m (green) / Honorários / Economia líquida (green) / Saldo (red) / Prazo do saldo (amber) / Projeção hon. anual (green)
 
-**Queries adicionais necessárias** (no `fetchData`):
-- Taxa conversão: `count(cliente_ativo) / count(all non-lost)` — já temos `comLeads`; precisa contar `cliente_ativo`
-- Score distribution: contar leads por faixa de score (A: ≥80, B: 50-79, C: 20-49, D: <20)
-- Segmentos: `group by segmento` dos leads ativos
-- Origem: `group by origem` dos leads ativos
-- Clientes ativos count: `clientes` com status ativo
-- Diagnósticos count: `count distinct lead_id from diagnosticos_leads`
-- Teses ativas: `count from motor_teses_config where ativo=true`
-- Semana anterior (trend): leads criados entre 14d e 7d atrás
-
-**3. Animações**
-- Fade-up com `opacity:0 → 1` + `translateY(10px → 0)` em 0.45s, delays escalonados (d1=40ms, d2=90ms, d3=140ms, d4=190ms)
-- Aplicar via classes utilitárias ou inline styles com `animation`
-
-**4. Tipografia inline**
-- Usar `fontFamily: "'Barlow Condensed', sans-serif"` nos KPI values
-- Usar `fontFamily: "'DM Mono', monospace"` nos counts/valores tabulares
-- `font-variant-numeric: tabular-nums` em todos os números monetários
+**3. Animações**: Fade-up com delays escalonados (d1–d6), usando a keyframe `fu` já definida no CSS.
 
 ### Arquivos alterados
-1. `src/index.css` — fontes + CSS custom properties
-2. `src/pages/Dashboard.tsx` — tab comercial reescrita, queries adicionais no fetchData, novo state
+1. `src/pages/Dashboard.tsx` — reescrever `OperationalTab` + adicionar `opTotalAtivos` state + query no fetchData
 
 ### Preservado
-- Tab Operacional intacta
-- Header + tab switcher existentes
-- Realtime subscriptions
-- Autenticação, rotas, sidebar
+- Tab Comercial intacta
+- Header, tab switcher, realtime, autenticação, rotas
 
