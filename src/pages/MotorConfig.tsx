@@ -267,10 +267,8 @@ export default function MotorConfig() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Motor de Cálculo</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Configuração de teses, percentuais e cobertura por perfil
-        </p>
+        <h1 className="font-display text-xl font-bold text-navy">Motor de Cálculo</h1>
+        <p className="text-xs text-muted-foreground uppercase tracking-widest">teses, percentuais e cobertura por perfil</p>
       </div>
 
       {/* Stat Cards */}

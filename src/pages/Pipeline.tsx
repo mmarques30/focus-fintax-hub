@@ -146,43 +146,11 @@ export default function Pipeline() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <Users className="h-8 w-8 text-primary" />
-            <div>
-              <p className="text-2xl font-bold">{activeLeads.length}</p>
-              <p className="text-xs text-muted-foreground">Leads ativos</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <div>
-              <p className="text-2xl font-bold">{newToday}</p>
-              <p className="text-xs text-muted-foreground">Novos hoje</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <TrendingUp className="h-8 w-8 text-green-600" />
-            <div>
-              <p className="text-2xl font-bold">{formatCurrency(totalPotencial)}</p>
-              <p className="text-xs text-muted-foreground">Potencial total</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={leadsStale > 0 ? "border-red-200 bg-red-50" : ""}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className={`h-8 w-8 ${leadsStale > 0 ? "text-red-500" : "text-muted-foreground"}`} />
-            <div>
-              <p className="text-2xl font-bold">{leadsStale}</p>
-              <p className="text-xs text-muted-foreground">Sem contato &gt;1d</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
+        <KpiBox label="Leads ativos" value={String(activeLeads.length)} sub="excluindo perdidos" />
+        <KpiBox label="Novos hoje" value={String(newToday)} sub="captados hoje" />
+        <KpiBox label="Potencial total" value={compactCurrency(totalPotencial)} sub="soma do potencial máx." colorClass="green" />
+        <KpiBox label="Sem contato >1d" value={String(leadsStale)} sub="leads parados" colorClass="red" last />
       </div>
 
       {/* View */}
