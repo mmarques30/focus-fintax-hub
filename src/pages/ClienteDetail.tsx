@@ -15,8 +15,6 @@ import { ResumoFinanceiroTab } from "@/components/clientes/ResumoFinanceiroTab";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import logoFintax from "@/assets/logo-focus-fintax.svg";
 
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
