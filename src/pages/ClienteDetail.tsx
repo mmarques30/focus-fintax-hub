@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, MessageCircle, FileText, Printer } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, FileText, Printer, Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ProcessosTesesTab } from "@/components/clientes/ProcessosTesesTab";
 import { CompensacoesTab } from "@/components/clientes/CompensacoesTab";
@@ -25,6 +26,13 @@ export default function ClienteDetail() {
   const obsDebounce = useRef<NodeJS.Timeout>();
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaData, setMapaData] = useState<{ processos: any[]; compensacoes: any[] } | null>(null);
+
+  // Laratex CSV import state
+  const [laratexOpen, setLatatexOpen] = useState(false);
+  const [csvData, setCsvData] = useState<string[][]>([]);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -46,6 +54,108 @@ export default function ClienteDetail() {
     obsDebounce.current = setTimeout(() => {
       supabase.from("clientes").update({ atualizado_em: new Date().toISOString() }).eq("id", id!);
     }, 800);
+  };
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      if (lines.length < 2) { toast.error("CSV vazio ou inválido"); return; }
+      const sep = lines[0].includes(";") ? ";" : ",";
+      const headers = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
+      const rows = lines.slice(1).map((l) => l.split(sep).map((c) => c.trim().replace(/^"|"$/g, "")));
+      setCsvHeaders(headers);
+      setCsvData(rows);
+      setColumnMap({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
+  const parseCurrency = (v: string) => {
+    if (!v) return 0;
+    return Number(v.replace(/[R$\s.]/g, "").replace(",", ".")) || 0;
+  };
+
+  const handleImport = async () => {
+    if (!columnMap.tese) { toast.error("Mapeie ao menos a coluna Tese"); return; }
+    setImporting(true);
+    try {
+      const teseIdx = csvHeaders.indexOf(columnMap.tese);
+      const creditoIdx = columnMap.valor_credito ? csvHeaders.indexOf(columnMap.valor_credito) : -1;
+      const mesIdx = columnMap.mes_referencia ? csvHeaders.indexOf(columnMap.mes_referencia) : -1;
+      const compIdx = columnMap.valor_compensado ? csvHeaders.indexOf(columnMap.valor_compensado) : -1;
+
+      // Group by tese name, sum valor_credito
+      const teseMap: Record<string, number> = {};
+      csvData.forEach((row) => {
+        const tese = row[teseIdx]?.trim();
+        if (!tese) return;
+        const val = creditoIdx >= 0 ? parseCurrency(row[creditoIdx]) : 0;
+        teseMap[tese] = (teseMap[tese] || 0) + val;
+      });
+
+      // Insert processos_teses
+      const processoInserts = Object.entries(teseMap).map(([tese, total]) => ({
+        cliente_id: id!,
+        tese: tese.toLowerCase().replace(/\s+/g, "_"),
+        nome_exibicao: tese,
+        valor_credito: total,
+        status_contrato: "assinado" as const,
+      }));
+
+      const { data: insertedProcessos, error: pErr } = await supabase
+        .from("processos_teses")
+        .insert(processoInserts)
+        .select("id, nome_exibicao");
+
+      if (pErr) throw pErr;
+
+      // Insert compensações if mapped
+      if (mesIdx >= 0 && compIdx >= 0 && insertedProcessos) {
+        const processoIdMap: Record<string, string> = {};
+        insertedProcessos.forEach((p) => { processoIdMap[p.nome_exibicao] = p.id; });
+
+        const compInserts = csvData
+          .filter((row) => row[teseIdx]?.trim() && row[mesIdx]?.trim() && parseCurrency(row[compIdx]) > 0)
+          .map((row) => {
+            const tese = row[teseIdx].trim();
+            const processoId = processoIdMap[tese];
+            if (!processoId) return null;
+            let mesRef = row[mesIdx].trim();
+            // Try to parse date formats: dd/mm/yyyy, mm/yyyy, yyyy-mm-dd
+            if (/^\d{2}\/\d{4}$/.test(mesRef)) mesRef = `${mesRef.slice(3)}-${mesRef.slice(0, 2)}-01`;
+            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(mesRef)) mesRef = `${mesRef.slice(6)}-${mesRef.slice(3, 5)}-01`;
+            return {
+              cliente_id: id!,
+              processo_tese_id: processoId,
+              mes_referencia: mesRef,
+              valor_compensado: parseCurrency(row[compIdx]),
+            };
+          })
+          .filter(Boolean);
+
+        if (compInserts.length > 0) {
+          const { error: cErr } = await supabase.from("compensacoes_mensais").insert(compInserts as any);
+          if (cErr) throw cErr;
+        }
+        toast.success(`Importados: ${processoInserts.length} processos, ${compInserts.length} compensações`);
+      } else {
+        toast.success(`Importados: ${processoInserts.length} processos`);
+      }
+
+      setLatatexOpen(false);
+      setCsvData([]);
+      setCsvHeaders([]);
+      // Reload page data
+      window.location.reload();
+    } catch (err: any) {
+      toast.error("Erro na importação: " + (err.message || err));
+    } finally {
+      setImporting(false);
+    }
   };
 
   const openMapa = async () => {
@@ -99,6 +209,9 @@ export default function ClienteDetail() {
 
         <Button variant="outline" size="sm" className="w-full justify-start gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={openMapa}>
           <FileText className="h-4 w-4" /> Gerar Mapa Tributário
+        </Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLatatexOpen(true)}>
+          <Upload className="h-4 w-4" /> Importar dados Laratex
         </Button>
 
         <div className="space-y-3 text-sm">
@@ -281,6 +394,81 @@ export default function ClienteDetail() {
             <div className="border-t pt-4 text-center text-xs text-muted-foreground">
               Focus FinTax · Grupo Focus · Documento gerado em {dataAtual}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Laratex CSV Import Modal */}
+      <Dialog open={laratexOpen} onOpenChange={(v) => { setLatatexOpen(v); if (!v) { setCsvData([]); setCsvHeaders([]); } }}>
+        <DialogContent className="max-w-[700px] max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">Importação temporária de dados — aguardando integração direta com Laratex</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Upload area */}
+            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">Exporte os dados do cliente no Laratex em formato CSV e importe aqui.</p>
+              <label className="cursor-pointer">
+                <span className="text-sm text-primary hover:underline">Selecionar arquivo CSV</span>
+                <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
+              </label>
+            </div>
+
+            {/* Preview */}
+            {csvHeaders.length > 0 && (
+              <>
+                <div className="rounded border overflow-auto max-h-[200px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {csvHeaders.map((h, i) => <TableHead key={i} className="text-xs whitespace-nowrap">{h}</TableHead>)}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {csvData.slice(0, 5).map((row, ri) => (
+                        <TableRow key={ri}>
+                          {row.map((cell, ci) => <TableCell key={ci} className="text-xs py-1">{cell}</TableCell>)}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <p className="text-xs text-muted-foreground">{csvData.length} linhas detectadas · Mostrando primeiras 5</p>
+
+                {/* Column mapping */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: "tese", label: "Tese *" },
+                    { key: "valor_credito", label: "Valor Crédito" },
+                    { key: "mes_referencia", label: "Mês Referência" },
+                    { key: "valor_compensado", label: "Valor Compensado" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-medium">{label}</label>
+                      <Select value={columnMap[key]} onValueChange={(v) => setColumnMap((prev) => ({ ...prev, [key]: v === "__ignore__" ? "" : v }))}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="— Ignorar —" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__ignore__">— Ignorar —</SelectItem>
+                          {csvHeaders.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+
+                <Button onClick={handleImport} disabled={importing || !columnMap.tese} className="w-full">
+                  {importing ? "Importando..." : "Confirmar importação"}
+                </Button>
+              </>
+            )}
+
+            <p className="text-xs text-muted-foreground italic text-center">
+              Esta importação será substituída pela integração automática com Laratex quando disponível.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
