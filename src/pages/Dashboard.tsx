@@ -126,6 +126,7 @@ export default function Dashboard() {
 
   // Operational state
   const [opClientes, setOpClientes] = useState(0);
+  const [opTotalAtivos, setOpTotalAtivos] = useState(0);
   const [opCompensado, setOpCompensado] = useState(0);
   const [opHonorarios, setOpHonorarios] = useState(0);
   const [opSaldo, setOpSaldo] = useState(0);
