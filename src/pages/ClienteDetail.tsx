@@ -22,7 +22,7 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 export default function ClienteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { userRole } = useAuth();
+  const { userRole, permissions } = useAuth();
   const [cliente, setCliente] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
