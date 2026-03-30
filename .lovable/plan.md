@@ -1,63 +1,59 @@
 
 
-## Importar clientes da planilha + alinhar fluxo
+## Redesign do Motor de Cálculo + Bloqueio Simples Nacional
 
-### Dados na planilha
-A planilha tem ~85 clientes reais (linhas 9-93, Page 1) com dados por tese: REPORTO, SUBVENÇÃO, INSUMOS, ICMS-ST da BC PIS/COFINS, PIS/COFINS BC. Cada tese tem: valor_credito, status_contrato, percentual_honorario, valor_honorario, status_processo.
+### Decisão: Simples Nacional
+Opção A — bloquear no formulário público com mensagem explicativa. Será implementado no `submit-lead-public` e no formulário `LeadForm.tsx`.
 
-### Plano
+### Mudanças em `src/pages/MotorConfig.tsx` (rewrite visual, preservar lógica)
 
-**1. Script Python para importar dados via INSERT no banco**
+**1. Top section — 3 stat cards em linha**
+- "Teses Ativas": count de `teses.filter(t => t.ativo).length`, número grande, fundo escuro (`bg-[#0a1a6e]`)
+- "Perfis Cobertos": contagem de combinações regime×segmento com ≥1 tese ativa, mostrado como `X / 15`
+- "Última Atualização": data mais recente de `atualizado_em` formatada como relativa ("há 2 dias")
 
-Usar `openpyxl` para ler o XLSX e `psql` para insertar. Para cada linha válida (com EMPRESA + CNPJ):
+**2. Simulator — linha única compacta, full-width**
+- Label sutil "Simulador ao vivo" à esquerda
+- 3 selects inline (Segmento, Regime, Faturamento) horizontais
+- Resultado à direita na mesma linha: `Estimativa: R$ X,X mi → R$ X,X mi · Multiplicador: X,Xx`
+- Fundo sutil `bg-muted/50`, sem card title separado
 
-- **Inserir em `clientes`**: empresa, cnpj, compensando_fintax (SIM→true), compensacao_outro_escritorio, segmento="supermercado", regime_tributario="Lucro Real", status="ativo"
-- **Inserir em `processos_teses`** (até 5 por cliente, só se tiver valor > 0):
-  - REPORTO → tese="reporto"
-  - SUBVENÇÃO → tese="subvencao"  
-  - INSUMOS → tese="insumos"
-  - ICMS-ST → tese="icms_st_bc_pis_cofins"
-  - PIS/COFINS BC → tese="pis_cofins_bc"
+**3. Alert banner — condicional**
+- Só aparece se alguma combinação tem 0 teses
+- Amber banner compacto: "X combinações sem cobertura — leads com esse perfil receberão diagnóstico vazio."
+- Botão "Ver quais" que faz scroll até o grid de cobertura
 
-**Mapeamento de status_contrato:**
-- "ASSINADO" → "assinado"
-- "AGUARDANDO ASS" / variantes → "aguardando_assinatura"
-- "não vai fazer" / "nao vai fazer" → "nao_vai_fazer"
+**4. Teses table — compacta e densa**
+- Colunas: #, Nome da Tese, Regimes (chips coloridos: LR=azul escuro, LP=azul médio, SN=cinza), Segmentos (chips pequenos coloridos), % Mín, % Máx, Ativo (toggle pequeno), Última edição (tempo relativo)
+- Row height compacto, sem padding excessivo
+- Click na row abre modal de edição
+- Botão "Nova tese" no header
 
-**Mapeamento de status_processo:**
-- "COMPENSANDO" / "COMPESANDO" → "compensando"
-- "PEDIDO FEITO RECEITA" → "pedido_feito_receita"
-- "NÃO PROTOCOLADO" / variantes → "nao_protocolado"
-- "A INICIAR" → "a_iniciar"
-- "COMPENSADO" → "compensado"
-- "A COMPENSAR" → "a_compensar"
-- "PROTOCOLADO" → "protocolado"
-- "DESISTIU" / "DESISITU" → "desistiu"
-- Sem status / pendência docs → "a_iniciar"
+**5. Coverage panel — grid compacto 5×3**
+- Tiles ~80×56px: label segmento, abreviação regime (LR/LP/SN), número grande no centro
+- Verde com check se ≥1 tese, vermelho com warning se 0
+- 3 colunas (LR, LP, SN) × 5 linhas (segmentos)
+- Texto abaixo: "X de 15 combinações com cobertura ativa."
 
-**2. Alinhamento com o fluxo (imagem anexa)**
+### Mudanças para bloqueio Simples Nacional
 
-O fluxo mostra: Comercial → Supermercado (levantamento teses, apresentação, contrato) → Focus FinTax (compensações por tipo de tese: Subvenção, Insumos, Exc. ICMS, Reporto, PIS/COFINS).
+**6. `supabase/functions/submit-lead-public/index.ts`**
+- Após mapear regime, se for `simples`: retornar redirect para uma URL com query param `?blocked=simples` em vez de inserir lead
 
-O sistema já suporta isso com:
-- Pipeline/CRM (comercial prospecta leads)
-- Conversão lead→cliente com processos_teses por tese
-- ClienteDetail com tabs de processos, compensações e resumo financeiro
-- Cada processo_tese tem status_contrato + status_processo individual
+**7. `src/pages/LeadForm.tsx`**
+- Ao selecionar "Simples Nacional" no regime, mostrar alerta inline e desabilitar botão submit
 
-Sem mudanças estruturais necessárias — o modelo atual já reflete o fluxo.
+**8. `public/lp.html`** (se existir formulário lá)
+- Adicionar validação similar no frontend da LP
 
-**3. Execução**
+### Helpers adicionados
+- Função `timeAgo(dateStr)` para formatar datas relativas ("há 2 dias", "há 1 mês")
+- Regime abbreviation map: `{ lucro_real: "LR", lucro_presumido: "LP", simples: "SN" }`
+- Regime chip colors: `{ lucro_real: "bg-blue-900 text-white", lucro_presumido: "bg-blue-500 text-white", simples: "bg-gray-400 text-white" }`
 
-Rodar script Python que:
-1. Lê o XLSX com openpyxl
-2. Parseia valores monetários (remove "R$", pontos, vírgulas)
-3. Insere clientes via psql
-4. Para cada tese com valor > 0, insere processo_tese vinculado ao cliente_id
-5. Gera relatório de quantos clientes/processos importados
-
-### Resultado esperado
-- ~85 clientes na tabela `clientes`
-- ~200-300 processos_teses vinculados (múltiplas teses por cliente)
-- Dados visíveis imediatamente na página /clientes do sistema
+### Arquivos alterados
+1. `src/pages/MotorConfig.tsx` — rewrite visual completo (preservar toda lógica de dados)
+2. `supabase/functions/submit-lead-public/index.ts` — bloqueio Simples Nacional
+3. `src/pages/LeadForm.tsx` — alerta para Simples Nacional
+4. `public/lp.html` — validação Simples Nacional (se aplicável)
 
