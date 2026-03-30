@@ -201,7 +201,7 @@ export default function Dashboard() {
 
     // ═══ OPERATIONAL TAB DATA ═══
     const [clientesRes, allCompRes, allProcRes] = await Promise.all([
-      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("status", "ativo"),
+      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("compensando_fintax", true),
       supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id"),
       supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario"),
     ]);
