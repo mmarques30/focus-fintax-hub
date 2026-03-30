@@ -30,6 +30,9 @@ export default function ClienteDetail() {
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingCliente, setDeletingCliente] = useState(false);
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
