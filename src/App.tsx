@@ -16,6 +16,7 @@ import LeadReport from "@/pages/LeadReport";
 import Benchmarks from "@/pages/Benchmarks";
 import Clientes from "@/pages/Clientes";
 import Diagnostico from "@/pages/Diagnostico";
+import MotorConfig from "@/pages/MotorConfig";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
