@@ -1,59 +1,59 @@
 
 
-## Redesign do Motor de Cálculo + Bloqueio Simples Nacional
+## Redesign completo do Dashboard
 
-### Decisão: Simples Nacional
-Opção A — bloquear no formulário público com mensagem explicativa. Será implementado no `submit-lead-public` e no formulário `LeadForm.tsx`.
+### Arquivo alterado
+`src/pages/Dashboard.tsx` — rewrite visual completo, preservando toda lógica de dados (queries, realtime, role filtering, state).
 
-### Mudanças em `src/pages/MotorConfig.tsx` (rewrite visual, preservar lógica)
+### Estrutura
 
-**1. Top section — 3 stat cards em linha**
-- "Teses Ativas": count de `teses.filter(t => t.ativo).length`, número grande, fundo escuro (`bg-[#0a1a6e]`)
-- "Perfis Cobertos": contagem de combinações regime×segmento com ≥1 tese ativa, mostrado como `X / 15`
-- "Última Atualização": data mais recente de `atualizado_em` formatada como relativa ("há 2 dias")
+**SECTION 1 — Header strip** (full width, `bg-[#0a1564]`, h-[72px])
+- Left: greeting dinâmico + nome, abaixo data formatada em branco 60% opacity
+- Right: badge com role do usuário (fundo white/10%), badge com hora atual
 
-**2. Simulator — linha única compacta, full-width**
-- Label sutil "Simulador ao vivo" à esquerda
-- 3 selects inline (Segmento, Regime, Faturamento) horizontais
-- Resultado à direita na mesma linha: `Estimativa: R$ X,X mi → R$ X,X mi · Multiplicador: X,Xx`
-- Fundo sutil `bg-muted/50`, sem card title separado
+**SECTION 2 — KPI strip** (6 cards em uma faixa unificada branca, 88px, separados por divider vertical 1px)
+- Leads no pipeline (Users icon)
+- Novos leads 7d (TrendingUp)
+- Potencial da carteira (DollarSign, **text-red-600**)
+- Clientes ativos (Briefcase)
+- Total compensado (CheckCircle2, **text-green-700**)
+- Honorários a receber (FileText)
+- Cada card: ícone navy left, número bold navy, label gray, trend arrow right (green/red %)
 
-**3. Alert banner — condicional**
-- Só aparece se alguma combinação tem 0 teses
-- Amber banner compacto: "X combinações sem cobertura — leads com esse perfil receberão diagnóstico vazio."
-- Botão "Ver quais" que faz scroll até o grid de cobertura
+**SECTION 3 — Duas colunas** (left 65% / right 35%)
 
-**4. Teses table — compacta e densa**
-- Colunas: #, Nome da Tese, Regimes (chips coloridos: LR=azul escuro, LP=azul médio, SN=cinza), Segmentos (chips pequenos coloridos), % Mín, % Máx, Ativo (toggle pequeno), Última edição (tempo relativo)
-- Row height compacto, sem padding excessivo
-- Click na row abre modal de edição
-- Botão "Nova tese" no header
+Left column:
+- **Alertas operacionais**: amber border-left se alerts > 0, compact lines (dot + empresa + detail + "há Xd" + arrow). Se zero: linha verde "Tudo em ordem". Max 5.
+- **Funil comercial**: tabela compacta (stage name | thin bar navy | count + potencial). Click navega para /pipeline?etapa=X. Total no footer.
 
-**5. Coverage panel — grid compacto 5×3**
-- Tiles ~80×56px: label segmento, abreviação regime (LR/LP/SN), número grande no centro
-- Verde com check se ≥1 tese, vermelho com warning se 0
-- 3 colunas (LR, LP, SN) × 5 linhas (segmentos)
-- Texto abaixo: "X de 15 combinações com cobertura ativa."
+Right column (3 cards stacked):
+- **Últimos leads**: 5 items compactos (empresa bold, segmento chip colorido, potencial green, time ago). Link "Ver pipeline →"
+- **Compensações do mês**: total green large + lista, ou "R$ 0 registrado em [mês]" compacto. Link "Ver clientes →"
+- **Motor de teses** (bg navy): 3 métricas em row (diagnósticos / leads LP 30d / taxa conversão) em branco
 
-### Mudanças para bloqueio Simples Nacional
+**SECTION 4 — Bottom strip** (full width, white, 64px)
+- 3 métricas estáticas separadas por dividers: clientes na carteira / teses configuradas / combinações cobertas
+- Buscar count de `motor_teses_config` ativo e calcular combinações cobertas (regime×segmento)
 
-**6. `supabase/functions/submit-lead-public/index.ts`**
-- Após mapear regime, se for `simples`: retornar redirect para uma URL com query param `?blocked=simples` em vez de inserir lead
+### Detalhes visuais
+- Background geral: `bg-[#f4f5f7]`
+- Card radius: `rounded-[10px]`
+- Shadow: `shadow-[0_1px_3px_rgba(0,0,0,0.08)]`
+- Padding máximo 20px por card
+- Gaps 16px (gap-4)
+- Segmento chips: supermercado=blue, farmacia=green, pet=orange, materiais=gray, outros=purple (10px font, pill)
+- Trend arrows: green `#166534` / red `#991b1b`, 11px
+- Monetary: `Intl.NumberFormat('pt-BR')` via `formatCurrency` existente
 
-**7. `src/pages/LeadForm.tsx`**
-- Ao selecionar "Simples Nacional" no regime, mostrar alerta inline e desabilitar botão submit
+### Dados adicionais necessários
+- Query `motor_teses_config` para contar teses ativas e combinações cobertas (já temos acesso via RLS). Adicionar ao `fetchData`.
+- Query `clientes` count para bottom strip (já existe no KPI).
 
-**8. `public/lp.html`** (se existir formulário lá)
-- Adicionar validação similar no frontend da LP
-
-### Helpers adicionados
-- Função `timeAgo(dateStr)` para formatar datas relativas ("há 2 dias", "há 1 mês")
-- Regime abbreviation map: `{ lucro_real: "LR", lucro_presumido: "LP", simples: "SN" }`
-- Regime chip colors: `{ lucro_real: "bg-blue-900 text-white", lucro_presumido: "bg-blue-500 text-white", simples: "bg-gray-400 text-white" }`
-
-### Arquivos alterados
-1. `src/pages/MotorConfig.tsx` — rewrite visual completo (preservar toda lógica de dados)
-2. `supabase/functions/submit-lead-public/index.ts` — bloqueio Simples Nacional
-3. `src/pages/LeadForm.tsx` — alerta para Simples Nacional
-4. `public/lp.html` — validação Simples Nacional (se aplicável)
+### Preservado integralmente
+- Todas as queries Supabase existentes
+- Realtime subscriptions
+- Role-based filtering (`showLeads`, `showClientes`)
+- Routing/navigation
+- `AnimatedNumber`, `timeAgo`, `greeting` helpers
+- `fetchData` callback structure
 
