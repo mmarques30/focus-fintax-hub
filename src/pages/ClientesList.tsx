@@ -17,6 +17,8 @@ import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 
 export default function ClientesList() {
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+  const isComercial = userRole === "comercial";
   const [clientes, setClientes] = useState<any[]>([]);
   const [processos, setProcessos] = useState<any[]>([]);
   const [compensacoes, setCompensacoes] = useState<any[]>([]);
