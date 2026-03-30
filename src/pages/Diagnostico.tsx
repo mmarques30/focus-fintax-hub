@@ -627,7 +627,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
               <WhatsAppSVG />
               Quero minha análise completa
             </a>
-            <button onClick={() => window.print()} style={{
+            <button onClick={handleDownloadPDF} disabled={downloading} style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "14px 28px", borderRadius: 10,
               fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
