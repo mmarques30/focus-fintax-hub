@@ -97,12 +97,28 @@ const fontCondensed: React.CSSProperties = { fontFamily: "'Barlow Condensed', sa
 const fontBarlow: React.CSSProperties = { fontFamily: "'Barlow', sans-serif" };
 
 export default function Dashboard() {
-  const { profile, userRole } = useAuth();
+  const { profile, userRole, permissions } = useAuth();
   const navigate = useNavigate();
   const role = userRole ?? "comercial";
 
-  const defaultTab = role === "comercial" ? "comercial" : role === "gestor_tributario" ? "operacional" : (localStorage.getItem("dash_tab") ?? "comercial");
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const canTab = (tabKey: string) => {
+    const perm = permissions.find((p) => p.screen_key === tabKey);
+    if (!perm) return true; // no explicit perm = allowed (fallback)
+    return perm.can_access;
+  };
+  const canComercial = canTab("dashboard.comercial");
+  const canOperacional = canTab("dashboard.operacional");
+
+  const resolveDefault = () => {
+    if (canComercial && canOperacional) {
+      if (role === "gestor_tributario") return "operacional";
+      return localStorage.getItem("dash_tab") ?? "comercial";
+    }
+    if (canComercial) return "comercial";
+    if (canOperacional) return "operacional";
+    return "comercial";
+  };
+  const [activeTab, setActiveTab] = useState(resolveDefault);
   const switchTab = (t: string) => { setActiveTab(t); localStorage.setItem("dash_tab", t); };
 
   const [loading, setLoading] = useState(true);
