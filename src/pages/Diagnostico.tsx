@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import logoFocus from "@/assets/logo-focus-fintax.svg";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -182,16 +183,6 @@ function useStyles() {
   }, []);
 }
 
-const LogoSVG = () => (
-  <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-    <path d="M20 6C20 6 13 10 11 18C10 22 11 26 14 28C16 29.5 18 30 20 30C22 30 24 29.5 26 28C29 26 30 22 29 18C27 10 20 6 20 6Z" fill="#c8001e"/>
-    <path d="M16 18C16 18 17 20 20 20C23 20 24 18 24 18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M17 22C17 22 18.5 23.5 20 23.5C21.5 23.5 23 22 23 22" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="17" cy="16" r="1.5" fill="white"/>
-    <circle cx="23" cy="16" r="1.5" fill="white"/>
-  </svg>
-);
 
 const WhatsAppSVG = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -308,13 +299,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <LogoSVG />
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-            <span style={{ fontWeight: 600, fontSize: 18, letterSpacing: 1, color: "#fff" }}>FOCUS</span>
-            <span style={{ fontWeight: 500, fontSize: 11, color: "#c8001e", letterSpacing: 3, textTransform: "uppercase" }}>FinTax</span>
-          </div>
-        </div>
+        <img src={logoFocus} alt="Focus FinTax" style={{ height: 40, width: "auto" }} />
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
@@ -627,7 +612,10 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         color: "rgba(255,255,255,0.5)",
         letterSpacing: 0.5,
       }}>
-        <span>Focus FinTax LTDA · Grupo Focus · A Contabilidade do Supermercado</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <img src={logoFocus} alt="Focus FinTax" style={{ height: 24, width: "auto", opacity: 0.7 }} />
+          <span>Focus FinTax LTDA · Grupo Focus · A Contabilidade do Supermercado</span>
+        </div>
         <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10 }}>{reportDate}</span>
       </footer>
     </div>
