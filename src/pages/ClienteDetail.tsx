@@ -27,6 +27,13 @@ export default function ClienteDetail() {
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaData, setMapaData] = useState<{ processos: any[]; compensacoes: any[] } | null>(null);
 
+  // Laratex CSV import state
+  const [laratexOpen, setLatatexOpen] = useState(false);
+  const [csvData, setCsvData] = useState<string[][]>([]);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
+  const [importing, setImporting] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     supabase.from("clientes").select("*").eq("id", id).single().then(({ data, error }) => {
