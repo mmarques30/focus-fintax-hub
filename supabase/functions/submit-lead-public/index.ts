@@ -22,10 +22,16 @@ const FATURAMENTO_MAP: Record<string, string> = {
   "Acima de R$ 20M": "acima_15m",
 };
 
-const FATURAMENTO_VALORES: Record<string, number> = {
-  "ate_2m": 24_000_000,
-  "2m_15m": 102_000_000,
-  "acima_15m": 300_000_000,
+const REGIME_MAP: Record<string, string> = {
+  "Simples Nacional": "simples",
+  "Lucro Presumido": "lucro_presumido",
+  "Lucro Real": "lucro_real",
+};
+
+const FATURAMENTO_MIDPOINTS: Record<string, number> = {
+  "ate_2m": 1_000_000,
+  "2m_15m": 3_500_000,
+  "acima_15m": 20_000_000,
 };
 
 serve(async (req) => {
@@ -47,6 +53,7 @@ serve(async (req) => {
     const segmentoDb = SEGMENTO_MAP[segmento] || "outros";
     const faturamentoDb = FATURAMENTO_MAP[faturamento] || "ate_2m";
     const regimeDb = regime || "Simples Nacional";
+    const regimeKey = REGIME_MAP[regimeDb] || "simples";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -78,29 +85,30 @@ serve(async (req) => {
       );
     }
 
-    // Fetch benchmarks
-    const { data: benchmarks } = await supabase
-      .from("benchmarks_teses")
+    // Fetch eligible teses from motor_teses_config
+    const { data: motorTeses } = await supabase
+      .from("motor_teses_config")
       .select("*")
       .eq("ativo", true)
-      .eq("faturamento_faixa", faturamentoDb)
-      .eq("segmento", segmentoDb);
+      .contains("regimes_elegiveis", [regimeKey])
+      .contains("segmentos_elegiveis", [segmentoDb])
+      .order("ordem_exibicao", { ascending: true });
 
-    const faturamentoAnual = FATURAMENTO_VALORES[faturamentoDb] || 24_000_000;
-    const baseMensal = faturamentoAnual / 12;
+    const faturamentoMensal = FATURAMENTO_MIDPOINTS[faturamentoDb] || 1_000_000;
 
-    const teses = (benchmarks || []).map((b: any) => ({
-      tese_nome: b.tese_nome,
-      estimativa_minima: Math.round(baseMensal * 60 * (b.percentual_minimo / 100)),
-      estimativa_maxima: Math.round(baseMensal * 60 * (b.percentual_maximo / 100)),
-      percentual_minimo: b.percentual_minimo,
-      percentual_maximo: b.percentual_maximo,
+    const teses = (motorTeses || []).map((t: any) => ({
+      tese_nome: t.nome_exibicao,
+      descricao_comercial: t.descricao_comercial || "",
+      ordem_exibicao: t.ordem_exibicao || 0,
+      estimativa_minima: Math.round(faturamentoMensal * 60 * t.percentual_min),
+      estimativa_maxima: Math.round(faturamentoMensal * 60 * t.percentual_max),
+      percentual_minimo: Number(t.percentual_min),
+      percentual_maximo: Number(t.percentual_max),
     }));
 
-    // Filter IPI from public totals (same logic as analyze-lead)
-    const tesasPublicas = teses.filter((t: any) => !t.tese_nome.toLowerCase().includes("ipi embutido"));
-    const estimativa_total_minima = tesasPublicas.reduce((s: number, t: any) => s + t.estimativa_minima, 0);
-    const estimativa_total_maxima = tesasPublicas.reduce((s: number, t: any) => s + t.estimativa_maxima, 0);
+    const estimativa_total_minima = teses.reduce((s: number, t: any) => s + t.estimativa_minima, 0);
+    const estimativa_total_maxima = teses.reduce((s: number, t: any) => s + t.estimativa_maxima, 0);
+    const faturamentoAnual = faturamentoMensal * 12;
     const score = Math.min(100, Math.round((estimativa_total_maxima / faturamentoAnual) * 100));
 
     // Insert report
