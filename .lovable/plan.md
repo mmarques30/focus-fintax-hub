@@ -1,65 +1,22 @@
 
 
-## Permissões granulares por aba e sub-aba
+## Corrigir divisória e espaçamento das tabs do Dashboard
 
-### Resumo
-Expandir o sistema de permissões para incluir não apenas telas (menus), mas também abas e sub-abas internas de cada tela. O admin poderá habilitar/desabilitar cada aba individualmente na gestão de usuários.
+### Problema
+O header (saudação) e o tab switcher estão em dois blocos separados com `background: var(--dash-surface)` e `borderBottom`, criando uma linha divisória branca duplicada entre eles. As tabs têm padding excessivo vertical e ficam apertadas.
 
-### Mapeamento de todas as abas do sistema
+### Mudança (`src/pages/Dashboard.tsx`, linhas 336-356)
 
-| Tela | Aba/Sub-aba | Key |
-|------|------------|-----|
-| Dashboard | Visão Comercial | `dashboard.comercial` |
-| Dashboard | Visão Operacional | `dashboard.operacional` |
-| Clientes (detalhe) | Processos por Tese | `clientes.processos` |
-| Clientes (detalhe) | Compensações | `clientes.compensacoes` |
-| Clientes (detalhe) | Resumo Financeiro | `clientes.resumo` |
+Unificar header e tabs em um único bloco branco com uma única borda inferior:
 
-Pipeline, Motor de Cálculo, Benchmarks e Usuários não têm sub-abas — mantêm permissão apenas no nível de tela.
+- Remover `borderBottom` do header (linha 336)
+- Remover `background` e `borderBottom` do wrapper das tabs (linha 349), deixando-o dentro do mesmo bloco branco do header
+- Envolver header + tabs em um único `<div>` com `background: var(--dash-surface)` e `borderBottom: 1px solid var(--dash-border)`
+- Aumentar padding horizontal das tabs para `padding: 12px 32px` e adicionar `gap: 8px` no container flex
 
-### Mudanças
+### Resultado
+Header e tabs em um bloco contínuo branco, sem divisória duplicada, com tabs mais espaçadas.
 
-**1. `src/lib/screen-permissions.ts`**
-- Adicionar campo opcional `children` ao `ScreenDef` com sub-keys
-- Expandir `SCREENS` para incluir sub-abas em Dashboard e Clientes
-- `getDefaultPermissions` gera entradas para cada sub-aba
-- Manter retrocompatibilidade: telas sem children funcionam como antes
-
-```typescript
-export interface ScreenDef {
-  key: string;
-  label: string;
-  route: string;
-  defaultRoles: string[];
-  defaultReadOnlyRoles: string[];
-  children?: { key: string; label: string; defaultRoles: string[]; defaultReadOnlyRoles: string[] }[];
-}
-```
-
-**2. `src/pages/UserManagement.tsx`**
-- No checklist de permissões, renderizar sub-abas indentadas abaixo da tela-pai
-- Sub-abas só aparecem se a tela-pai estiver habilitada
-- Cada sub-aba tem seu próprio checkbox de acesso e somente leitura
-- As sub-abas são salvas na mesma tabela `user_permissions` com keys como `dashboard.comercial`
-
-**3. `src/hooks/useAuth.tsx`**
-- Sem mudança — já carrega todas as permissões por `screen_key`, que agora inclui sub-keys
-
-**4. `src/pages/Dashboard.tsx`**
-- Verificar permissão de `dashboard.comercial` e `dashboard.operacional` antes de mostrar cada tab
-- Se só uma tab permitida, mostrar direto sem switcher
-- Se nenhuma, mostrar mensagem de acesso restrito
-
-**5. `src/pages/ClienteDetail.tsx`**
-- Verificar permissões `clientes.processos`, `clientes.compensacoes`, `clientes.resumo`
-- Filtrar TabsTrigger e TabsContent — só renderizar abas permitidas
-- Default tab = primeira aba permitida
-
-**6. Migration SQL** — nenhuma necessária (tabela `user_permissions` já suporta qualquer `screen_key` string)
-
-### Arquivos alterados
-1. `src/lib/screen-permissions.ts` — children nas definições
-2. `src/pages/UserManagement.tsx` — UI de sub-abas no modal
-3. `src/pages/Dashboard.tsx` — filtrar tabs por permissão
-4. `src/pages/ClienteDetail.tsx` — filtrar tabs por permissão
+### Arquivo alterado
+1. `src/pages/Dashboard.tsx` — linhas 336-356
 
