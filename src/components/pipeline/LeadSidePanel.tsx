@@ -32,7 +32,9 @@ interface HistoricoEntry {
 }
 
 export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const isEditable = lead ? canEditLead(userRole, lead.status_funil) : false;
+  const isFullReadOnly = userRole === "gestor_tributario";
   const [obs, setObs] = useState("");
   const [historico, setHistorico] = useState<HistoricoEntry[]>([]);
   const [showConvert, setShowConvert] = useState(false);
