@@ -183,16 +183,6 @@ function useStyles() {
   }, []);
 }
 
-const LogoSVG = () => (
-  <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-    <path d="M20 6C20 6 13 10 11 18C10 22 11 26 14 28C16 29.5 18 30 20 30C22 30 24 29.5 26 28C29 26 30 22 29 18C27 10 20 6 20 6Z" fill="#c8001e"/>
-    <path d="M16 18C16 18 17 20 20 20C23 20 24 18 24 18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M17 22C17 22 18.5 23.5 20 23.5C21.5 23.5 23 22 23 22" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="17" cy="16" r="1.5" fill="white"/>
-    <circle cx="23" cy="16" r="1.5" fill="white"/>
-  </svg>
-);
 
 const WhatsAppSVG = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
