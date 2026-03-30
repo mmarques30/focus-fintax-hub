@@ -44,12 +44,12 @@ const FATURAMENTO_MIDPOINTS: Record<string, number> = {
   acima_15m: 20_000_000,
 };
 
-const TESE_DESCRICOES: Record<string, string> = {
-  "PIS/COFINS Monofásico": "Produtos com tributação concentrada na indústria — o varejo pode ter direito à restituição de valores pagos indevidamente na cadeia.",
-  "ICMS-ST": "O ICMS retido por substituição tributária não representa receita — logo, não deve compor a base de PIS/COFINS. Recuperação pode ser material e imediata.",
+const TESE_DESCRICOES_FALLBACK: Record<string, string> = {
+  "PIS/COFINS Insumos": "Produtos com tributação concentrada na indústria — o varejo pode ter direito à restituição de valores pagos indevidamente na cadeia.",
   "Exclusão ICMS da Base PIS/COFINS": "Decisão histórica do STF (RE 574.706 — Tema 69): o ICMS não compõe o faturamento para fins de PIS/COFINS. Risco baixíssimo — jurisprudência consolidada.",
-  "ICMS Energia Elétrica": "Cobrança indevida de ICMS sobre demanda contratada de energia elétrica — créditos recuperáveis nos últimos 5 anos.",
-  "IPI Embutido": "Base de cálculo do PIS/COFINS pode estar indevidamente inflada pelo IPI. Possibilidade de recuperação de valores pagos a maior.",
+  "Subvenção ICMS (IRPJ/CSLL)": "Incentivos fiscais de ICMS podem ser excluídos da base de IRPJ e CSLL, gerando economia tributária relevante.",
+  "Reporto / PIS-COFINS Acumulado": "Regime tributário para modernização e créditos acumulados de PIS/COFINS passíveis de compensação administrativa.",
+  "Exclusão ICMS-ST": "O ICMS retido por substituição tributária não representa receita — logo, não deve compor a base de PIS/COFINS.",
 };
 
 function formatValue(v: number): string {
