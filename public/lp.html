@@ -720,13 +720,42 @@ function fmt(v){
   if(v>=1000)return'R$ '+(v/1000).toFixed(0)+'k';
   return'R$ '+v.toFixed(0);
 }
-function runDiag(){
+async function runDiag(){
   const nome=document.getElementById('nome').value.trim();
   const empresa=document.getElementById('empresa').value.trim();
+  const cnpj=document.getElementById('cnpj').value.trim();
+  const whatsapp=document.getElementById('whatsapp').value.trim();
+  const emailEl=document.getElementById('email');
+  const email=emailEl?emailEl.value.trim():'';
   const segmento=document.getElementById('segmento').value;
   const regime=document.getElementById('regime').value;
   const fat=document.getElementById('faturamento').value;
   if(!nome||!segmento||!fat){alert('Por favor preencha pelo menos: nome, segmento e faturamento.');return;}
+
+  // Show loading state on button
+  const btn=document.querySelector('#form-state .btn-primary')||document.querySelector('#form-state button');
+  const btnOrigText=btn?btn.textContent:'';
+  if(btn){btn.textContent='Analisando...';btn.disabled=true;}
+
+  try{
+    const SUPABASE_URL='https://klfpgpymgkfurylwpkrc.supabase.co';
+    const resp=await fetch(SUPABASE_URL+'/functions/v1/submit-lead-public',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({nome,empresa,cnpj,whatsapp,email,segmento,regime,faturamento:fat})
+    });
+    const data=await resp.json();
+    if(resp.ok&&data.token){
+      window.location.href='/diagnostico/'+data.token;
+      return;
+    }
+    console.error('submit-lead-public error:',data);
+  }catch(e){
+    console.error('Network error:',e);
+  }
+
+  // Fallback: client-side calculation
+  if(btn){btn.textContent=btnOrigText;btn.disabled=false;}
   const faixas={'Até R$ 500 mil':350000,'R$ 500 mil – R$ 1M':750000,'R$ 1M – R$ 5M':2500000,'R$ 5M – R$ 20M':10000000,'Acima de R$ 20M':25000000};
   const base=faixas[fat]||1000000;
   const scale=base/1000000;
