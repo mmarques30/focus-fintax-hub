@@ -361,7 +361,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        <img src={logoFocus} alt="Focus FinTax" style={{ height: 40, width: "auto" }} />
+        <img src={logoFocusWhite} alt="Focus FinTax" style={{ height: 56, width: "auto" }} />
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
