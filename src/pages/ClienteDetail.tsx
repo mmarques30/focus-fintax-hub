@@ -397,6 +397,81 @@ export default function ClienteDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Laratex CSV Import Modal */}
+      <Dialog open={laratexOpen} onOpenChange={(v) => { setLatatexOpen(v); if (!v) { setCsvData([]); setCsvHeaders([]); } }}>
+        <DialogContent className="max-w-[700px] max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">Importação temporária de dados — aguardando integração direta com Laratex</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Upload area */}
+            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">Exporte os dados do cliente no Laratex em formato CSV e importe aqui.</p>
+              <label className="cursor-pointer">
+                <span className="text-sm text-primary hover:underline">Selecionar arquivo CSV</span>
+                <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} />
+              </label>
+            </div>
+
+            {/* Preview */}
+            {csvHeaders.length > 0 && (
+              <>
+                <div className="rounded border overflow-auto max-h-[200px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {csvHeaders.map((h, i) => <TableHead key={i} className="text-xs whitespace-nowrap">{h}</TableHead>)}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {csvData.slice(0, 5).map((row, ri) => (
+                        <TableRow key={ri}>
+                          {row.map((cell, ci) => <TableCell key={ci} className="text-xs py-1">{cell}</TableCell>)}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <p className="text-xs text-muted-foreground">{csvData.length} linhas detectadas · Mostrando primeiras 5</p>
+
+                {/* Column mapping */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: "tese", label: "Tese *" },
+                    { key: "valor_credito", label: "Valor Crédito" },
+                    { key: "mes_referencia", label: "Mês Referência" },
+                    { key: "valor_compensado", label: "Valor Compensado" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-medium">{label}</label>
+                      <Select value={columnMap[key]} onValueChange={(v) => setColumnMap((prev) => ({ ...prev, [key]: v === "__ignore__" ? "" : v }))}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="— Ignorar —" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__ignore__">— Ignorar —</SelectItem>
+                          {csvHeaders.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+
+                <Button onClick={handleImport} disabled={importing || !columnMap.tese} className="w-full">
+                  {importing ? "Importando..." : "Confirmar importação"}
+                </Button>
+              </>
+            )}
+
+            <p className="text-xs text-muted-foreground italic text-center">
+              Esta importação será substituída pela integração automática com Laratex quando disponível.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
