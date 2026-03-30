@@ -8,7 +8,8 @@ import type { PipelineLead } from "@/pages/Pipeline";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { ConvertClientModal } from "./ConvertClientModal";
-
+import { canEditLead, canDragInPipeline } from "@/lib/role-permissions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 interface Props {
   leads: PipelineLead[];
   onLeadClick: (id: string) => void;
