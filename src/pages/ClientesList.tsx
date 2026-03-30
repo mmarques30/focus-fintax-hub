@@ -190,12 +190,50 @@ export default function ClientesList() {
                 {c.hasAlertNaoProtocolado ? <AlertOctagon className="h-4 w-4 text-red-500" /> :
                  c.hasAlertAguardando ? <AlertTriangle className="h-4 w-4 text-orange-500" /> : null}
               </TableCell>
+              {!isComercial && (
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditCliente(c); setModalOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(c); }}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <ClienteFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={fetchAll} />
+      <ClienteFormModal open={modalOpen} onOpenChange={(v) => { setModalOpen(v); if (!v) setEditCliente(null); }} onSuccess={fetchAll} cliente={editCliente} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteTarget?.empresa}</strong>? Todos os processos e compensações associados serão removidos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              setDeleting(true);
+              await supabase.from("compensacoes_mensais").delete().eq("cliente_id", deleteTarget.id);
+              await supabase.from("processos_teses").delete().eq("cliente_id", deleteTarget.id);
+              const { error } = await supabase.from("clientes").delete().eq("id", deleteTarget.id);
+              setDeleting(false);
+              if (error) { toast.error("Erro ao excluir cliente."); return; }
+              toast.success("Cliente excluído com sucesso!");
+              setDeleteTarget(null);
+              fetchAll();
+            }}>{deleting ? "Excluindo..." : "Excluir"}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Report Modal */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
