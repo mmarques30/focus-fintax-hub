@@ -12,12 +12,13 @@ interface MenuItem {
   url: string;
   icon: typeof LayoutDashboard;
   roles?: string[]; // if undefined, visible to all
+  readOnlyRoles?: string[]; // roles that see this item but read-only
 }
 
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, roles: ["admin", "comercial", "pmo"] },
-  { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo"] },
+  { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, roles: ["admin", "comercial", "pmo", "gestor_tributario"], readOnlyRoles: ["gestor_tributario"] },
+  { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo", "comercial"], readOnlyRoles: ["comercial"] },
   { title: "Benchmarks e Teses", url: "/benchmarks", icon: Database, roles: ["admin"] },
   { title: "Motor de Cálculo", url: "/configuracoes/motor", icon: Settings, roles: ["admin", "pmo"] },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
