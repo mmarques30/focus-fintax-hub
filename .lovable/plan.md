@@ -1,20 +1,24 @@
 
 
-## Remover faixa azul do Dashboard e redesenhar header
+## Cobertura por Perfil — Remover espaço lateral
 
 ### Problema
-A faixa navy (`bg-[#0a1564] h-16`) no topo do dashboard duplica visualmente o header da aplicação (AppHeader), criando uma barra azul estranha.
+O grid "Cobertura por Perfil" tem `maxWidth: 400` hardcoded (linha 408), deixando ~70% do card vazio à direita.
 
-### Mudança
+### Solução
+Expandir o card para layout de 2 colunas: grid de cobertura à esquerda + resumo útil à direita com estatísticas das teses por regime e segmento.
 
-**`src/pages/Dashboard.tsx`** (linhas 287-305)
+### Mudança (`src/pages/MotorConfig.tsx`, linhas 400-467)
 
-Substituir o bloco `div.bg-[#0a1564]` por um header limpo em fundo branco, integrado ao layout:
+**Layout**: Card com `grid grid-cols-2 gap-6` interno:
+- **Coluna esquerda**: Grid de cobertura atual, remover `maxWidth: 400`, manter `grid-cols-4`
+- **Coluna direita**: "Resumo por Regime" — 3 mini-cards (LR, LP, SN) mostrando quantas teses ativas cobrem cada regime, e abaixo "Resumo por Segmento" — lista dos 5 segmentos com count de teses e barra de progresso (count / total teses ativas)
 
-- Greeting + data: texto em `text-gray-900` (bold) e `text-gray-500` (data), alinhados à esquerda
-- Role badge + horário: pills com borda cinza clara (`border border-gray-200`), texto navy, alinhados à direita
-- Fundo: `bg-white` com `border-b border-gray-200`, mesma altura (`h-16`)
-- Remove o contraste navy que conflita com o AppHeader acima
+Isso preenche o espaço vazio com dados úteis e complementares ao grid de cobertura.
 
-Resultado: header clean em branco que não compete com a sidebar/header do app.
+### Detalhes
+- Remover `style={{ maxWidth: 400 }}` da linha 408
+- Envolver conteúdo do CardContent em `grid grid-cols-1 lg:grid-cols-2 gap-6`
+- Coluna direita: calcular counts a partir do `coverageGrid` já existente — sem novas queries
+- Texto footer "X de 15 combinações" move para abaixo do grid esquerdo
 
