@@ -51,6 +51,8 @@ export type Database = {
         Row: {
           atualizado_em: string | null
           cnpj: string
+          compensacao_outro_escritorio: string | null
+          compensando_fintax: boolean | null
           criado_em: string | null
           email: string | null
           empresa: string
@@ -66,6 +68,8 @@ export type Database = {
         Insert: {
           atualizado_em?: string | null
           cnpj?: string
+          compensacao_outro_escritorio?: string | null
+          compensando_fintax?: boolean | null
           criado_em?: string | null
           email?: string | null
           empresa: string
@@ -81,6 +85,8 @@ export type Database = {
         Update: {
           atualizado_em?: string | null
           cnpj?: string
+          compensacao_outro_escritorio?: string | null
+          compensando_fintax?: boolean | null
           criado_em?: string | null
           email?: string | null
           empresa?: string
@@ -99,6 +105,57 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compensacoes_mensais: {
+        Row: {
+          cliente_id: string
+          criado_em: string | null
+          id: string
+          mes_referencia: string
+          observacao: string | null
+          processo_tese_id: string
+          status_pagamento: string | null
+          valor_compensado: number | null
+          valor_nf_servico: number | null
+        }
+        Insert: {
+          cliente_id: string
+          criado_em?: string | null
+          id?: string
+          mes_referencia: string
+          observacao?: string | null
+          processo_tese_id: string
+          status_pagamento?: string | null
+          valor_compensado?: number | null
+          valor_nf_servico?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          criado_em?: string | null
+          id?: string
+          mes_referencia?: string
+          observacao?: string | null
+          processo_tese_id?: string
+          status_pagamento?: string | null
+          valor_compensado?: number | null
+          valor_nf_servico?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compensacoes_mensais_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensacoes_mensais_processo_tese_id_fkey"
+            columns: ["processo_tese_id"]
+            isOneToOne: false
+            referencedRelation: "processos_teses"
             referencedColumns: ["id"]
           },
         ]
@@ -248,6 +305,59 @@ export type Database = {
           tese?: string
         }
         Relationships: []
+      }
+      processos_teses: {
+        Row: {
+          atualizado_em: string | null
+          cliente_id: string
+          criado_em: string | null
+          id: string
+          nome_exibicao: string
+          observacao: string | null
+          percentual_honorario: number | null
+          status_contrato: string | null
+          status_processo: string | null
+          tese: string
+          valor_credito: number | null
+          valor_honorario: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          cliente_id: string
+          criado_em?: string | null
+          id?: string
+          nome_exibicao: string
+          observacao?: string | null
+          percentual_honorario?: number | null
+          status_contrato?: string | null
+          status_processo?: string | null
+          tese: string
+          valor_credito?: number | null
+          valor_honorario?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          cliente_id?: string
+          criado_em?: string | null
+          id?: string
+          nome_exibicao?: string
+          observacao?: string | null
+          percentual_honorario?: number | null
+          status_contrato?: string | null
+          status_processo?: string | null
+          tese?: string
+          valor_credito?: number | null
+          valor_honorario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_teses_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
