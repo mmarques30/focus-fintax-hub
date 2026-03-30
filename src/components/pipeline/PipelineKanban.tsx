@@ -122,7 +122,8 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
                   >
                     <div
                       className="px-1 py-1 cursor-pointer select-none flex items-center gap-1"
-                      onClick={() => toggleCollapse(stage.value)}
+                      onClick={(e) => { e.stopPropagation(); toggleCollapse(stage.value); }}
+                      onMouseDown={(e) => e.stopPropagation()}
                     >
                       <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                       <div className="flex-1 flex items-center justify-between">
