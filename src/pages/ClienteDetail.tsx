@@ -163,15 +163,6 @@ export default function ClienteDetail() {
     }
   };
 
-  const openMapa = async () => {
-    const [{ data: processos }, { data: compensacoes }] = await Promise.all([
-      supabase.from("processos_teses").select("id, tese, nome_exibicao, valor_credito, percentual_honorario, valor_honorario, status_contrato").eq("cliente_id", id!),
-      supabase.from("compensacoes_mensais").select("processo_tese_id, mes_referencia, valor_compensado, status_pagamento").eq("cliente_id", id!),
-    ]);
-    setMapaData({ processos: processos || [], compensacoes: compensacoes || [] });
-    setMapaOpen(true);
-  };
-
   if (loading || !cliente) {
     return <div className="flex items-center justify-center h-full"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   }
@@ -179,29 +170,6 @@ export default function ClienteDetail() {
   const whatsappLink = cliente.whatsapp
     ? `https://wa.me/55${cliente.whatsapp.replace(/\D/g, "")}`
     : null;
-
-  // Mapa data calculations
-  const assinados = mapaData?.processos.filter((p) => p.status_contrato === "assinado") || [];
-  const totalIdentificado = assinados.reduce((s, p) => s + Number(p.valor_credito || 0), 0);
-  const totalHonorarios = assinados.reduce((s, p) => s + Number(p.valor_honorario || 0), 0);
-  const totalCompensado = (mapaData?.compensacoes || []).reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
-  const saldo = totalIdentificado - totalCompensado;
-
-  // Compensações grouped by month
-  const compensacoesByMonth = (() => {
-    if (!mapaData) return [];
-    const map: Record<string, any[]> = {};
-    const processosMap: Record<string, string> = {};
-    (mapaData.processos || []).forEach((p) => { processosMap[p.id] = p.nome_exibicao; });
-    (mapaData.compensacoes || []).forEach((c) => {
-      const mes = c.mes_referencia;
-      if (!map[mes]) map[mes] = [];
-      map[mes].push({ ...c, tese_nome: processosMap[c.processo_tese_id] || "—" });
-    });
-    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
-  })();
-
-  const dataAtual = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
   return (
     <div className="flex h-full">
