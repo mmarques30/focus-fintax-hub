@@ -39,6 +39,7 @@ const App = () => (
                       <Route path="/leads" element={<LeadQueue />} />
                       <Route path="/leads/novo" element={<LeadForm />} />
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />
+                      <Route path="/clientes" element={<Clientes />} />
                       <Route path="/benchmarks" element={<Benchmarks />} />
                       <Route path="/usuarios" element={<UserManagement />} />
                       <Route path="*" element={<NotFound />} />
