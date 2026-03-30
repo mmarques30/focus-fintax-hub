@@ -1,4 +1,4 @@
-import { anim, fontMono } from "../dashboard-utils";
+import { animDelay } from "../dashboard-utils";
 
 interface StalledLead {
   empresa: string;
@@ -14,18 +14,18 @@ export function AlertasBanner({ stalledLeads }: Props) {
   if (stalledLeads.length === 0) return null;
 
   return (
-    <div style={{ ...anim(90), background: "var(--dash-surface)", border: "1px solid rgba(180,83,9,0.2)", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
-      <div style={{ padding: "10px 18px", background: "var(--dash-amber-bg)", borderBottom: "1px solid rgba(180,83,9,0.12)", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--dash-amber)", flexShrink: 0 }} />
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "var(--dash-amber)" }}>
+    <div className="animate-dash-in bg-white border border-[rgba(180,83,9,0.2)] rounded-[10px] overflow-hidden mb-3.5" style={animDelay(90)}>
+      <div className="px-[18px] py-2.5 bg-[rgba(251,191,36,0.12)] border-b border-[rgba(180,83,9,0.12)] flex items-center gap-2">
+        <span className="w-[7px] h-[7px] rounded-full bg-dash-amber shrink-0" />
+        <span className="text-[11px] font-bold tracking-[0.8px] uppercase text-dash-amber">
           Requer atenção — {stalledLeads.length} lead{stalledLeads.length > 1 ? "s" : ""} sem movimentação
         </span>
       </div>
       {stalledLeads.slice(0, 5).map((l, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", padding: "8px 18px", borderBottom: "1px solid rgba(0,0,0,0.04)", gap: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", width: 220, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.empresa}</span>
-          <span style={{ fontSize: 11, color: "var(--ink-60)", flex: 1 }}>Em Contrato Emitido sem atualização</span>
-          <span style={{ ...fontMono, fontSize: 10, color: "var(--dash-amber)", fontWeight: 600, background: "var(--dash-amber-10)", padding: "2px 7px", borderRadius: 4, flexShrink: 0 }}>há {l.days} dias</span>
+        <div key={i} className="flex items-center px-[18px] py-2 border-b border-[rgba(0,0,0,0.04)] gap-3">
+          <span className="text-xs font-semibold text-ink w-[220px] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap">{l.empresa}</span>
+          <span className="text-[11px] text-ink-60 flex-1">Em Contrato Emitido sem atualização</span>
+          <span className="font-mono-dm tabular-nums text-[10px] text-dash-amber font-semibold bg-[rgba(180,83,9,0.10)] px-[7px] py-[2px] rounded shrink-0">há {l.days} dias</span>
         </div>
       ))}
     </div>

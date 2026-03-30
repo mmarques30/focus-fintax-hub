@@ -1,4 +1,4 @@
-import { anim, KpiBox, compactCurrency } from "../dashboard-utils";
+import { KpiBox, compactCurrency, animDelay } from "../dashboard-utils";
 
 interface Props {
   comLeads: number;
@@ -11,7 +11,7 @@ interface Props {
 
 export function KpiStripComercial({ comLeads, comNewWeek, trendDiff, comPotencial, comContratos, comTaxaConversao }: Props) {
   return (
-    <div style={{ ...anim(40), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, display: "grid", gridTemplateColumns: "repeat(5,1fr)", marginBottom: 14, overflow: "hidden" }}>
+    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 mb-3.5 overflow-hidden" style={animDelay(40)}>
       <KpiBox label="Leads no pipeline" value={String(comLeads)} sub="excluindo perdidos" />
       <KpiBox label="Novos esta semana" value={String(comNewWeek)} sub="leads captados (7d)" trend={trendDiff} />
       <KpiBox label="Potencial total" value={compactCurrency(comPotencial)} sub="soma do potencial máx." colorClass="red" />

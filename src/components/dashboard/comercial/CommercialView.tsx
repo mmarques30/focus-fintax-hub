@@ -1,6 +1,6 @@
 import type { NavigateFunction } from "react-router-dom";
 import type { FunnelRow, RecentLead } from "../dashboard-utils";
-import { anim } from "../dashboard-utils";
+import { animDelay } from "../dashboard-utils";
 import { KpiStripComercial } from "./KpiStripComercial";
 import { AlertasBanner } from "./AlertasBanner";
 import { FunilComercial } from "./FunilComercial";
@@ -41,14 +41,14 @@ export function CommercialView(props: Props) {
       />
       <AlertasBanner stalledLeads={props.stalledLeads} />
 
-      <div style={{ ...anim(140), display: "grid", gridTemplateColumns: "1fr 320px", gap: 14, marginBottom: 14 }}>
+      <div className="animate-dash-in grid grid-cols-[1fr_320px] gap-3.5 mb-3.5" style={animDelay(140)}>
         <FunilComercial
           funnelData={props.funnelData} maxFunnelCount={props.maxFunnelCount}
           totalFunnelCount={props.totalFunnelCount} totalFunnelPotencial={props.totalFunnelPotencial}
           segmentoData={props.segmentoData} maxSegCount={props.maxSegCount}
           origemData={props.origemData} navigate={props.navigate}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="flex flex-col gap-3">
           <LeadsRecentes recentLeads={props.recentLeads} navigate={props.navigate} />
           <QualidadeCarteira scoreDistribution={props.scoreDistribution} />
           <MotorPerformance motorDiagnosticos={props.motorDiagnosticos} motorTesesAtivas={props.motorTesesAtivas} />

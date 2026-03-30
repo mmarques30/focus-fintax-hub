@@ -1,4 +1,4 @@
-import { anim, fontCondensed, compactCurrency } from "../dashboard-utils";
+import { animDelay, compactCurrency } from "../dashboard-utils";
 
 interface Props {
   comLeads: number;
@@ -10,20 +10,19 @@ interface Props {
 
 export function BottomStripComercial({ comLeads, comContratos, comClientesAtivos, comPotencial, comTaxaConversao }: Props) {
   const items = [
-    { val: String(comLeads), label: "Leads no pipeline" },
-    { val: String(comContratos), label: "Contratos emitidos", colorClass: "amber" },
-    { val: String(comClientesAtivos), label: "Clientes ativos", colorClass: "green" },
-    { val: compactCurrency(comPotencial), label: "Potencial total", colorClass: "red" },
-    { val: `${comTaxaConversao}%`, label: "Taxa de conversão", colorClass: "green" },
+    { val: String(comLeads), label: "Leads no pipeline", colorClass: "" },
+    { val: String(comContratos), label: "Contratos emitidos", colorClass: "text-dash-amber" },
+    { val: String(comClientesAtivos), label: "Clientes ativos", colorClass: "text-dash-green" },
+    { val: compactCurrency(comPotencial), label: "Potencial total", colorClass: "text-dash-red" },
+    { val: `${comTaxaConversao}%`, label: "Taxa de conversão", colorClass: "text-dash-green" },
   ];
-  const colorMap: Record<string, string> = { red: "var(--dash-red)", green: "var(--dash-green)", amber: "var(--dash-amber)" };
 
   return (
-    <div style={{ ...anim(190), background: "var(--dash-surface)", border: "1px solid var(--dash-border)", borderRadius: 10, padding: "12px 24px", display: "flex", alignItems: "center", marginTop: 14 }}>
+    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] px-6 py-3 flex items-center mt-3.5" style={animDelay(190)}>
       {items.map((item, i) => (
-        <div key={i} style={{ flex: 1, textAlign: "center", borderRight: i < 4 ? "1px solid var(--dash-border)" : "none", padding: "0 12px" }}>
-          <span style={{ ...fontCondensed, fontSize: 20, fontWeight: 700, color: item.colorClass ? colorMap[item.colorClass] : "var(--navy)", display: "block", lineHeight: 1.1 }}>{item.val}</span>
-          <span style={{ fontSize: 9, color: "var(--ink-35)", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginTop: 3, display: "block" }}>{item.label}</span>
+        <div key={i} className={`flex-1 text-center px-3 ${i < 4 ? "border-r border-[rgba(10,21,100,0.10)]" : ""}`}>
+          <span className={`font-display text-xl font-bold block leading-[1.1] ${item.colorClass || "text-navy"}`}>{item.val}</span>
+          <span className="text-[9px] text-ink-35 font-semibold tracking-[1px] uppercase mt-[3px] block">{item.label}</span>
         </div>
       ))}
     </div>

@@ -82,31 +82,28 @@ export interface RecentLead { id: string; empresa: string; segmento: string; cri
 export interface MonthBar { month: string; label: string; valor: number; honorarios: number; isProjection?: boolean }
 export interface ClientRank { id: string; empresa: string; compensado: number; saldo: number; identificado: number; honorarios: number }
 
-/* ─── Shared font styles ─── */
+/* ─── Shared font style objects (kept for Recharts tick props that need style objects) ─── */
 export const fontMono: React.CSSProperties = { fontFamily: "'DM Mono', monospace", fontVariantNumeric: "tabular-nums" };
 export const fontCondensed: React.CSSProperties = { fontFamily: "'Barlow Condensed', sans-serif" };
 export const fontBarlow: React.CSSProperties = { fontFamily: "'Barlow', sans-serif" };
 
-/* ─── anim helper ─── */
-export const anim = (delay: number): React.CSSProperties => ({
-  opacity: 0, transform: "translateY(10px)",
-  animation: `fu 0.45s ease ${delay}ms both`,
-});
+/* ─── anim delay style helper ─── */
+export const animDelay = (ms: number): React.CSSProperties => ({ '--anim-delay': `${ms}ms` } as React.CSSProperties);
 
 /* ─── KpiBox ─── */
 export function KpiBox({ label, value, sub, colorClass, trend, last }: { label: string; value: string; sub: string; colorClass?: string; trend?: number; last?: boolean }) {
-  const colorMap: Record<string, string> = { red: "var(--dash-red)", green: "var(--dash-green)", amber: "var(--dash-amber)" };
-  const valColor = colorClass ? colorMap[colorClass] : "var(--navy)";
+  const colorMap: Record<string, string> = { red: "text-dash-red", green: "text-dash-green", amber: "text-dash-amber" };
+  const valColorClass = colorClass ? colorMap[colorClass] ?? "text-navy" : "text-navy";
   return (
-    <div style={{ padding: "16px 20px", borderRight: last ? "none" : "1px solid var(--dash-border)", position: "relative" }}>
+    <div className={`px-5 py-4 relative ${last ? "" : "border-r border-[rgba(10,21,100,0.10)]"}`}>
       {trend !== undefined && trend !== 0 && (
-        <span style={{ position: "absolute", top: 14, right: 14, fontSize: 10, fontWeight: 600, ...fontMono, color: trend > 0 ? "var(--dash-green)" : "var(--dash-red)" }}>
+        <span className={`absolute top-3.5 right-3.5 text-[10px] font-semibold font-mono-dm tabular-nums ${trend > 0 ? "text-dash-green" : "text-dash-red"}`}>
           {trend > 0 ? "↑" : "↓"} {trend > 0 ? "+" : ""}{trend} vs sem. ant.
         </span>
       )}
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.4, textTransform: "uppercase", color: "var(--ink-35)", marginBottom: 7 }}>{label}</div>
-      <div style={{ ...fontCondensed, fontSize: 26, fontWeight: 700, lineHeight: 1, color: valColor }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--ink-35)", marginTop: 4 }}>{sub}</div>
+      <div className="text-[10px] font-semibold tracking-[1.4px] uppercase text-ink-35 mb-[7px]">{label}</div>
+      <div className={`font-display text-[26px] font-bold leading-none ${valColorClass}`}>{value}</div>
+      <div className="text-[11px] text-ink-35 mt-1">{sub}</div>
     </div>
   );
 }
