@@ -275,7 +275,7 @@ export default function Dashboard() {
   const opEconomia = opCompensado - opHonorarios;
 
   return (
-    <div className="bg-[#f4f5f7] -m-6 min-h-[calc(100vh-64px)]">
+    <div className="bg-[#f4f5f7] -m-4 min-h-[calc(100vh-64px)]">
       {/* ═══ Header ═══ */}
       <div className="bg-[#0a1564] h-16 px-6 flex items-center justify-between">
         <div>
@@ -319,10 +319,10 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-3 py-3 space-y-3">
         {loading ? (
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg p-4 flex gap-4">
+          <div className="space-y-3">
+            <div className="bg-white rounded-lg p-4 flex gap-3">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 flex-1" />)}
             </div>
             <Skeleton className="h-64 w-full rounded-lg" />
@@ -343,7 +343,7 @@ export default function Dashboard() {
             </div>
 
             {/* Row 2 — 60/40 */}
-            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-3">
               {/* LEFT — Funil */}
               <div className="bg-white rounded-lg shadow-sm px-5 py-4">
                 <p className="text-sm font-bold text-gray-900 mb-3">Funil comercial</p>
@@ -474,7 +474,7 @@ export default function Dashboard() {
             </div>
 
             {/* Row 3 — Rankings */}
-            <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-3">
               {/* LEFT — Top compensado */}
               <div className="bg-white rounded-lg shadow-sm px-5 py-4">
                 <p className="text-sm font-bold text-gray-900 mb-3">Ranking de compensações</p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Users, LogOut, UserPlus, Database, Building2, Settings, Lock } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, UserPlus, Building2, Settings, Lock, ChevronDown } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,21 +11,37 @@ interface MenuItem {
   title: string;
   url: string;
   icon: typeof LayoutDashboard;
-  roles?: string[]; // if undefined, visible to all
-  readOnlyRoles?: string[]; // roles that see this item but read-only
+  roles?: string[];
+  readOnlyRoles?: string[];
+  children?: SubMenuItem[];
+}
+
+interface SubMenuItem {
+  title: string;
+  url: string;
+  roles?: string[];
 }
 
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, roles: ["admin", "comercial", "pmo", "gestor_tributario"], readOnlyRoles: ["gestor_tributario"] },
   { title: "Clientes", url: "/clientes", icon: Building2, roles: ["admin", "gestor_tributario", "pmo", "comercial"], readOnlyRoles: ["comercial"] },
-  { title: "Benchmarks e Teses", url: "/benchmarks", icon: Database, roles: ["admin"] },
-  { title: "Motor de Cálculo", url: "/configuracoes/motor", icon: Settings, roles: ["admin", "pmo"] },
+  {
+    title: "Configurações",
+    url: "/configuracoes",
+    icon: Settings,
+    roles: ["admin", "pmo"],
+    children: [
+      { title: "Motor de Cálculo", url: "/configuracoes/motor", roles: ["admin", "pmo"] },
+      { title: "Benchmarks e Teses", url: "/benchmarks", roles: ["admin"] },
+    ],
+  },
   { title: "Usuários", url: "/usuarios", icon: Users, roles: ["admin", "pmo"] },
 ];
 
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const location = useLocation();
   const { profile, userRole, signOut } = useAuth();
 
@@ -38,6 +54,9 @@ export function AppSidebar() {
     await signOut();
     navigate("/auth");
   };
+
+  // Auto-open config submenu if on a config route
+  const isOnConfigRoute = location.pathname.startsWith("/configuracoes") || location.pathname.startsWith("/benchmarks");
 
   return (
     <div
@@ -62,8 +81,73 @@ export function AppSidebar() {
       {/* Navigation */}
       <nav className="flex-1 flex flex-col gap-1 px-2 mt-4 overflow-y-auto overflow-x-hidden">
         {visibleItems.map((item) => {
-          const isActive = location.pathname === item.url;
+          const hasChildren = item.children && item.children.length > 0;
+          const isActive = hasChildren
+            ? isOnConfigRoute
+            : location.pathname === item.url;
           const isReadOnly = !!(item.readOnlyRoles && userRole && item.readOnlyRoles.includes(userRole));
+          const showChildren = hasChildren && open && (configOpen || isOnConfigRoute);
+
+          if (hasChildren) {
+            const visibleChildren = item.children!.filter(
+              (c) => !c.roles || userRole === "admin" || (userRole && c.roles.includes(userRole))
+            );
+            if (visibleChildren.length === 0) return null;
+
+            return (
+              <div key={item.title}>
+                <button
+                  onClick={() => setConfigOpen(!configOpen)}
+                  className={cn(
+                    "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap w-full",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                      : "hover:bg-sidebar-accent/50"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  <span
+                    className={cn(
+                      "text-sm transition-opacity duration-200 flex-1 text-left flex items-center gap-1.5",
+                      open ? "opacity-100" : "opacity-0"
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                  {open && (
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                        showChildren ? "rotate-180" : ""
+                      )}
+                    />
+                  )}
+                </button>
+                {showChildren && (
+                  <div className="flex flex-col gap-0.5 mt-0.5">
+                    {visibleChildren.map((child) => {
+                      const childActive = location.pathname === child.url;
+                      return (
+                        <NavLink
+                          key={child.url}
+                          to={child.url}
+                          className={cn(
+                            "flex items-center h-8 rounded-md pl-10 pr-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                            childActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                              : "hover:bg-sidebar-accent/50"
+                          )}
+                        >
+                          <span className="text-xs">{child.title}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <NavLink
               key={item.title}
