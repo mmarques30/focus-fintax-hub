@@ -103,7 +103,7 @@ export function PipelineList({ leads, onLeadClick }: Props) {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -119,7 +119,7 @@ export function PipelineList({ leads, onLeadClick }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paged.map((lead) => {
+            {paged.map((lead, idx) => {
               const scoreLabel = getScoreLabel(lead.score_lead);
               const scoreConf = SCORE_CONFIG[scoreLabel];
               const potMin = lead.relatorios_leads?.[0]?.estimativa_total_minima || 0;
@@ -129,7 +129,7 @@ export function PipelineList({ leads, onLeadClick }: Props) {
               const stageColor = STAGE_COLORS[lead.status_funil] || "";
 
               return (
-                <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onLeadClick(lead.id)}>
+                <TableRow key={lead.id} className={`cursor-pointer hover:bg-[rgba(10,21,100,0.025)] ${idx % 2 === 0 ? "bg-[rgba(10,21,100,0.012)]" : ""}`} onClick={() => onLeadClick(lead.id)}>
                   <TableCell className="font-medium">{lead.empresa}</TableCell>
                   <TableCell><span className="text-xs">{SEGMENTO_LABELS[lead.segmento] || lead.segmento}</span></TableCell>
                   <TableCell><span className="text-xs">{lead.regime_tributario}</span></TableCell>
