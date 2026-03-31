@@ -1,42 +1,21 @@
 
 
-## Part 9 — Sidebar Polish
+## Part 10 — Urgency Clients Strip: Cards Not a Grid
 
 ### Summary
-Add gradient background, glass border glow, and refined active-item styling to the sidebar.
+Replace the single bordered container with a grid of cells with individual floating cards in a horizontal scrollable flex layout. Keep the header banner, change only the items area.
 
-### Changes — `src/components/AppSidebar.tsx`
+### Changes — `src/components/dashboard/operacional/UrgencyClients.tsx`
 
-**1. Outer `<div>` (line 76-80)**: Add `relative` to className, replace `bg-sidebar` with inline style for gradient + border:
-
-```tsx
-<div
-  className={cn(
-    "h-screen flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden relative",
-    open ? "w-[250px]" : "w-[60px]"
-  )}
-  style={{
-    background: 'linear-gradient(180deg, #0a1564 0%, #071040 100%)',
-    borderRight: '1px solid rgba(255,255,255,0.06)',
-  }}
-  onMouseEnter={() => setOpen(true)}
-  onMouseLeave={() => setOpen(false)}
->
-```
-
-**2. Right-side glow line** — Add immediately inside the outer div (after opening tag, before Logo section):
-
-```tsx
-<div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent pointer-events-none" />
-```
-
-**3. Active menu item styling** — Replace `bg-sidebar-accent text-sidebar-accent-foreground font-semibold` with `bg-white/10 backdrop-blur-sm text-white font-semibold` in three places:
-- Parent button active state (line 114)
-- Child NavLink active state (line 148)
-- Top-level NavLink active state (line 172)
-
-Change `rounded-md` to `rounded-xl` on those same active items.
+1. **Keep** the outer wrapper and header banner as-is (lines 14-20)
+2. **Replace** the grid div (lines 21-29) with a horizontal flex layout:
+   - `flex gap-3 overflow-x-auto pb-1 px-4 py-3` container
+   - Each client becomes an individual card: `flex-shrink-0 w-48 rounded-xl p-3` with gradient background, subtle red border, and shadow via inline style
+   - Hover: `hover:-translate-y-0.5` with `transition-all duration-200`
+   - Text: `text-xs font-bold` for empresa (truncated), `font-display text-xl font-bold text-dash-red` for saldo, `text-[10px]` for honorário
+3. **Remove** the `border-r` dividers between items (no longer needed — each card is independent)
+4. Continue using `compactCurrency` for formatting values
 
 ### Files modified
-1. `src/components/AppSidebar.tsx`
+1. `src/components/dashboard/operacional/UrgencyClients.tsx`
 
