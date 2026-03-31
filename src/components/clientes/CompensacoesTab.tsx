@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -190,7 +191,7 @@ Equipe Focus.`;
           {loading ? (
             <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : filtered.length === 0 ? (
-            <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhuma compensação registrada.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={7}><EmptyState icon={<FileText size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." /></TableCell></TableRow>
           ) : filtered.map((c) => {
             const sp = getStatusPagamentoConfig(c.status_pagamento);
             return (

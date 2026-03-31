@@ -1,5 +1,7 @@
 import type { NavigateFunction } from "react-router-dom";
+import { BarChart3 } from "lucide-react";
 import { compactCurrency, fullCurrency, type ClientRank } from "../dashboard-utils";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Props {
   fullRanking: ClientRank[];
@@ -48,7 +50,7 @@ export function RankingTable({ fullRanking, numMonths, navigate }: Props) {
             );
           })}
           {fullRanking.length === 0 && (
-            <tr><td colSpan={8} className="p-5 text-center text-xs text-ink-35">Nenhuma compensação registrada.</td></tr>
+            <tr><td colSpan={8}><EmptyState icon={<BarChart3 size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Os dados aparecerão aqui conforme compensações forem lançadas." /></td></tr>
           )}
         </tbody>
       </table>
