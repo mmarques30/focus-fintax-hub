@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2 } from "lucide-react";
+import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
+import { ImportCompensacoesModal } from "@/components/clientes/ImportCompensacoesModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ export default function ClientesList() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -126,6 +128,11 @@ export default function ClientesList() {
           <p className="text-xs text-muted-foreground uppercase tracking-widest">carteira de clientes e compensações</p>
         </div>
         <div className="flex gap-2">
+          {!isComercial && (
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Importar XLSX
+            </Button>
+          )}
           {!isComercial && (
             <Button variant="outline" onClick={() => setReportOpen(true)}>
               <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
@@ -455,6 +462,12 @@ export default function ClientesList() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImportCompensacoesModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={fetchAll}
+      />
     </div>
   );
 }
