@@ -80,7 +80,7 @@ export default function ClientesList() {
     filtered = filtered.filter((c) => c.empresa?.toLowerCase().includes(q) || c.cnpj?.includes(q));
   }
   if (filterSegmento !== "all") filtered = filtered.filter((c) => c.segmento === filterSegmento);
-  if (filterStatus === "compensando") filtered = filtered.filter((c) => c.compensando_fintax);
+  if (filterStatus === "compensando") filtered = filtered.filter((c) => c.totalCompensado > 0);
   else if (filterStatus !== "all") filtered = filtered.filter((c) => c.status === filterStatus);
 
   // Report data
