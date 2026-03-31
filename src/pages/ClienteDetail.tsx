@@ -324,7 +324,7 @@ export default function ClienteDetail() {
                       <div className="min-w-0 pb-2">
                         <p className="text-[11px] leading-tight text-foreground">{h.descricao}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
+                          {h.usuario_nome} · {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
                         </p>
                       </div>
                     </div>
