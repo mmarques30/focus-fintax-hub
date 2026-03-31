@@ -33,7 +33,8 @@ export default function ClientesList() {
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
   const fetchAll = async () => {
     const [{ data: c }, { data: p }, { data: comp }] = await Promise.all([
       supabase.from("clientes").select("*").order("criado_em", { ascending: false }),
