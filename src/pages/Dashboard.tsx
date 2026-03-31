@@ -70,12 +70,13 @@ export default function Dashboard() {
     const d3 = new Date(now.getTime() - 3 * 86400000).toISOString();
 
     // ═══ COMMERCIAL TAB DATA ═══
-    const [pipelineRes, newWeekRes, prevWeekRes, contratosRes, clientesAtivosRes] = await Promise.all([
+    const [pipelineRes, newWeekRes, prevWeekRes, contratosRes, clientesAtivosRes, totalEverRes] = await Promise.all([
       supabase.from("leads").select("id", { count: "exact", head: true }).not("status_funil", "in", "(perdido,nao_vai_fazer)"),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("criado_em", d7),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("criado_em", d14).lt("criado_em", d7),
       supabase.from("leads").select("id", { count: "exact", head: true }).eq("status_funil", "contrato_emitido"),
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      supabase.from("leads").select("id", { count: "exact", head: true }),
     ]);
     setKpiLoading(false);
     setComLeads(pipelineRes.count ?? 0);
