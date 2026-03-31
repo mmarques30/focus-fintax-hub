@@ -1,27 +1,16 @@
 
 
-## PART 7 — Typography Polish
+## Remove White Card from Dashboard Header
 
 ### Summary
-Remove the unused Montserrat font import. Everything else is already in place: Barlow/Barlow Condensed/DM Mono are imported, tailwind config maps them to `font-sans`/`font-display`/`font-mono-dm`, and body uses `font-sans`.
+Remove the white background card from the header area. The greeting, date, and time should float without any card behind them. The tab switcher should have a subtle, discrete card only around the tab text area.
 
-### Changes
+### Changes — `src/components/dashboard/DashboardHeader.tsx`
 
-**File: `src/index.css` (line 1)**
-
-Remove the Montserrat import line:
-```css
-// DELETE:
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-```
-
-The remaining import on line 2 already loads all three font families with correct weights.
-
-### Already configured (no changes needed)
-- `tailwind.config.ts`: `font-sans` → Barlow, `font-display` → Barlow Condensed, `font-mono-dm` → DM Mono
-- `src/index.css` body: `@apply font-sans` (= Barlow)
-- Google Fonts import with all required weights
+1. **Outer wrapper** (line 16): Remove `bg-white border-b border-[rgba(10,21,100,0.10)]` — keep only `sticky top-0 z-[100]`
+2. **Tab switcher** (line 28): Add a discrete inline card around the tab buttons: `bg-white/80 border border-[rgba(10,21,100,0.08)] rounded-lg px-1 py-1 mx-auto w-fit`
+3. Active tab text stays navy/bold, inactive stays `text-ink-60` — no background change on tabs, just the text color difference
 
 ### Files modified
-1. `src/index.css` — remove unused Montserrat import (1 line)
+1. `src/components/dashboard/DashboardHeader.tsx`
 
