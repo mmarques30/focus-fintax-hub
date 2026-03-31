@@ -129,6 +129,11 @@ export default function ClientesList() {
         </div>
         <div className="flex gap-2">
           {!isComercial && (
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Importar XLSX
+            </Button>
+          )}
+          {!isComercial && (
             <Button variant="outline" onClick={() => setReportOpen(true)}>
               <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
             </Button>
