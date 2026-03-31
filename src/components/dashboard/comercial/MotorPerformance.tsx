@@ -5,7 +5,7 @@ interface Props {
 
 export function MotorPerformance({ motorDiagnosticos, motorTesesAtivas }: Props) {
   return (
-    <div className="bg-navy rounded-[10px] px-4 py-3.5">
+    <div className="bg-navy rounded-[14px] px-4 py-3.5">
       <div className="text-[9px] font-bold tracking-[2px] uppercase opacity-50 text-white mb-3">Performance do motor</div>
       <div className="grid grid-cols-3">
         {[

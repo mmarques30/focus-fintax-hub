@@ -386,7 +386,7 @@ export default function UserManagement() {
           { label: "Admins", value: users.filter((u) => u.role === "admin").length, icon: Shield },
           { label: "Inativos", value: users.filter((u) => !u.is_active).length, icon: UsersIcon },
         ].map((s) => (
-          <Card key={s.label} className="border-card-border">
+          <Card key={s.label} className="card-base">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <s.icon className="h-5 w-5 text-primary" />
@@ -401,7 +401,7 @@ export default function UserManagement() {
       </div>
 
       {/* Table */}
-      <Card className="border-card-border">
+      <Card className="card-base">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-lg font-bold">Usuários Cadastrados</CardTitle>
           <div className="relative w-64">

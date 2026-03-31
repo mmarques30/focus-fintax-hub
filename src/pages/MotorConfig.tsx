@@ -347,7 +347,7 @@ export default function MotorConfig() {
       </div>
 
       {/* Teses Table */}
-      <Card>
+      <Card className="card-base">
         <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
           <CardTitle className="text-sm font-semibold">Teses Configuradas ({teses.length})</CardTitle>
           <Button size="sm" onClick={openCreate} className="h-7 text-xs"><Plus className="h-3.5 w-3.5 mr-1" /> Nova tese</Button>
@@ -388,7 +388,7 @@ export default function MotorConfig() {
       </Card>
 
       {/* Resumo de Cobertura */}
-      <Card>
+      <Card className="card-base">
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-semibold">Resumo de Cobertura</CardTitle>
         </CardHeader>

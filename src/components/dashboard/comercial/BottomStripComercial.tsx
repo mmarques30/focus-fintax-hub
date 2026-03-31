@@ -18,9 +18,9 @@ export function BottomStripComercial({ comLeads, comContratos, comClientesAtivos
   ];
 
   return (
-    <div className="animate-slide-up delay-4 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] px-6 py-3 flex items-center mt-3.5">
+    <div className="animate-slide-up delay-4 card-base px-6 py-3 flex items-center mt-3.5">
       {items.map((item, i) => (
-        <div key={i} className={`flex-1 text-center px-3 ${i < 4 ? "border-r border-[rgba(10,21,100,0.10)]" : ""}`}>
+        <div key={i} className="flex-1 text-center px-3">
           <span className={`font-display text-xl font-bold block leading-[1.1] ${item.colorClass || "text-navy"}`}>{item.val}</span>
           <span className="text-[9px] text-ink-35 font-semibold tracking-[1px] uppercase mt-[3px] block">{item.label}</span>
         </div>

@@ -14,7 +14,7 @@ interface Props {
 
 export function FunilComercial({ funnelData, maxFunnelCount, totalFunnelCount, totalFunnelPotencial, segmentoData, maxSegCount, origemData, navigate }: Props) {
   return (
-    <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden">
+    <div className="card-base overflow-hidden">
       {/* Card header */}
       <div className="px-[18px] pt-3 pb-2.5 border-b border-[rgba(10,21,100,0.10)] flex items-center justify-between">
         <div>

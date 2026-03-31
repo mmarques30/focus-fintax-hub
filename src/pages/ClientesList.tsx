@@ -14,7 +14,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
-import { KpiBox } from "@/components/dashboard/dashboard-utils";
 import { toast } from "sonner";
 
 export default function ClientesList() {
@@ -126,12 +125,32 @@ export default function ClientesList() {
       </div>
 
       {/* Stats */}
-      <div className="animate-slide-up delay-1 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
-        <KpiBox label="Total clientes" value={String(totalClientes)} sub="cadastrados" />
-        <KpiBox label="Compensando Fintax" value={String(totalCompensando)} sub="clientes ativos" />
-        <KpiBox label="Crédito identificado" value={formatCurrencyBR(globalCredito)} sub="total identificado" colorClass="red" />
-        <KpiBox label="Já compensado" value={formatCurrencyBR(globalCompensado)} sub="realizado" colorClass="green" />
-        <KpiBox label="Saldo restante" value={formatCurrencyBR(globalCredito - globalCompensado)} sub="disponível" colorClass="red" last />
+      <div className="animate-slide-up delay-1 grid grid-cols-5 gap-3">
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Total clientes</p>
+          <p className="font-display text-[28px] font-bold leading-none text-navy">{totalClientes}</p>
+          <p className="text-[11px] text-ink-35 mt-1">cadastrados</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Compensando Fintax</p>
+          <p className="font-display text-[28px] font-bold leading-none text-navy">{totalCompensando}</p>
+          <p className="text-[11px] text-ink-35 mt-1">clientes ativos</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Crédito identificado</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{formatCurrencyBR(globalCredito)}</p>
+          <p className="text-[11px] text-ink-35 mt-1">total identificado</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Já compensado</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-green">{formatCurrencyBR(globalCompensado)}</p>
+          <p className="text-[11px] text-ink-35 mt-1">realizado</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Saldo restante</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{formatCurrencyBR(globalCredito - globalCompensado)}</p>
+          <p className="text-[11px] text-ink-35 mt-1">disponível</p>
+        </div>
       </div>
 
       {/* Filters */}
