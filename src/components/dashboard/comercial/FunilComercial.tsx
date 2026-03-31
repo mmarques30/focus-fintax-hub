@@ -31,31 +31,42 @@ export function FunilComercial({ funnelData, maxFunnelCount, totalFunnelCount, t
         {funnelData.map((f) => {
           const isContrato = f.stage === "contrato_emitido" && f.count > 0;
           const isCliente = f.stage === "cliente_ativo";
-          const suffix = isContrato ? " ⚠" : isCliente ? " ✓" : "";
 
           return (
             <div
               key={f.stage}
               onClick={() => navigate(f.stage === "cliente_ativo" ? "/clientes" : `/pipeline?etapa=${f.stage}`)}
               className={cn(
-                "flex items-center px-[18px] py-[9px] cursor-pointer transition-all duration-150 rounded-xl mx-2 my-0.5 min-w-0",
+                "flex items-center px-5 py-3 cursor-pointer transition-colors duration-150",
                 isContrato
-                  ? hoveredRow === f.stage ? "bg-[rgba(251,191,36,0.14)]" : "bg-[rgba(251,191,36,0.08)]"
-                  : hoveredRow === f.stage ? "bg-[rgba(10,21,100,0.04)]" : "bg-transparent"
+                  ? hoveredRow === f.stage ? "bg-[rgba(251,191,36,0.12)]" : "bg-[rgba(251,191,36,0.06)]"
+                  : hoveredRow === f.stage ? "bg-[rgba(10,21,100,0.03)]" : "bg-transparent"
               )}
               onMouseEnter={() => setHoveredRow(f.stage)}
               onMouseLeave={() => setHoveredRow(null)}
             >
-              <div className="w-[5px] h-[26px] rounded-[3px] shrink-0 mr-3" style={{ background: f.color }} />
-              <span className={`text-xs flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap pr-2 ${isContrato ? "font-bold text-dash-amber" : isCliente ? "font-semibold text-dash-green" : "font-medium text-ink"}`}>{f.label}{suffix}</span>
-              <span className={`font-mono-dm tabular-nums text-sm font-bold w-8 text-right shrink-0 ${isContrato ? "text-dash-amber" : isCliente ? "text-dash-green" : "text-navy"}`}>{f.count}</span>
-              <span className={`font-mono-dm tabular-nums text-[11px] font-semibold w-[60px] text-right shrink-0 px-2 ${isContrato ? "text-dash-amber" : "text-dash-green"}`}>{f.potencial > 0 ? compactCurrency(f.potencial) : "—"}</span>
-              <div className="shrink-0 w-[100px]">
-                <div className="h-[5px] bg-ink-12 rounded-[3px] overflow-hidden">
-                  <div className="h-full rounded-[3px]" style={{ background: f.color, width: `${(f.count / maxFunnelCount) * 100}%` }} />
+              <div className="w-1 h-6 rounded-full flex-shrink-0 mr-4" style={{ background: f.color }} />
+              <span className={cn(
+                "flex-1 min-w-0 text-sm truncate pr-4",
+                isContrato ? "font-bold text-[#b45309]" : isCliente ? "font-semibold text-[#0f7b4e]" : "font-medium text-ink"
+              )}>{f.label}</span>
+              <span className={cn(
+                "font-mono-dm tabular-nums text-[15px] font-bold flex-shrink-0 w-9 text-right",
+                isContrato ? "text-[#b45309]" : isCliente ? "text-[#0f7b4e]" : "text-navy"
+              )}>{f.count}</span>
+              <span className={cn(
+                "font-mono-dm tabular-nums text-[11px] font-semibold flex-shrink-0 w-[72px] text-right px-2",
+                isContrato ? "text-[#b45309]" : "text-[#0f7b4e]"
+              )}>{f.potencial > 0 ? compactCurrency(f.potencial) : "—"}</span>
+              <div className="flex-shrink-0 w-[100px]">
+                <div className="h-1.5 bg-[rgba(15,17,23,0.08)] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500" style={{ background: f.color, width: `${(f.count / maxFunnelCount) * 100}%` }} />
                 </div>
               </div>
-              <span className={`text-[10px] w-3.5 text-right shrink-0 ml-2 ${isContrato ? "text-dash-amber font-bold" : "text-ink-35 font-normal"}`}>
+              <span className={cn(
+                "flex-shrink-0 w-[22px] text-right text-[10px] ml-2",
+                isContrato ? "text-[#b45309] font-bold" : "text-[rgba(15,17,23,0.3)]"
+              )}>
                 {isContrato ? "!" : "→"}
               </span>
             </div>
