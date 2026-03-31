@@ -55,7 +55,7 @@ export function CompensacoesTab({ clienteId, cliente, onTotalChange }: Props) {
     const [{ data: comp }, { data: proc }] = await Promise.all([
       supabase
         .from("compensacoes_mensais")
-        .select("*, processos_teses(nome_exibicao, tese)")
+        .select("*, processos_teses!compensacoes_mensais_processo_tese_id_fkey(nome_exibicao, tese)")
         .eq("cliente_id", clienteId)
         .order("mes_referencia", { ascending: false }),
       supabase.from("processos_teses").select("id, nome_exibicao, tese, valor_credito, percentual_honorario").eq("cliente_id", clienteId),
