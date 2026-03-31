@@ -1,5 +1,6 @@
 import type { NavigateFunction } from "react-router-dom";
 import { compactCurrency, type ClientRank } from "../dashboard-utils";
+import { Target } from "lucide-react";
 
 interface Props {
   urgencyClients: ClientRank[];
