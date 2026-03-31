@@ -1,46 +1,64 @@
 
 
-## IMPROVEMENT 2 — Notificações Funcionais no Header
-
-### Situação Atual
-`AppHeader.tsx` já tem lógica de notificações inline (leads parados em `contrato_emitido` > 3 dias). Funciona, mas é monolítica e suporta apenas 1 tipo de alerta.
-
-### Problema com a proposta do usuário
-A tabela `clientes` **não tem** colunas `total_credito_identificado` nem `total_compensado` — esses valores são calculados via joins com `processos_teses` e `compensacoes_mensais`. O alerta de "saldo zerado" precisa de uma abordagem diferente.
+## IMPROVEMENT 3 + 4 — Audit Trail para Clientes + Comunicado por E-mail
 
 ### Mudanças
 
-**1. Criar `src/hooks/useNotifications.ts`**
+**1. Migração — Tabela `cliente_historico`**
 
-Hook extraído com 2 tipos de alerta:
+```sql
+CREATE TABLE public.cliente_historico (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id uuid NOT NULL,
+  tipo text NOT NULL,
+  descricao text,
+  valor_anterior jsonb,
+  valor_novo jsonb,
+  usuario_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-| Tipo | Query | Condição |
-|------|-------|----------|
-| `warning` — Lead parado | `leads` where `status_funil = 'contrato_emitido'` e `status_funil_atualizado_em < 3 dias atrás` | Já funciona |
-| `info` — Saldo zerado | Para cada cliente: soma `valor_credito` de `processos_teses` e soma `valor_compensado` de `compensacoes_mensais`. Se compensado >= crédito e crédito > 0 → alerta | Requer 2 queries adicionais |
+ALTER TABLE public.cliente_historico ENABLE ROW LEVEL SECURITY;
 
-Interface:
-```typescript
-interface Notification {
-  id: string;
-  type: 'warning' | 'info';
-  title: string;
-  subtitle: string;
-  href: string;
-}
+CREATE POLICY "admin_gestor_pmo_crud_historico" ON public.cliente_historico
+FOR ALL TO authenticated
+USING (has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'gestor_tributario'::app_role) OR has_role(auth.uid(), 'pmo'::app_role))
+WITH CHECK (has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'gestor_tributario'::app_role) OR has_role(auth.uid(), 'pmo'::app_role));
+
+CREATE POLICY "comercial_select_historico" ON public.cliente_historico
+FOR SELECT TO authenticated
+USING (has_role(auth.uid(), 'comercial'::app_role));
 ```
 
-- Refresh a cada 5 minutos (não 1 min como atual)
-- Gated por `canSeeNotifications` (admin, comercial, pmo)
+Tipos de evento: `compensacao_adicionada`, `processo_atualizado`, `status_mudado`, `observacao`, `comunicado_enviado`
 
-**2. Atualizar `src/components/AppHeader.tsx`**
+**2. Helper `logClienteHistorico`** — `src/lib/cliente-historico.ts`
 
-- Remover lógica inline de fetch
-- Usar `useNotifications()` hook
-- Renderizar notificações com ícone de tipo (warning = amber dot, info = blue dot)
-- `navigate(n.href)` ao clicar (em vez de sempre `/pipeline`)
+Função utilitária que faz `insert` na `cliente_historico` recebendo `clienteId`, `tipo`, `descricao`, `valorAnterior?`, `valorNovo?`. Obtém `usuario_id` via `supabase.auth.getUser()`.
 
-### Arquivos modificados
-1. `src/hooks/useNotifications.ts` — novo hook
-2. `src/components/AppHeader.tsx` — consumir hook, remover lógica inline
+**3. `src/components/clientes/CompensacoesTab.tsx`**
+
+- Na função `handleSave` (linha 76-96): após insert bem-sucedido, chamar `logClienteHistorico` com tipo `compensacao_adicionada`
+- No modal WhatsApp (linha 487): após `handleCopy`, chamar `logClienteHistorico` com tipo `comunicado_enviado` e descrição incluindo o mês
+- Adicionar botão **"Enviar por E-mail"** ao lado do "Copiar mensagem" no modal WhatsApp:
+  - Gera `mailto:` link com subject `Compensação Tributária {mês} — {empresa}` e body com a mensagem
+  - Ao clicar, também loga `comunicado_enviado` no histórico
+
+**4. `src/components/clientes/ProcessosTesesTab.tsx`**
+
+- Na função `handleStatusProcessoChange` (linha 51-55): após update, chamar `logClienteHistorico` com tipo `status_mudado`, valor anterior e novo
+
+**5. `src/pages/ClienteDetail.tsx` — Timeline no sidebar**
+
+- Abaixo dos metadados no sidebar, adicionar seção "Histórico"
+- Query `cliente_historico` onde `cliente_id = id`, ordenado por `created_at desc`, limite 10
+- Renderizar como timeline vertical com ícone por tipo (dot colorido), descrição e data relativa
+- Scroll interno se > 5 itens
+
+### Arquivos modificados/criados
+1. Migração SQL — nova tabela `cliente_historico`
+2. `src/lib/cliente-historico.ts` — novo helper
+3. `src/components/clientes/CompensacoesTab.tsx` — log ao salvar compensação + botão e-mail + log comunicado
+4. `src/components/clientes/ProcessosTesesTab.tsx` — log ao mudar status
+5. `src/pages/ClienteDetail.tsx` — timeline no sidebar
 
