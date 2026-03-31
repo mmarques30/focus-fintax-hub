@@ -103,7 +103,7 @@ export function PipelineList({ leads, onLeadClick }: Props) {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
