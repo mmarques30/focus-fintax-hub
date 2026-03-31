@@ -155,6 +155,15 @@ Equipe Focus.`;
   const handleCopy = async () => {
     await navigator.clipboard.writeText(fullWhatsMessage);
     toast.success("Copiado!");
+    logClienteHistorico(clienteId, "comunicado_enviado", `Comunicado WhatsApp copiado — ${formatMesPT(whatsMes)}`);
+  };
+
+  const handleEmail = () => {
+    const mesLabel = formatMesPT(whatsMes);
+    const subject = encodeURIComponent(`Compensação Tributária ${mesLabel} — ${cliente?.empresa || ""}`);
+    const body = encodeURIComponent(fullWhatsMessage);
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+    logClienteHistorico(clienteId, "comunicado_enviado", `Comunicado por e-mail — ${mesLabel}`);
   };
 
   return (
