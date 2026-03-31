@@ -224,6 +224,18 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
 
+  useEffect(() => {
+    if (role !== "admin") return;
+    const checkDataHealth = async () => {
+      const [{ count: compCount }, { count: procCount }] = await Promise.all([
+        supabase.from("compensacoes_mensais").select("*", { count: "exact", head: true }),
+        supabase.from("processos_teses").select("*", { count: "exact", head: true }),
+      ]);
+      setDataHealth({ compensacoes: compCount ?? 0, processos: procCount ?? 0, hasData: (compCount ?? 0) > 0 });
+    };
+    checkDataHealth();
+  }, [role]);
+
   const opEconomia = opCompensado - opHonorarios;
   const trendDiff = comNewWeek - comNewPrevWeek;
   const maxFunnelCount = Math.max(...funnelData.map(f => f.count), 1);
