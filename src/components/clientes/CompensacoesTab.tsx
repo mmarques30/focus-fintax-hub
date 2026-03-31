@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, FileText, MessageCircle, Printer, Copy } from "lucide-react";
+import { Plus, FileText, MessageCircle, Printer, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrencyBR, getStatusPagamentoConfig, STATUS_PAGAMENTO } from "@/lib/clientes-constants";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import logoFintax from "@/assets/logo-focus-fintax.svg";
+import { logClienteHistorico } from "@/lib/cliente-historico";
 
 const TRIBUTO_OPTIONS = ["INSS", "PIS/COFINS", "IRPJ", "CSLL", "Outros"];
 const MESES_PT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
@@ -90,6 +91,8 @@ export function CompensacoesTab({ clienteId, cliente, onTotalChange }: Props) {
     });
     if (error) { toast.error("Erro ao registrar."); return; }
     toast.success("Compensação registrada!");
+    const proc = processos.find((p) => p.id === form.processo_tese_id);
+    logClienteHistorico(clienteId, "compensacao_adicionada", `Compensação ${form.mes_referencia} — ${proc?.nome_exibicao || ""}: ${formatCurrencyBR(Number(form.valor_compensado) || 0)}`);
     setModalOpen(false);
     setForm({ processo_tese_id: "", mes_referencia: "", valor_compensado: "", status_pagamento: "pendente", valor_nf_servico: "", observacao: "", tributo: "" });
     fetchData();
@@ -152,6 +155,15 @@ Equipe Focus.`;
   const handleCopy = async () => {
     await navigator.clipboard.writeText(fullWhatsMessage);
     toast.success("Copiado!");
+    logClienteHistorico(clienteId, "comunicado_enviado", `Comunicado WhatsApp copiado — ${formatMesPT(whatsMes)}`);
+  };
+
+  const handleEmail = () => {
+    const mesLabel = formatMesPT(whatsMes);
+    const subject = encodeURIComponent(`Compensação Tributária ${mesLabel} — ${cliente?.empresa || ""}`);
+    const body = encodeURIComponent(fullWhatsMessage);
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+    logClienteHistorico(clienteId, "comunicado_enviado", `Comunicado por e-mail — ${mesLabel}`);
   };
 
   return (
@@ -484,9 +496,14 @@ Equipe Focus.`;
                 <div className="rounded border bg-muted/20 p-3 max-h-[300px] overflow-auto">
                   <pre className="whitespace-pre-wrap text-xs font-mono">{fullWhatsMessage}</pre>
                 </div>
-                <Button className="w-full gap-2 text-white" style={{ background: "#25D366" }} onClick={handleCopy}>
-                  <Copy className="h-4 w-4" /> Copiar mensagem
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 gap-2 text-white" style={{ background: "#25D366" }} onClick={handleCopy}>
+                    <Copy className="h-4 w-4" /> Copiar mensagem
+                  </Button>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={handleEmail}>
+                    <Mail className="h-4 w-4" /> Enviar por E-mail
+                  </Button>
+                </div>
               </>
             )}
 

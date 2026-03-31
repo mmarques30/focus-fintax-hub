@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, MessageCircle, Upload, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, Upload, Pencil, Trash2, Clock, AlertTriangle, FileText, Mail } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ProcessosTesesTab } from "@/components/clientes/ProcessosTesesTab";
@@ -14,6 +15,8 @@ import { CompensacoesTab } from "@/components/clientes/CompensacoesTab";
 import { ResumoFinanceiroTab } from "@/components/clientes/ResumoFinanceiroTab";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertTitle } from "@/components/ui/alert-dialog";
@@ -26,7 +29,21 @@ export default function ClienteDetail() {
   const [cliente, setCliente] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
+  const [historico, setHistorico] = useState<any[]>([]);
   const obsDebounce = useRef<NodeJS.Timeout>();
+
+  const fetchHistorico = useCallback(async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("cliente_historico" as any)
+      .select("*")
+      .eq("cliente_id", id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setHistorico(data || []);
+  }, [id]);
+
+  useEffect(() => { fetchHistorico(); }, [fetchHistorico]);
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
@@ -229,6 +246,43 @@ export default function ClienteDetail() {
             </Link>
           )}
         </div>
+
+        {/* Histórico Timeline */}
+        {historico.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Histórico</h3>
+            <ScrollArea className={historico.length > 5 ? "h-[200px]" : ""}>
+              <div className="space-y-2">
+                {historico.map((h: any) => {
+                  const dotColor =
+                    h.tipo === "compensacao_adicionada" ? "bg-emerald-500" :
+                    h.tipo === "status_mudado" ? "bg-amber-500" :
+                    h.tipo === "comunicado_enviado" ? "bg-blue-500" :
+                    "bg-muted-foreground";
+                  const Icon =
+                    h.tipo === "comunicado_enviado" ? Mail :
+                    h.tipo === "status_mudado" ? AlertTriangle :
+                    h.tipo === "compensacao_adicionada" ? FileText :
+                    Clock;
+                  return (
+                    <div key={h.id} className="flex gap-2 items-start">
+                      <div className="flex flex-col items-center mt-1">
+                        <div className={`h-2 w-2 rounded-full ${dotColor}`} />
+                        <div className="w-px h-full bg-border" />
+                      </div>
+                      <div className="min-w-0 pb-2">
+                        <p className="text-[11px] leading-tight text-foreground">{h.descricao}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
       </div>
 
       {/* Main */}

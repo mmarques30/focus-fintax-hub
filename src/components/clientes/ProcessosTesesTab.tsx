@@ -10,6 +10,7 @@ import { Pencil, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { ProcessoFormModal } from "./ProcessoFormModal";
 import { formatCurrencyBR, getStatusContratoConfig, getStatusProcessoConfig, STATUS_PROCESSO } from "@/lib/clientes-constants";
+import { logClienteHistorico } from "@/lib/cliente-historico";
 
 interface Props {
   clienteId: string;
@@ -49,8 +50,11 @@ export function ProcessosTesesTab({ clienteId, compensacoesTotal }: Props) {
   };
 
   const handleStatusProcessoChange = async (id: string, value: string) => {
-    setProcessos((prev) => prev.map((p) => p.id === id ? { ...p, status_processo: value } : p));
+    const prev = processos.find((p) => p.id === id);
+    const oldStatus = prev?.status_processo;
+    setProcessos((ps) => ps.map((p) => p.id === id ? { ...p, status_processo: value } : p));
     await supabase.from("processos_teses").update({ status_processo: value, atualizado_em: new Date().toISOString() }).eq("id", id);
+    logClienteHistorico(clienteId, "status_mudado", `Status de "${prev?.nome_exibicao}" alterado`, { status_processo: oldStatus }, { status_processo: value });
     fetchProcessos();
   };
 
