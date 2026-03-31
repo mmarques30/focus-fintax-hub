@@ -20,7 +20,7 @@ export function RankingTable({ fullRanking, numMonths, navigate }: Props) {
         <thead>
           <tr>
             {["#", "Empresa", "Total compensado", "Honorários", "Economia líquida", "% utilizado", "Progresso", "Saldo restante"].map((h, i) => (
-              <th key={i} className={`px-3 py-[7px] text-[9px] font-bold tracking-[1.4px] uppercase text-ink-35 border-b border-[rgba(10,21,100,0.10)] bg-[rgba(15,17,23,0.05)] ${i === 7 ? "text-right" : "text-left"}`}>{h}</th>
+              <th key={i} className={`px-3 py-3 text-[9px] font-bold tracking-[1.4px] uppercase text-ink-35 border-b border-[rgba(10,21,100,0.08)] bg-transparent ${i === 7 ? "text-right" : "text-left"}`}>{h}</th>
             ))}
           </tr>
         </thead>
