@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { FileText } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
