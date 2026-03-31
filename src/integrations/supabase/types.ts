@@ -93,6 +93,7 @@ export type Database = {
           id: string
           lead_id: string | null
           nome_contato: string | null
+          observacoes: string | null
           regime_tributario: string | null
           segmento: string | null
           status: string | null
@@ -110,6 +111,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           nome_contato?: string | null
+          observacoes?: string | null
           regime_tributario?: string | null
           segmento?: string | null
           status?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           nome_contato?: string | null
+          observacoes?: string | null
           regime_tributario?: string | null
           segmento?: string | null
           status?: string | null
