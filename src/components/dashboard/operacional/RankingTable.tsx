@@ -1,5 +1,7 @@
 import type { NavigateFunction } from "react-router-dom";
+import { BarChart3 } from "lucide-react";
 import { compactCurrency, fullCurrency, type ClientRank } from "../dashboard-utils";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Props {
   fullRanking: ClientRank[];
