@@ -1,28 +1,37 @@
 
 
-## PART 5 — Header Notification Bell
+## PART 6 — Fix Foreign Key Constraints
 
-### Summary
-Make the bell icon functional: query leads stuck in `contrato_emitido` for >3 days, show red dot badge when alerts exist, and display a Popover dropdown listing them on click.
+### Step 1 — Database Migration
 
-### Implementation
+Run SQL to add missing FK constraints with cascade behavior:
 
-**File: `src/components/AppHeader.tsx`**
+```sql
+ALTER TABLE public.processos_teses
+ADD CONSTRAINT fk_processos_cliente
+FOREIGN KEY (cliente_id) REFERENCES public.clientes(id) ON DELETE CASCADE;
 
-1. Add state + useEffect to query leads:
-   ```sql
-   SELECT id, empresa, status_funil_atualizado_em 
-   FROM leads 
-   WHERE status_funil = 'contrato_emitido' 
-   AND status_funil_atualizado_em < now() - interval '3 days'
-   ```
-2. Wrap Bell button in `Popover` + `PopoverTrigger` + `PopoverContent`
-3. Show red dot badge (absolute positioned `span` with `bg-dash-red w-2 h-2 rounded-full`) on the bell when notifications array is non-empty
-4. PopoverContent lists each alert with empresa name, days stuck, and a link to `/pipeline` (or click to navigate)
-5. Empty state: "Nenhuma notificação" text
-6. Re-fetch on 60s interval for freshness
-7. Only query if user role is admin, comercial, or pmo (skip for gestor_tributario/cliente who can't see leads)
+ALTER TABLE public.compensacoes_mensais
+ADD CONSTRAINT fk_comp_cliente
+FOREIGN KEY (cliente_id) REFERENCES public.clientes(id) ON DELETE CASCADE;
+
+ALTER TABLE public.compensacoes_mensais
+ADD CONSTRAINT fk_comp_processo
+FOREIGN KEY (processo_tese_id) REFERENCES public.processos_teses(id) ON DELETE SET NULL;
+```
+
+### Step 2 — Remove manual cascade delete in `src/pages/ClienteDetail.tsx`
+
+In the delete confirmation handler (around line 206-212), remove the two manual delete calls:
+```ts
+// REMOVE these two lines:
+await supabase.from("compensacoes_mensais").delete().eq("cliente_id", id!);
+await supabase.from("processos_teses").delete().eq("cliente_id", id!);
+```
+
+Keep only the `clientes` delete — the DB cascade handles the rest automatically.
 
 ### Files modified
-1. `src/components/AppHeader.tsx` — add Popover, query, badge, dropdown list
+1. Database migration — 3 FK constraints
+2. `src/pages/ClienteDetail.tsx` — remove 2 manual delete lines
 
