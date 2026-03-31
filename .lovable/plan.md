@@ -1,23 +1,22 @@
 
 
-## FIX 2 — Análise da Coluna de Honorários
+## FIX 3 — Paginação nas Listagens Críticas
 
 ### Situação Atual
+- **PipelineList.tsx**: Já tem paginação (PAGE_SIZE=25, estado `page`, controles Anterior/Próxima). Nenhuma mudança necessária.
+- **ClientesList.tsx**: Sem paginação — renderiza todos os `filtered` direto na tabela.
 
-A coluna no banco de dados **já se chama `valor_nf_servico`** e **todo o código já usa `valor_nf_servico` consistentemente** (4 arquivos, 75 referências). Não existe nenhuma referência a `valor_nfse` no código.
+### Mudanças
 
-A coluna `tributo` também **já existe** na tabela `compensacoes_mensais` (confirmado no schema e em `types.ts`).
+**1. `src/pages/ClientesList.tsx`**
 
-### Recomendação: NÃO executar esta migração
+- Adicionar estado `currentPage` (default 1) e constante `ITEMS_PER_PAGE = 25`
+- Calcular `totalPages` e `paginated` a partir de `filtered`
+- Resetar `currentPage` para 1 quando filtros mudarem (`search`, `filterSegmento`, `filterStatus`)
+- Renderizar apenas `paginated` no `<TableBody>`
+- Adicionar controles de paginação abaixo da tabela (Anterior / números / Próxima) com estilo consistente com o design system existente (navy bg para página ativa)
+- Importar `cn` de `@/lib/utils`
 
-Renomear `valor_nf_servico` → `valor_nfse` quebraria:
-- `src/pages/Dashboard.tsx` (4 referências)
-- `src/components/clientes/ResumoFinanceiroTab.tsx` (3 referências)
-- `src/components/clientes/CompensacoesTab.tsx` (5 referências)
-- `src/integrations/supabase/types.ts` (auto-gerado — quebraria até ser regenerado)
-
-**Não há inconsistência a corrigir.** O nome `valor_nf_servico` é o nome canônico atual, usado em 100% do código e do banco. A coluna `tributo` já existe.
-
-### Ação
-Nenhuma mudança necessária. Este FIX já está resolvido pelo estado atual do sistema.
+### Arquivos modificados
+1. `src/pages/ClientesList.tsx` — adicionar paginação client-side
 
