@@ -31,6 +31,7 @@ export default function ClientesList() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
