@@ -9,14 +9,14 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { pathname } = useLocation();
-  const noPadding = pathname === "/dashboard";
+  const isDashboard = pathname === "/dashboard";
 
   return (
     <div className="min-h-screen flex w-full bg-sidebar">
       <AppSidebar />
       <div className="flex-1 flex flex-col bg-background rounded-tl-2xl overflow-hidden">
-        <AppHeader />
-        <main className={cn("flex-1 overflow-auto", !noPadding && "p-4")}>
+        {!isDashboard && <AppHeader />}
+        <main className={cn("flex-1 overflow-auto", !isDashboard && "p-4")}>
           {children}
         </main>
       </div>
