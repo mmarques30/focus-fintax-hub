@@ -194,6 +194,7 @@ export default function ClientesList() {
             <TableHead>Crédito</TableHead>
             <TableHead>Compensado</TableHead>
             <TableHead>Saldo</TableHead>
+            <TableHead>Saúde</TableHead>
             <TableHead>Alerta</TableHead>
             {!isComercial && <TableHead className="w-[80px]">Ações</TableHead>}
           </TableRow>
