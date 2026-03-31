@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,7 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function ClientesList() {
   const navigate = useNavigate();
@@ -32,7 +33,8 @@ export default function ClientesList() {
   const [search, setSearch] = useState("");
   const [filterSegmento, setFilterSegmento] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
   const fetchAll = async () => {
     const [{ data: c }, { data: p }, { data: comp }] = await Promise.all([
       supabase.from("clientes").select("*").order("criado_em", { ascending: false }),
@@ -82,6 +84,17 @@ export default function ClientesList() {
   if (filterSegmento !== "all") filtered = filtered.filter((c) => c.segmento === filterSegmento);
   if (filterStatus === "compensando") filtered = filtered.filter((c) => c.totalCompensado > 0);
   else if (filterStatus !== "all") filtered = filtered.filter((c) => c.status === filterStatus);
+
+  // Reset page on filter change
+  useEffect(() => setCurrentPage(1), [search, filterSegmento, filterStatus]);
+
+  // Pagination
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filtered, currentPage]
+  );
 
   // Report data
   const reportClientes = [...allStats].sort((a, b) => b.totalCredito - a.totalCredito);
@@ -193,9 +206,9 @@ export default function ClientesList() {
         <TableBody>
           {loading ? (
             <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
-          ) : filtered.length === 0 ? (
+          ) : paginated.length === 0 ? (
             <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
-          ) : filtered.map((c) => (
+          ) : paginated.map((c) => (
             <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
               <TableCell className="font-medium">{c.empresa}</TableCell>
               <TableCell className="text-sm text-muted-foreground">{c.cnpj}</TableCell>
@@ -225,6 +238,48 @@ export default function ClientesList() {
           ))}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} de {totalItems}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-30 hover:bg-muted transition-colors"
+            >
+              Anterior
+            </button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={cn(
+                    "w-7 h-7 text-xs font-medium rounded-lg transition-colors",
+                    currentPage === page
+                      ? "bg-navy text-primary-foreground"
+                      : "hover:bg-muted text-muted-foreground"
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg disabled:opacity-30 hover:bg-muted transition-colors"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
 
       <ClienteFormModal open={modalOpen} onOpenChange={(v) => { setModalOpen(v); if (!v) setEditCliente(null); }} onSuccess={fetchAll} cliente={editCliente} />
 
