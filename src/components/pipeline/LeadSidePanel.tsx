@@ -29,6 +29,8 @@ interface HistoricoEntry {
   para_etapa: string;
   anotacao: string | null;
   criado_em: string;
+  criado_por: string | null;
+  usuario_nome: string;
 }
 
 export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
