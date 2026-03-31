@@ -138,31 +138,26 @@ export default function ClientesList() {
       </div>
 
       {/* Stats */}
-      <div className="animate-slide-up delay-1 grid grid-cols-5 gap-3">
+      <div className="animate-slide-up delay-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="card-base p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Total clientes</p>
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Total de clientes</p>
           <p className="font-display text-[28px] font-bold leading-none text-navy">{totalClientes}</p>
-          <p className="text-[11px] text-ink-35 mt-1">cadastrados</p>
+          <p className="text-[11px] text-ink-35 mt-1">na carteira</p>
         </div>
         <div className="card-base p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Compensando Fintax</p>
-          <p className="font-display text-[28px] font-bold leading-none text-navy">{totalCompensando}</p>
-          <p className="text-[11px] text-ink-35 mt-1">clientes ativos</p>
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Compensando ativamente</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-green">{totalCompensando}</p>
+          <p className="text-[11px] text-ink-35 mt-1">com dados reais</p>
         </div>
         <div className="card-base p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Crédito identificado</p>
-          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{formatCurrencyBR(globalCredito)}</p>
-          <p className="text-[11px] text-ink-35 mt-1">total identificado</p>
-        </div>
-        <div className="card-base p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Já compensado</p>
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Total compensado</p>
           <p className="font-display text-[28px] font-bold leading-none text-dash-green">{formatCurrencyBR(globalCompensado)}</p>
-          <p className="text-[11px] text-ink-35 mt-1">realizado</p>
+          <p className="text-[11px] text-ink-35 mt-1">acumulado carteira</p>
         </div>
         <div className="card-base p-4">
-          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Saldo restante</p>
-          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{formatCurrencyBR(globalCredito - globalCompensado)}</p>
-          <p className="text-[11px] text-ink-35 mt-1">disponível</p>
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Saldo a compensar</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{formatCurrencyBR(Math.max(0, globalCredito - globalCompensado))}</p>
+          <p className="text-[11px] text-ink-35 mt-1">potencial restante</p>
         </div>
       </div>
 
