@@ -119,7 +119,7 @@ export function PipelineList({ leads, onLeadClick }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paged.map((lead) => {
+            {paged.map((lead, idx) => {
               const scoreLabel = getScoreLabel(lead.score_lead);
               const scoreConf = SCORE_CONFIG[scoreLabel];
               const potMin = lead.relatorios_leads?.[0]?.estimativa_total_minima || 0;
