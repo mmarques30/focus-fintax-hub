@@ -90,6 +90,9 @@ export function useNotifications() {
       }
 
       setNotifications(alerts);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchAlerts();
