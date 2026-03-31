@@ -29,7 +29,21 @@ export default function ClienteDetail() {
   const [cliente, setCliente] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
+  const [historico, setHistorico] = useState<any[]>([]);
   const obsDebounce = useRef<NodeJS.Timeout>();
+
+  const fetchHistorico = useCallback(async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("cliente_historico" as any)
+      .select("*")
+      .eq("cliente_id", id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setHistorico(data || []);
+  }, [id]);
+
+  useEffect(() => { fetchHistorico(); }, [fetchHistorico]);
 
   // Laratex CSV import state
   const [laratexOpen, setLatatexOpen] = useState(false);
