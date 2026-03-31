@@ -62,7 +62,7 @@ export function CommercialView(props: Props) {
               segmentoData={props.segmentoData} maxSegCount={props.maxSegCount}
               origemData={props.origemData} navigate={props.navigate}
             />
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <LeadsRecentes recentLeads={props.recentLeads} navigate={props.navigate} />
               <QualidadeCarteira scoreDistribution={props.scoreDistribution} />
               <MotorPerformance motorDiagnosticos={props.motorDiagnosticos} motorTesesAtivas={props.motorTesesAtivas} />
