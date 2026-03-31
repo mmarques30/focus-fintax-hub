@@ -1,37 +1,27 @@
 
 
-## PART 6 — Fix Foreign Key Constraints
+## PART 7 — Typography Polish
 
-### Step 1 — Database Migration
+### Summary
+Remove the unused Montserrat font import. Everything else is already in place: Barlow/Barlow Condensed/DM Mono are imported, tailwind config maps them to `font-sans`/`font-display`/`font-mono-dm`, and body uses `font-sans`.
 
-Run SQL to add missing FK constraints with cascade behavior:
+### Changes
 
-```sql
-ALTER TABLE public.processos_teses
-ADD CONSTRAINT fk_processos_cliente
-FOREIGN KEY (cliente_id) REFERENCES public.clientes(id) ON DELETE CASCADE;
+**File: `src/index.css` (line 1)**
 
-ALTER TABLE public.compensacoes_mensais
-ADD CONSTRAINT fk_comp_cliente
-FOREIGN KEY (cliente_id) REFERENCES public.clientes(id) ON DELETE CASCADE;
-
-ALTER TABLE public.compensacoes_mensais
-ADD CONSTRAINT fk_comp_processo
-FOREIGN KEY (processo_tese_id) REFERENCES public.processos_teses(id) ON DELETE SET NULL;
+Remove the Montserrat import line:
+```css
+// DELETE:
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 ```
 
-### Step 2 — Remove manual cascade delete in `src/pages/ClienteDetail.tsx`
+The remaining import on line 2 already loads all three font families with correct weights.
 
-In the delete confirmation handler (around line 206-212), remove the two manual delete calls:
-```ts
-// REMOVE these two lines:
-await supabase.from("compensacoes_mensais").delete().eq("cliente_id", id!);
-await supabase.from("processos_teses").delete().eq("cliente_id", id!);
-```
-
-Keep only the `clientes` delete — the DB cascade handles the rest automatically.
+### Already configured (no changes needed)
+- `tailwind.config.ts`: `font-sans` → Barlow, `font-display` → Barlow Condensed, `font-mono-dm` → DM Mono
+- `src/index.css` body: `@apply font-sans` (= Barlow)
+- Google Fonts import with all required weights
 
 ### Files modified
-1. Database migration — 3 FK constraints
-2. `src/pages/ClienteDetail.tsx` — remove 2 manual delete lines
+1. `src/index.css` — remove unused Montserrat import (1 line)
 
