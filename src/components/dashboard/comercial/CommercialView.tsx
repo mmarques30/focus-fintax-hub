@@ -55,7 +55,7 @@ export function CommercialView(props: Props) {
         <>
           <AlertasBanner stalledLeads={props.stalledLeads} />
 
-          <div className="animate-slide-up delay-3 grid grid-cols-[1fr_320px] gap-3.5 mb-3.5">
+          <div className="animate-slide-up delay-3 grid gap-4 mb-4 w-full" style={{ gridTemplateColumns: '1fr 340px' }}>
             <FunilComercial
               funnelData={props.funnelData} maxFunnelCount={props.maxFunnelCount}
               totalFunnelCount={props.totalFunnelCount} totalFunnelPotencial={props.totalFunnelPotencial}
