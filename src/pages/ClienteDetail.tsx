@@ -42,8 +42,23 @@ export default function ClienteDetail() {
       .select("*")
       .eq("cliente_id", id)
       .order("created_at", { ascending: false })
-      .limit(10);
-    setHistorico(data || []);
+      .limit(20);
+
+    const userIds = [...new Set((data || []).map((h: any) => h.usuario_id).filter(Boolean))];
+    let userMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+      profiles?.forEach((p) => { userMap[p.user_id] = p.full_name; });
+    }
+
+    const enriched = (data || []).map((h: any) => ({
+      ...h,
+      usuario_nome: h.usuario_id ? (userMap[h.usuario_id] || "Usuário") : "Sistema",
+    }));
+    setHistorico(enriched);
   }, [id]);
 
   useEffect(() => { fetchHistorico(); }, [fetchHistorico]);
@@ -309,7 +324,7 @@ export default function ClienteDetail() {
                       <div className="min-w-0 pb-2">
                         <p className="text-[11px] leading-tight text-foreground">{h.descricao}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
+                          {h.usuario_nome} · {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
                         </p>
                       </div>
                     </div>
