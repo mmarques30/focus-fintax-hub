@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { FunnelRow, compactCurrency, SEGMENTO_LABELS, SEGMENTO_BAR_COLOR, ORIGEM_LABELS } from "../dashboard-utils";
 import type { NavigateFunction } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface Props {
   funnelData: FunnelRow[];
