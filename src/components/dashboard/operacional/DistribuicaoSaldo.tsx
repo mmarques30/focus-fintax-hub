@@ -1,4 +1,5 @@
 import { compactCurrency } from "../dashboard-utils";
+import { AlertTriangle } from "lucide-react";
 
 interface DistBand {
   label: string;
