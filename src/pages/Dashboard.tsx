@@ -70,12 +70,13 @@ export default function Dashboard() {
     const d3 = new Date(now.getTime() - 3 * 86400000).toISOString();
 
     // ═══ COMMERCIAL TAB DATA ═══
-    const [pipelineRes, newWeekRes, prevWeekRes, contratosRes, clientesAtivosRes] = await Promise.all([
+    const [pipelineRes, newWeekRes, prevWeekRes, contratosRes, clientesAtivosRes, totalEverRes] = await Promise.all([
       supabase.from("leads").select("id", { count: "exact", head: true }).not("status_funil", "in", "(perdido,nao_vai_fazer)"),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("criado_em", d7),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("criado_em", d14).lt("criado_em", d7),
       supabase.from("leads").select("id", { count: "exact", head: true }).eq("status_funil", "contrato_emitido"),
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      supabase.from("leads").select("id", { count: "exact", head: true }),
     ]);
     setKpiLoading(false);
     setComLeads(pipelineRes.count ?? 0);
@@ -85,8 +86,8 @@ export default function Dashboard() {
     const clientesAtivos = clientesAtivosRes.count ?? 0;
     setComClientesAtivos(clientesAtivos);
 
-    const totalNonLost = pipelineRes.count ?? 0;
-    setComTaxaConversao(totalNonLost > 0 ? Math.round((clientesAtivos / totalNonLost) * 100) : 0);
+    const totalEver = totalEverRes.count ?? 0;
+    setComTaxaConversao(totalEver > 0 ? Math.min(Math.round((clientesAtivos / totalEver) * 100), 100) : 0);
 
     const { data: allLeads } = await supabase.from("leads").select("id, status_funil, segmento, origem, score_lead").not("status_funil", "in", "(perdido,nao_vai_fazer)");
     const activeLeads = allLeads ?? [];
