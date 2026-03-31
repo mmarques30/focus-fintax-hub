@@ -172,9 +172,9 @@ export function AppSidebar() {
               key={item.title}
               to={item.url}
               className={cn(
-                "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                "flex items-center gap-3 h-9 rounded-xl px-3 text-sidebar-foreground transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                  ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                   : "hover:bg-sidebar-accent/50"
               )}
             >
