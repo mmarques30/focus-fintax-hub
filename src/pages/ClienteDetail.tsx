@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, MessageCircle, Upload, Pencil, Trash2, Clock, AlertTriangle, FileText, Mail } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, Upload, Pencil, Trash2, Clock, AlertTriangle, FileText, Mail, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export default function ClienteDetail() {
   const [compensacoesTotal, setCompensacoesTotal] = useState(0);
   const [historico, setHistorico] = useState<any[]>([]);
   const obsDebounce = useRef<NodeJS.Timeout>();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const fetchHistorico = useCallback(async () => {
     if (!id) return;
@@ -78,7 +80,7 @@ export default function ClienteDetail() {
     setCliente((prev: any) => ({ ...prev, observacoes: value }));
     if (obsDebounce.current) clearTimeout(obsDebounce.current);
     obsDebounce.current = setTimeout(() => {
-      supabase.from("clientes").update({ atualizado_em: new Date().toISOString() }).eq("id", id!);
+      supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
     }, 800);
   };
 
@@ -193,9 +195,22 @@ export default function ClienteDetail() {
     : null;
 
   return (
-    <div className="flex h-full">
-      {/* Sidebar */}
-      <div className="w-[280px] shrink-0 border-r bg-muted/30 p-4 overflow-y-auto space-y-4">
+    <div className="flex h-full gap-0 min-h-0">
+      {/* Sidebar — collapsible */}
+      <div className={cn(
+        "relative flex-shrink-0 transition-all duration-300 overflow-hidden border-r bg-muted/30",
+        sidebarOpen ? "w-[260px]" : "w-[20px]"
+      )}>
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute right-0 top-4 z-10 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center shadow-sm translate-x-1/2"
+        >
+          <ChevronRight className={cn("w-3 h-3 transition-transform", sidebarOpen && "rotate-180")} />
+        </button>
+
+        {sidebarOpen && (
+      <div className="p-4 overflow-y-auto space-y-4 h-full">
         <Button variant="ghost" size="sm" onClick={() => navigate("/clientes")} className="mb-2">
           <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Button>
@@ -282,6 +297,8 @@ export default function ClienteDetail() {
               </div>
             </ScrollArea>
           </div>
+        )}
+      </div>
         )}
       </div>
 
