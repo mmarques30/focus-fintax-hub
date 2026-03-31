@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pencil, Plus, AlertTriangle } from "lucide-react";
+import { Pencil, Plus, AlertTriangle, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ProcessoFormModal } from "./ProcessoFormModal";
 import { formatCurrencyBR, getStatusContratoConfig, getStatusProcessoConfig, STATUS_PROCESSO } from "@/lib/clientes-constants";
@@ -157,9 +158,42 @@ export function ProcessosTesesTab({ clienteId, compensacoesTotal }: Props) {
                   />
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditProcesso(p); setModalOpen(true); }}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditProcesso(p); setModalOpen(true); }}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. A tese{" "}
+                            <strong>{p.nome_exibicao}</strong> será removida permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              const { error } = await supabase.from("processos_teses").delete().eq("id", p.id);
+                              if (error) { toast.error("Erro ao excluir."); return; }
+                              toast.success("Tese excluída.");
+                              logClienteHistorico(clienteId, "processo_removido", `Tese removida: ${p.nome_exibicao}`);
+                              fetchProcessos();
+                            }}
+                            className="bg-[#c8001e] hover:bg-[#a30019] text-white"
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </TableCell>
               </TableRow>
             );

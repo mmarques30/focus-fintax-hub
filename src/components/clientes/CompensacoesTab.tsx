@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, FileText, MessageCircle, Printer, Copy, Mail } from "lucide-react";
+import { Plus, FileText, MessageCircle, Printer, Copy, Mail, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatCurrencyBR, getStatusPagamentoConfig, STATUS_PAGAMENTO } from "@/lib/clientes-constants";
 import { format } from "date-fns";
@@ -193,7 +194,7 @@ Equipe Focus.`;
       </div>
 
       <Table>
-        <TableHeader>
+         <TableHeader>
           <TableRow>
             <TableHead>Mês Ref.</TableHead>
             <TableHead>Tese</TableHead>
@@ -202,13 +203,14 @@ Equipe Focus.`;
             <TableHead>Pagamento</TableHead>
             <TableHead>NF Serviço</TableHead>
             <TableHead>Obs.</TableHead>
+            <TableHead className="w-10"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+            <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : filtered.length === 0 ? (
-            <TableRow><TableCell colSpan={7}><EmptyState icon={<FileText size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." /></TableCell></TableRow>
+            <TableRow><TableCell colSpan={8}><EmptyState icon={<FileText size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." /></TableCell></TableRow>
           ) : filtered.map((c) => {
             const sp = getStatusPagamentoConfig(c.status_pagamento);
             return (
@@ -220,6 +222,40 @@ Equipe Focus.`;
                 <TableCell><Badge variant="outline" className={sp.color}>{sp.label}</Badge></TableCell>
                 <TableCell>{formatCurrencyBR(Number(c.valor_nf_servico || 0))}</TableCell>
                 <TableCell className="text-xs text-muted-foreground max-w-32 truncate">{c.observacao || "—"}</TableCell>
+                <TableCell>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. A compensação de{" "}
+                          <strong>{formatCurrencyBR(Number(c.valor_compensado || 0))}</strong> referente a{" "}
+                          <strong>{format(new Date(c.mes_referencia), "MMM/yyyy", { locale: ptBR })}</strong> será removida permanentemente.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            const { error } = await supabase.from("compensacoes_mensais").delete().eq("id", c.id);
+                            if (error) { toast.error("Erro ao excluir."); return; }
+                            toast.success("Compensação excluída.");
+                            logClienteHistorico(clienteId, "compensacao_removida", `Compensação removida: ${format(new Date(c.mes_referencia), "MMM/yyyy", { locale: ptBR })} — ${formatCurrencyBR(Number(c.valor_compensado || 0))}`);
+                            fetchData();
+                          }}
+                          className="bg-[#c8001e] hover:bg-[#a30019] text-white"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
             );
           })}
@@ -229,7 +265,7 @@ Equipe Focus.`;
             <TableRow>
               <TableCell colSpan={3} className="font-medium">Total</TableCell>
               <TableCell className="font-bold">{formatCurrencyBR(totalFiltered)}</TableCell>
-              <TableCell colSpan={3}></TableCell>
+              <TableCell colSpan={4}></TableCell>
             </TableRow>
           </TableFooter>
         )}
