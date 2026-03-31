@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function AppHeader() {
   const { profile, userRole } = useAuth();
   const navigate = useNavigate();
-  const notifications = useNotifications();
+  const { notifications, loading: notifLoading } = useNotifications();
 
   const ROLE_LABELS: Record<string, string> = {
     admin: "Administrador",
