@@ -114,9 +114,9 @@ export function AppSidebar() {
                 <button
                   onClick={() => setConfigOpen(!configOpen)}
                   className={cn(
-                    "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap w-full",
+                    "flex items-center gap-3 h-9 rounded-xl px-3 text-sidebar-foreground transition-colors whitespace-nowrap w-full",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                      ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                       : "hover:bg-sidebar-accent/50"
                   )}
                 >
