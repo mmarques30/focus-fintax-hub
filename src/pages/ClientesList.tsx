@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,7 @@ import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function ClientesList() {
   const navigate = useNavigate();
