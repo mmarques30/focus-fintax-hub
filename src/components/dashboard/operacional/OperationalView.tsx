@@ -1,5 +1,8 @@
 import type { NavigateFunction } from "react-router-dom";
 import { compactCurrency, type MonthBar, type ClientRank, MONTH_ABBR } from "../dashboard-utils";
+import { SkeletonKpi } from "../SkeletonKpi";
+import { SkeletonChart } from "../SkeletonChart";
+import { SkeletonTable } from "../SkeletonTable";
 import { KpiStripOperacional } from "./KpiStripOperacional";
 import { ProjectionBand } from "./ProjectionBand";
 import { ChartEvolucao } from "./ChartEvolucao";
@@ -9,6 +12,8 @@ import { RankingTable } from "./RankingTable";
 import { BottomStripOperacional } from "./BottomStripOperacional";
 
 interface Props {
+  kpiLoading: boolean;
+  chartLoading: boolean;
   opClientes: number;
   opTotalAtivos: number;
   opCompensado: number;
@@ -21,7 +26,7 @@ interface Props {
   navigate: NavigateFunction;
 }
 
-export function OperationalView({ opClientes, opTotalAtivos, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate }: Props) {
+export function OperationalView({ kpiLoading, chartLoading, opClientes, opTotalAtivos, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate }: Props) {
   // Projections
   const numMonths = monthlyBars.length || 1;
   const avgMensal = opCompensado / numMonths;
@@ -78,37 +83,48 @@ export function OperationalView({ opClientes, opTotalAtivos, opCompensado, opHon
 
   return (
     <>
-      <KpiStripOperacional
-        opClientes={opClientes} opTotalAtivos={opTotalAtivos} opCompensado={opCompensado}
-        opHonorarios={opHonorarios} opEconomia={opEconomia} opSaldo={opSaldo}
-        periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}
-      />
-
-      <ProjectionBand
-        projAnual={projAnual} projHonAnual={projHonAnual} prazoSaldo={prazoSaldo}
-        honFuturosSaldo={honFuturosSaldo} avgMensal={avgMensal} opSaldo={opSaldo} periodLabel={periodLabel}
-      />
-
-      <div className="animate-slide-up delay-3 grid grid-cols-[1.6fr_1fr] gap-3.5 mb-3.5">
-        <ChartEvolucao
-          monthlyBars={monthlyBars} avgMensal={avgMensal} nextMonthLabel={nextMonthLabel}
+      {kpiLoading ? <SkeletonKpi /> : (
+        <KpiStripOperacional
+          opClientes={opClientes} opTotalAtivos={opTotalAtivos} opCompensado={opCompensado}
+          opHonorarios={opHonorarios} opEconomia={opEconomia} opSaldo={opSaldo}
           periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}
-          insightVar={insightVar} insightVarLabel={insightVarLabel}
         />
-        <DistribuicaoSaldo
-          opClientes={opClientes} distBands={distBands} maxDistCount={maxDistCount}
-          prazoSaldo={prazoSaldo} honFuturosSaldo={honFuturosSaldo} opSaldo={opSaldo} taxaHon={taxaHon}
-        />
-      </div>
+      )}
 
-      <UrgencyClients urgencyClients={urgencyClients} taxaHon={taxaHon} navigate={navigate} />
-      <RankingTable fullRanking={fullRanking} numMonths={numMonths} navigate={navigate} />
+      {chartLoading ? (
+        <>
+          <SkeletonChart />
+          <div className="mt-3.5"><SkeletonTable /></div>
+        </>
+      ) : (
+        <>
+          <ProjectionBand
+            projAnual={projAnual} projHonAnual={projHonAnual} prazoSaldo={prazoSaldo}
+            honFuturosSaldo={honFuturosSaldo} avgMensal={avgMensal} opSaldo={opSaldo} periodLabel={periodLabel}
+          />
 
-      <BottomStripOperacional
-        opClientes={opClientes} opCompensado={opCompensado} opHonorarios={opHonorarios}
-        opEconomia={opEconomia} opSaldo={opSaldo} numMonths={numMonths}
-        prazoSaldo={prazoSaldo} projHonAnual={projHonAnual}
-      />
+          <div className="animate-slide-up delay-3 grid grid-cols-[1.6fr_1fr] gap-3.5 mb-3.5">
+            <ChartEvolucao
+              monthlyBars={monthlyBars} avgMensal={avgMensal} nextMonthLabel={nextMonthLabel}
+              periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}
+              insightVar={insightVar} insightVarLabel={insightVarLabel}
+            />
+            <DistribuicaoSaldo
+              opClientes={opClientes} distBands={distBands} maxDistCount={maxDistCount}
+              prazoSaldo={prazoSaldo} honFuturosSaldo={honFuturosSaldo} opSaldo={opSaldo} taxaHon={taxaHon}
+            />
+          </div>
+
+          <UrgencyClients urgencyClients={urgencyClients} taxaHon={taxaHon} navigate={navigate} />
+          <RankingTable fullRanking={fullRanking} numMonths={numMonths} navigate={navigate} />
+
+          <BottomStripOperacional
+            opClientes={opClientes} opCompensado={opCompensado} opHonorarios={opHonorarios}
+            opEconomia={opEconomia} opSaldo={opSaldo} numMonths={numMonths}
+            prazoSaldo={prazoSaldo} projHonAnual={projHonAnual}
+          />
+        </>
+      )}
     </>
   );
 }

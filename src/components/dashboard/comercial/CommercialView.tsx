@@ -1,5 +1,8 @@
 import type { NavigateFunction } from "react-router-dom";
 import type { FunnelRow, RecentLead } from "../dashboard-utils";
+import { SkeletonKpi } from "../SkeletonKpi";
+import { SkeletonChart } from "../SkeletonChart";
+import { SkeletonTable } from "../SkeletonTable";
 import { KpiStripComercial } from "./KpiStripComercial";
 import { AlertasBanner } from "./AlertasBanner";
 import { FunilComercial } from "./FunilComercial";
@@ -9,6 +12,8 @@ import { MotorPerformance } from "./MotorPerformance";
 import { BottomStripComercial } from "./BottomStripComercial";
 
 interface Props {
+  kpiLoading: boolean;
+  chartLoading: boolean;
   comLeads: number;
   comNewWeek: number;
   trendDiff: number;
@@ -34,31 +39,43 @@ interface Props {
 export function CommercialView(props: Props) {
   return (
     <>
-      <KpiStripComercial
-        comLeads={props.comLeads} comNewWeek={props.comNewWeek} trendDiff={props.trendDiff}
-        comPotencial={props.comPotencial} comContratos={props.comContratos} comTaxaConversao={props.comTaxaConversao}
-      />
-      <AlertasBanner stalledLeads={props.stalledLeads} />
-
-      <div className="animate-slide-up delay-3 grid grid-cols-[1fr_320px] gap-3.5 mb-3.5">
-        <FunilComercial
-          funnelData={props.funnelData} maxFunnelCount={props.maxFunnelCount}
-          totalFunnelCount={props.totalFunnelCount} totalFunnelPotencial={props.totalFunnelPotencial}
-          segmentoData={props.segmentoData} maxSegCount={props.maxSegCount}
-          origemData={props.origemData} navigate={props.navigate}
+      {props.kpiLoading ? <SkeletonKpi /> : (
+        <KpiStripComercial
+          comLeads={props.comLeads} comNewWeek={props.comNewWeek} trendDiff={props.trendDiff}
+          comPotencial={props.comPotencial} comContratos={props.comContratos} comTaxaConversao={props.comTaxaConversao}
         />
-        <div className="flex flex-col gap-3">
-          <LeadsRecentes recentLeads={props.recentLeads} navigate={props.navigate} />
-          <QualidadeCarteira scoreDistribution={props.scoreDistribution} />
-          <MotorPerformance motorDiagnosticos={props.motorDiagnosticos} motorTesesAtivas={props.motorTesesAtivas} />
-        </div>
-      </div>
+      )}
 
-      <BottomStripComercial
-        comLeads={props.comLeads} comContratos={props.comContratos}
-        comClientesAtivos={props.comClientesAtivos} comPotencial={props.comPotencial}
-        comTaxaConversao={props.comTaxaConversao}
-      />
+      {props.chartLoading ? (
+        <>
+          <SkeletonChart />
+          <div className="mt-3.5"><SkeletonTable /></div>
+        </>
+      ) : (
+        <>
+          <AlertasBanner stalledLeads={props.stalledLeads} />
+
+          <div className="animate-slide-up delay-3 grid grid-cols-[1fr_320px] gap-3.5 mb-3.5">
+            <FunilComercial
+              funnelData={props.funnelData} maxFunnelCount={props.maxFunnelCount}
+              totalFunnelCount={props.totalFunnelCount} totalFunnelPotencial={props.totalFunnelPotencial}
+              segmentoData={props.segmentoData} maxSegCount={props.maxSegCount}
+              origemData={props.origemData} navigate={props.navigate}
+            />
+            <div className="flex flex-col gap-3">
+              <LeadsRecentes recentLeads={props.recentLeads} navigate={props.navigate} />
+              <QualidadeCarteira scoreDistribution={props.scoreDistribution} />
+              <MotorPerformance motorDiagnosticos={props.motorDiagnosticos} motorTesesAtivas={props.motorTesesAtivas} />
+            </div>
+          </div>
+
+          <BottomStripComercial
+            comLeads={props.comLeads} comContratos={props.comContratos}
+            comClientesAtivos={props.comClientesAtivos} comPotencial={props.comPotencial}
+            comTaxaConversao={props.comTaxaConversao}
+          />
+        </>
+      )}
     </>
   );
 }
