@@ -91,6 +91,8 @@ export function CompensacoesTab({ clienteId, cliente, onTotalChange }: Props) {
     });
     if (error) { toast.error("Erro ao registrar."); return; }
     toast.success("Compensação registrada!");
+    const proc = processos.find((p) => p.id === form.processo_tese_id);
+    logClienteHistorico(clienteId, "compensacao_adicionada", `Compensação ${form.mes_referencia} — ${proc?.nome_exibicao || ""}: ${formatCurrencyBR(Number(form.valor_compensado) || 0)}`);
     setModalOpen(false);
     setForm({ processo_tese_id: "", mes_referencia: "", valor_compensado: "", status_pagamento: "pendente", valor_nf_servico: "", observacao: "", tributo: "" });
     fetchData();
