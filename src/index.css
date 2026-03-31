@@ -80,6 +80,17 @@
   .print\\:hidden {
     display: none !important;
   }
+  [data-sidebar], .app-header, nav {
+    display: none !important;
+  }
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .card-base {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
 }
 
 @layer base {

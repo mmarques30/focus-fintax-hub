@@ -14,7 +14,7 @@ export function UrgencyClients({ urgencyClients, taxaHon, navigate }: Props) {
   return (
     <div className="animate-slide-up delay-4 bg-[rgba(200,0,30,0.04)] border border-[rgba(200,0,30,0.18)] rounded-2xl overflow-hidden mb-3.5">
       <div className="px-4 py-2.5 bg-[rgba(200,0,30,0.08)] border-b border-[rgba(200,0,30,0.15)] flex items-center gap-2">
-        <span className="text-xs">🎯</span>
+        <Target className="w-3.5 h-3.5 text-dash-red flex-shrink-0" />
         <span className="text-[11px] font-bold tracking-[0.8px] uppercase text-dash-red">
           Prioridade máxima — {urgencyClients.length} cliente{urgencyClients.length > 1 ? "s" : ""} com saldo acima de R$1M
         </span>

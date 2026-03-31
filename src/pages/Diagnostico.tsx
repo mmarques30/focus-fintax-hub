@@ -591,7 +591,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
           gap: 14,
           alignItems: "flex-start",
         }}>
-          <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚠</div>
+          <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1 }} viewBox="0 0 24 24" fill="none" stroke="var(--dg-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           <p style={{ fontSize: 12, color: "var(--dg-ink-60)", lineHeight: 1.7 }}>
             <strong style={{ color: "var(--dg-gold)", fontWeight: 600 }}>Análise Estimada · Dados Declarados</strong><br />
             Os valores acima são projeções preliminares com base no faturamento e regime informados, calculadas a partir de médias históricas de empresas do mesmo segmento. A análise completa e definitiva requer acesso às declarações fiscais, Speds e balancetes contábeis. Prazo legal para recuperação: <strong style={{ color: "var(--dg-gold)", fontWeight: 600 }}>5 anos retroativos</strong>. Cada mês sem análise reduz o período recuperável.

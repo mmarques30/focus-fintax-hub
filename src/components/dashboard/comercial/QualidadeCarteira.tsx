@@ -12,13 +12,16 @@ export function QualidadeCarteira({ scoreDistribution }: Props) {
       </div>
       <div className="px-3.5 py-2">
         {[
-          { key: "A", emoji: "🔴", label: "Score A — alto potencial" },
-          { key: "B", emoji: "🟠", label: "Score B — médio" },
-          { key: "C", emoji: "🟡", label: "Score C — regular" },
-          { key: "D", emoji: "⚪", label: "Score D — mínimo" },
+          { key: "A", label: "Score A — alto potencial", dotColor: "#c8001e" },
+          { key: "B", label: "Score B — médio", dotColor: "#b45309" },
+          { key: "C", label: "Score C — regular", dotColor: "#ca8a04" },
+          { key: "D", label: "Score D — mínimo", dotColor: "rgba(15,17,23,0.25)" },
         ].map(s => (
           <div key={s.key} className="flex items-center justify-between py-[7px] border-b border-[rgba(0,0,0,0.04)]">
-            <span className="text-xs font-medium text-ink-60">{s.emoji} {s.label}</span>
+            <span className="text-xs font-medium text-ink-60 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dotColor }} />
+              {s.label}
+            </span>
             <span className="font-display text-lg font-bold" style={{ color: SCORE_VAL_COLOR[s.key] }}>{scoreDistribution[s.key] ?? 0}</span>
           </div>
         ))}
