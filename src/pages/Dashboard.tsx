@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getScoreLabel, daysSince } from "@/lib/pipeline-constants";
@@ -34,7 +33,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(resolveDefault);
   const switchTab = (t: string) => { setActiveTab(t); localStorage.setItem("dash_tab", t); };
 
-  const [loading, setLoading] = useState(true);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
 
   // Commercial state
   const [comLeads, setComLeads] = useState(0);
@@ -77,6 +77,7 @@ export default function Dashboard() {
       supabase.from("leads").select("id", { count: "exact", head: true }).eq("status_funil", "contrato_emitido"),
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
     ]);
+    setKpiLoading(false);
     setComLeads(pipelineRes.count ?? 0);
     setComNewWeek(newWeekRes.count ?? 0);
     setComNewPrevWeek(prevWeekRes.count ?? 0);
@@ -206,7 +207,7 @@ export default function Dashboard() {
     setTopCompensado([...rankings].sort((a, b) => b.compensado - a.compensado).slice(0, 8));
     setTopSaldo([...rankings].sort((a, b) => b.saldo - a.saldo).filter(r => r.saldo > 0).slice(0, 8));
 
-    setLoading(false);
+    setChartLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -238,15 +239,9 @@ export default function Dashboard() {
       />
 
       <div className="px-7 pt-[18px] pb-9 max-w-[1400px] mx-auto">
-        {loading ? (
-          <div className="space-y-3">
-            <div className="bg-white rounded-lg p-4 flex gap-3">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 flex-1" />)}
-            </div>
-            <Skeleton className="h-64 w-full rounded-lg" />
-          </div>
-        ) : activeTab === "comercial" ? (
+        {activeTab === "comercial" ? (
           <CommercialView
+            kpiLoading={kpiLoading} chartLoading={chartLoading}
             comLeads={comLeads} comNewWeek={comNewWeek} trendDiff={trendDiff}
             comPotencial={comPotencial} comContratos={comContratos} comTaxaConversao={comTaxaConversao}
             comClientesAtivos={comClientesAtivos} stalledLeads={stalledLeads} funnelData={funnelData}
@@ -258,6 +253,7 @@ export default function Dashboard() {
           />
         ) : (
           <OperationalView
+            kpiLoading={kpiLoading} chartLoading={chartLoading}
             opClientes={opClientes} opTotalAtivos={opTotalAtivos} opCompensado={opCompensado} opHonorarios={opHonorarios}
             opSaldo={opSaldo} opEconomia={opEconomia} monthlyBars={monthlyBars}
             topCompensado={topCompensado} topSaldo={topSaldo} navigate={navigate}
