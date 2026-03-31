@@ -100,5 +100,5 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [canSee]);
 
-  return notifications;
+  return { notifications, loading };
 }

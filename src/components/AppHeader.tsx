@@ -35,8 +35,20 @@ export function AppHeader() {
             <div className="px-4 py-3 border-b border-border">
               <p className="text-sm font-semibold text-foreground">Notificações</p>
             </div>
-            {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground text-center">Nenhuma notificação</p>
+            {notifLoading ? (
+              <div className="p-4 space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="animate-pulse flex gap-3">
+                    <div className="w-2 h-2 rounded-full bg-muted mt-1.5 flex-shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-3/4 bg-muted rounded" />
+                      <div className="h-2.5 w-1/2 bg-muted/60 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : notifications.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground text-center">Nenhuma notificação pendente</p>
             ) : (
               <div className="max-h-64 overflow-y-auto divide-y divide-border">
                 {notifications.map((n) => (
