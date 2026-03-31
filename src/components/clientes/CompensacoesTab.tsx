@@ -15,6 +15,7 @@ import { formatCurrencyBR, getStatusPagamentoConfig, STATUS_PAGAMENTO } from "@/
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import logoFintax from "@/assets/logo-focus-fintax.svg";
+import { logClienteHistorico } from "@/lib/cliente-historico";
 
 const TRIBUTO_OPTIONS = ["INSS", "PIS/COFINS", "IRPJ", "CSLL", "Outros"];
 const MESES_PT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
