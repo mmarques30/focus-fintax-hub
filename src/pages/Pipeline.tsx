@@ -146,11 +146,27 @@ export default function Pipeline() {
       </div>
 
       {/* Stats */}
-      <div className="animate-slide-up delay-1 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
-        <KpiBox label="Leads ativos" value={String(activeLeads.length)} sub="excluindo perdidos" />
-        <KpiBox label="Novos hoje" value={String(newToday)} sub="captados hoje" />
-        <KpiBox label="Potencial total" value={compactCurrency(totalPotencial)} sub="soma do potencial máx." colorClass="green" />
-        <KpiBox label="Sem contato >1d" value={String(leadsStale)} sub="leads parados" colorClass="red" last />
+      <div className="animate-slide-up delay-1 grid grid-cols-4 gap-3">
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Leads ativos</p>
+          <p className="font-display text-[28px] font-bold leading-none text-navy">{activeLeads.length}</p>
+          <p className="text-[11px] text-ink-35 mt-1">excluindo perdidos</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Novos hoje</p>
+          <p className="font-display text-[28px] font-bold leading-none text-navy">{newToday}</p>
+          <p className="text-[11px] text-ink-35 mt-1">captados hoje</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Potencial total</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-green">{compactCurrency(totalPotencial)}</p>
+          <p className="text-[11px] text-ink-35 mt-1">soma do potencial máx.</p>
+        </div>
+        <div className="card-base p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Sem contato &gt;1d</p>
+          <p className="font-display text-[28px] font-bold leading-none text-dash-red">{leadsStale}</p>
+          <p className="text-[11px] text-ink-35 mt-1">leads parados</p>
+        </div>
       </div>
 
       {/* View */}

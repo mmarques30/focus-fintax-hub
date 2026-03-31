@@ -8,7 +8,7 @@ interface Props {
 
 export function LeadsRecentes({ recentLeads, navigate }: Props) {
   return (
-    <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden">
+    <div className="card-base overflow-hidden">
       <div className="px-[18px] pt-3 pb-2.5 border-b border-[rgba(10,21,100,0.10)]">
         <div className="text-[11px] font-bold tracking-[0.8px] uppercase text-navy">Leads recentes</div>
       </div>

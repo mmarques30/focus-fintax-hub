@@ -401,7 +401,7 @@ export default function UserManagement() {
       </div>
 
       {/* Table */}
-      <Card className="border-card-border">
+      <Card className="card-base">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-lg font-bold">Usuários Cadastrados</CardTitle>
           <div className="relative w-64">

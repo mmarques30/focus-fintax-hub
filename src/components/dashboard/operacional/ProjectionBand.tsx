@@ -24,7 +24,7 @@ export function ProjectionBand({ projAnual, projHonAnual, prazoSaldo, honFuturos
   ];
 
   return (
-    <div className="animate-slide-up delay-2 bg-navy rounded-[10px] px-6 py-3.5 grid grid-cols-[1fr_1px_1fr_1px_1fr_1px_1fr_1px_1fr] mb-3.5 items-center">
+    <div className="animate-slide-up delay-2 bg-navy rounded-[14px] px-6 py-3.5 grid grid-cols-[1fr_1px_1fr_1px_1fr_1px_1fr_1px_1fr] mb-3.5 items-center">
       {items.map((item, i) => {
         if (!item) return <div key={i} className="w-px bg-[rgba(255,255,255,0.12)] self-stretch" />;
         const isFirst = i === 0;

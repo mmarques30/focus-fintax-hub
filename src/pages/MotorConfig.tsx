@@ -388,7 +388,7 @@ export default function MotorConfig() {
       </Card>
 
       {/* Resumo de Cobertura */}
-      <Card>
+      <Card className="card-base">
         <CardHeader className="py-3 px-4">
           <CardTitle className="text-sm font-semibold">Resumo de Cobertura</CardTitle>
         </CardHeader>
