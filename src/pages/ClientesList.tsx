@@ -69,7 +69,7 @@ export default function ClientesList() {
   // Global stats
   const allStats = clientes.map((c) => ({ ...c, ...getClienteStats(c.id) }));
   const totalClientes = clientes.length;
-  const totalCompensando = clientes.filter((c) => c.compensando_fintax).length;
+  const totalCompensando = allStats.filter((c) => c.totalCompensado > 0).length;
   const globalCredito = allStats.reduce((s, c) => s + c.totalCredito, 0);
   const globalCompensado = allStats.reduce((s, c) => s + c.totalCompensado, 0);
 
@@ -80,7 +80,7 @@ export default function ClientesList() {
     filtered = filtered.filter((c) => c.empresa?.toLowerCase().includes(q) || c.cnpj?.includes(q));
   }
   if (filterSegmento !== "all") filtered = filtered.filter((c) => c.segmento === filterSegmento);
-  if (filterStatus === "compensando") filtered = filtered.filter((c) => c.compensando_fintax);
+  if (filterStatus === "compensando") filtered = filtered.filter((c) => c.totalCompensado > 0);
   else if (filterStatus !== "all") filtered = filtered.filter((c) => c.status === filterStatus);
 
   // Report data
