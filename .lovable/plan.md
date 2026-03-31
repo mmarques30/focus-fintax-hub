@@ -1,30 +1,23 @@
 
 
-## FIX 1 — Filtro "Compensando" baseado em dados reais
+## FIX 2 — Análise da Coluna de Honorários
 
-### Problema
-Linha 72 e 83 de `ClientesList.tsx` usam `compensando_fintax` (toggle manual) para KPI e filtro. Isso causa inconsistência: clientes aparecem como "compensando" sem ter dados reais em `compensacoes_mensais`.
+### Situação Atual
 
-### Mudanças
+A coluna no banco de dados **já se chama `valor_nf_servico`** e **todo o código já usa `valor_nf_servico` consistentemente** (4 arquivos, 75 referências). Não existe nenhuma referência a `valor_nfse` no código.
 
-**1. `src/pages/ClientesList.tsx`**
+A coluna `tributo` também **já existe** na tabela `compensacoes_mensais` (confirmado no schema e em `types.ts`).
 
-- **Linha 72** — KPI: trocar `c.compensando_fintax` por `getClienteStats(c.id).totalCompensado > 0`:
-  ```typescript
-  const totalCompensando = allStats.filter((c) => c.totalCompensado > 0).length;
-  ```
+### Recomendação: NÃO executar esta migração
 
-- **Linha 83** — Filtro: trocar `c.compensando_fintax` por `c.totalCompensado > 0`:
-  ```typescript
-  if (filterStatus === "compensando") filtered = filtered.filter((c) => c.totalCompensado > 0);
-  ```
+Renomear `valor_nf_servico` → `valor_nfse` quebraria:
+- `src/pages/Dashboard.tsx` (4 referências)
+- `src/components/clientes/ResumoFinanceiroTab.tsx` (3 referências)
+- `src/components/clientes/CompensacoesTab.tsx` (5 referências)
+- `src/integrations/supabase/types.ts` (auto-gerado — quebraria até ser regenerado)
 
-**2. `src/pages/ClienteDetail.tsx` (sidebar)**
+**Não há inconsistência a corrigir.** O nome `valor_nf_servico` é o nome canônico atual, usado em 100% do código e do banco. A coluna `tributo` já existe.
 
-- Manter o toggle `compensando_fintax` visível
-- Adicionar nota abaixo: `"Marcação interna — filtros baseados em dados reais de compensação."`
-
-### Arquivos modificados
-1. `src/pages/ClientesList.tsx` — 2 linhas
-2. `src/pages/ClienteDetail.tsx` — nota informativa junto ao toggle
+### Ação
+Nenhuma mudança necessária. Este FIX já está resolvido pelo estado atual do sistema.
 
