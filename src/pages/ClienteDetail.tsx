@@ -79,9 +79,14 @@ export default function ClienteDetail() {
 
   const handleObsChange = (value: string) => {
     setCliente((prev: any) => ({ ...prev, observacoes: value }));
+    setObsSaved(false);
     if (obsDebounce.current) clearTimeout(obsDebounce.current);
-    obsDebounce.current = setTimeout(() => {
-      supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
+    obsDebounce.current = setTimeout(async () => {
+      const { error } = await supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() } as any).eq("id", id!);
+      if (!error) {
+        setObsSaved(true);
+        setTimeout(() => setObsSaved(false), 2000);
+      }
     }, 800);
   };
 
