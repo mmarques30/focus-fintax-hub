@@ -29,6 +29,8 @@ interface HistoricoEntry {
   para_etapa: string;
   anotacao: string | null;
   criado_em: string;
+  criado_por: string | null;
+  usuario_nome: string;
 }
 
 export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
@@ -53,10 +55,26 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   const fetchHistorico = async (leadId: string) => {
     const { data } = await supabase
       .from("lead_historico")
-      .select("*")
+      .select("id, de_etapa, para_etapa, anotacao, criado_em, criado_por")
       .eq("lead_id", leadId)
-      .order("criado_em", { ascending: false });
-    setHistorico((data as HistoricoEntry[]) || []);
+      .order("criado_em", { ascending: false })
+      .limit(30);
+
+    const entries = data ?? [];
+    const userIds = [...new Set(entries.map(h => h.criado_por).filter(Boolean))] as string[];
+    let userMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+      (profiles ?? []).forEach(p => { userMap[p.user_id] = p.full_name; });
+    }
+
+    setHistorico(entries.map(h => ({
+      ...h,
+      usuario_nome: h.criado_por ? (userMap[h.criado_por] || "Usuário") : "Sistema",
+    })));
   };
 
   const handleObsChange = useCallback((value: string) => {
@@ -273,7 +291,7 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                                 {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
                               </p>
                               {h.anotacao && <p className={`text-xs mt-0.5 ${isException ? "text-amber-700 font-medium" : "text-muted-foreground"}`}>{h.anotacao}</p>}
-                              <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">{h.usuario_nome} · {new Date(h.criado_em).toLocaleString("pt-BR")}</p>
                             </div>
                           </div>
                         );
