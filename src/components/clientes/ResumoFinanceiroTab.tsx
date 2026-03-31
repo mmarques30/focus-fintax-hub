@@ -24,7 +24,7 @@ export function ResumoFinanceiroTab({ clienteId, cliente }: Props) {
         supabase.from("processos_teses").select("*").eq("cliente_id", clienteId),
         supabase
           .from("compensacoes_mensais")
-          .select("*, processos_teses(id, tese, nome_exibicao, percentual_honorario, valor_credito)")
+          .select("*, processos_teses!compensacoes_mensais_processo_tese_id_fkey(id, tese, nome_exibicao, percentual_honorario, valor_credito)")
           .eq("cliente_id", clienteId)
           .order("mes_referencia", { ascending: false }),
       ]);

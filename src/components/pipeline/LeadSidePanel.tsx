@@ -291,7 +291,7 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                                 {h.de_etapa ? stageLabel(h.de_etapa) : "Criado"} <ArrowRight className="h-3 w-3" /> {stageLabel(h.para_etapa)}
                               </p>
                               {h.anotacao && <p className={`text-xs mt-0.5 ${isException ? "text-amber-700 font-medium" : "text-muted-foreground"}`}>{h.anotacao}</p>}
-                              <p className="text-[10px] text-muted-foreground mt-1">{new Date(h.criado_em).toLocaleString("pt-BR")}</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">{h.usuario_nome} · {new Date(h.criado_em).toLocaleString("pt-BR")}</p>
                             </div>
                           </div>
                         );

@@ -254,6 +254,18 @@ export default function Dashboard() {
         switchTab={switchTab}
       />
 
+      {role === "admin" && dataHealth && !dataHealth.hasData && (
+        <div className="mx-7 mt-4 p-3 rounded-xl border border-[hsl(var(--destructive)/0.2)] bg-[hsl(var(--destructive)/0.04)] flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0" />
+          <p className="text-xs text-muted-foreground flex-1">
+            Nenhuma compensação encontrada. Os dados reais precisam ser importados.
+          </p>
+          <Link to="/clientes" className="text-[10px] font-bold text-destructive hover:underline whitespace-nowrap">
+            Ir para clientes →
+          </Link>
+        </div>
+      )}
+
       <div className="px-7 pt-[18px] pb-9 w-full">
         {activeTab === "comercial" ? (
           <CommercialView
