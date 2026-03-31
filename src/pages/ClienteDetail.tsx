@@ -80,7 +80,7 @@ export default function ClienteDetail() {
     setCliente((prev: any) => ({ ...prev, observacoes: value }));
     if (obsDebounce.current) clearTimeout(obsDebounce.current);
     obsDebounce.current = setTimeout(() => {
-      supabase.from("clientes").update({ atualizado_em: new Date().toISOString() }).eq("id", id!);
+      supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
     }, 800);
   };
 
