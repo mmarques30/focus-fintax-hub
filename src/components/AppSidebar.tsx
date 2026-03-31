@@ -148,9 +148,9 @@ export function AppSidebar() {
                           key={child.url}
                           to={child.url}
                           className={cn(
-                            "flex items-center h-8 rounded-md pl-10 pr-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                            "flex items-center h-8 rounded-xl pl-10 pr-3 text-sidebar-foreground transition-colors whitespace-nowrap",
                             childActive
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                              ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                               : "hover:bg-sidebar-accent/50"
                           )}
                         >
