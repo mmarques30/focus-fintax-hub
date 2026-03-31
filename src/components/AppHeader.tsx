@@ -1,50 +1,15 @@
-import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
-
-interface StuckLead {
-  id: string;
-  empresa: string;
-  days: number;
-}
+import { cn } from "@/lib/utils";
 
 export function AppHeader() {
   const { profile, userRole } = useAuth();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<StuckLead[]>([]);
-
-  const canSeeNotifications = ["admin", "comercial", "pmo"].includes(userRole ?? "");
-
-  useEffect(() => {
-    if (!canSeeNotifications) return;
-
-    const fetch = async () => {
-      const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString();
-      const { data } = await supabase
-        .from("leads")
-        .select("id, empresa, status_funil_atualizado_em")
-        .eq("status_funil", "contrato_emitido")
-        .lt("status_funil_atualizado_em", threeDaysAgo);
-
-      if (data) {
-        setNotifications(
-          data.map((l) => ({
-            id: l.id,
-            empresa: l.empresa,
-            days: Math.floor((Date.now() - new Date(l.status_funil_atualizado_em!).getTime()) / 86400000),
-          }))
-        );
-      }
-    };
-
-    fetch();
-    const interval = setInterval(fetch, 60000);
-    return () => clearInterval(interval);
-  }, [canSeeNotifications]);
+  const notifications = useNotifications();
 
   const ROLE_LABELS: Record<string, string> = {
     admin: "Administrador",
@@ -77,13 +42,19 @@ export function AppHeader() {
                 {notifications.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => navigate("/pipeline")}
-                    className="w-full text-left px-4 py-3 hover:bg-[rgba(10,21,100,0.03)] transition-colors"
+                    onClick={() => navigate(n.href)}
+                    className="w-full text-left px-4 py-3 hover:bg-accent/50 transition-colors flex items-start gap-3"
                   >
-                    <p className="text-sm font-medium text-foreground">{n.empresa}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Contrato emitido há {n.days} dias sem avanço
-                    </p>
+                    <span
+                      className={cn(
+                        "mt-1.5 h-2 w-2 rounded-full flex-shrink-0",
+                        n.type === "warning" ? "bg-amber-500" : "bg-blue-500"
+                      )}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{n.title}</p>
+                      <p className="text-xs text-muted-foreground">{n.subtitle}</p>
+                    </div>
                   </button>
                 ))}
               </div>
