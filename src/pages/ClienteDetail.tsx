@@ -33,6 +33,7 @@ export default function ClienteDetail() {
   const [historico, setHistorico] = useState<any[]>([]);
   const obsDebounce = useRef<NodeJS.Timeout>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [obsSaved, setObsSaved] = useState(false);
 
   const fetchHistorico = useCallback(async () => {
     if (!id) return;
@@ -78,9 +79,14 @@ export default function ClienteDetail() {
 
   const handleObsChange = (value: string) => {
     setCliente((prev: any) => ({ ...prev, observacoes: value }));
+    setObsSaved(false);
     if (obsDebounce.current) clearTimeout(obsDebounce.current);
-    obsDebounce.current = setTimeout(() => {
-      supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
+    obsDebounce.current = setTimeout(async () => {
+      const { error } = await supabase.from("clientes").update({ observacoes: value, atualizado_em: new Date().toISOString() } as any).eq("id", id!);
+      if (!error) {
+        setObsSaved(true);
+        setTimeout(() => setObsSaved(false), 2000);
+      }
     }, 800);
   };
 
@@ -250,6 +256,21 @@ export default function ClienteDetail() {
           <div>
             <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <p className="text-xs">{cliente.compensacao_outro_escritorio || "—"}</p>
+          </div>
+          <div className="relative">
+            <span className="text-muted-foreground text-xs">Observações:</span>
+            <textarea
+              value={cliente.observacoes || ""}
+              onChange={(e) => handleObsChange(e.target.value)}
+              className="w-full text-sm resize-none rounded-lg border border-border bg-background p-3 focus:outline-none focus:ring-1 focus:ring-ring min-h-[80px] mt-1"
+              placeholder="Observações internas sobre o cliente..."
+            />
+            <span className={cn(
+              "absolute bottom-2 right-3 text-[10px] text-emerald-600 transition-opacity duration-300",
+              obsSaved ? "opacity-100" : "opacity-0"
+            )}>
+              Salvo ✓
+            </span>
           </div>
           <div>
             <span className="text-muted-foreground text-xs">Cadastrado em:</span>
