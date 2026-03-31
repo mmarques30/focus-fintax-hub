@@ -210,7 +210,7 @@ Equipe Focus.`;
           {loading ? (
             <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : filtered.length === 0 ? (
-            <TableRow><TableCell colSpan={7}><EmptyState icon={<FileText size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." /></TableCell></TableRow>
+            <TableRow><TableCell colSpan={8}><EmptyState icon={<FileText size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." /></TableCell></TableRow>
           ) : filtered.map((c) => {
             const sp = getStatusPagamentoConfig(c.status_pagamento);
             return (
