@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Plus, LayoutGrid, List } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ACTIVE_STAGES, daysSince, formatCurrency } from "@/lib/pipeline-constants";
-import { KpiBox, compactCurrency } from "@/components/dashboard/dashboard-utils";
+import { compactCurrency } from "@/components/dashboard/dashboard-utils";
 import { PipelineKanban } from "@/components/pipeline/PipelineKanban";
 import { PipelineList } from "@/components/pipeline/PipelineList";
 import { LeadFormModal } from "@/components/pipeline/LeadFormModal";

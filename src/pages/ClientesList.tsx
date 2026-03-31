@@ -14,7 +14,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
-import { KpiBox } from "@/components/dashboard/dashboard-utils";
 import { toast } from "sonner";
 
 export default function ClientesList() {
