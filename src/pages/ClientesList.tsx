@@ -85,6 +85,17 @@ export default function ClientesList() {
   if (filterStatus === "compensando") filtered = filtered.filter((c) => c.totalCompensado > 0);
   else if (filterStatus !== "all") filtered = filtered.filter((c) => c.status === filterStatus);
 
+  // Reset page on filter change
+  useEffect(() => setCurrentPage(1), [search, filterSegmento, filterStatus]);
+
+  // Pagination
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filtered, currentPage]
+  );
+
   // Report data
   const reportClientes = [...allStats].sort((a, b) => b.totalCredito - a.totalCredito);
   const reportDate = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
