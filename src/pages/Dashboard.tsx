@@ -78,6 +78,7 @@ export default function Dashboard() {
       supabase.from("leads").select("id", { count: "exact", head: true }).eq("status_funil", "contrato_emitido"),
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
     ]);
+    setKpiLoading(false);
     setComLeads(pipelineRes.count ?? 0);
     setComNewWeek(newWeekRes.count ?? 0);
     setComNewPrevWeek(prevWeekRes.count ?? 0);
