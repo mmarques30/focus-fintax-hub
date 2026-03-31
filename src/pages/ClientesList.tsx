@@ -194,15 +194,16 @@ export default function ClientesList() {
             <TableHead>Crédito</TableHead>
             <TableHead>Compensado</TableHead>
             <TableHead>Saldo</TableHead>
+            <TableHead>Saúde</TableHead>
             <TableHead>Alerta</TableHead>
             {!isComercial && <TableHead className="w-[80px]">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
-            <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
-          ) : paginated.length === 0 ? (
-            <TableRow><TableCell colSpan={!isComercial ? 10 : 9} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
+             <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+           ) : paginated.length === 0 ? (
+             <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
           ) : paginated.map((c) => (
             <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
               <TableCell className="font-medium">{c.empresa}</TableCell>
@@ -213,6 +214,26 @@ export default function ClientesList() {
               <TableCell>{formatCurrencyBR(c.totalCredito)}</TableCell>
               <TableCell>{formatCurrencyBR(c.totalCompensado)}</TableCell>
               <TableCell>{formatCurrencyBR(c.saldo)}</TableCell>
+              <TableCell>
+                {(() => {
+                  const health = c.saldo <= 0 ? 'amarelo' : (c.totalCredito > 0 && (c.totalCompensado / c.totalCredito) < 0.05) ? 'vermelho' : 'verde';
+                  return (
+                    <div
+                      className={cn(
+                        "w-2.5 h-2.5 rounded-full mx-auto",
+                        health === 'verde' && "bg-dash-green",
+                        health === 'amarelo' && "bg-dash-amber",
+                        health === 'vermelho' && "bg-dash-red"
+                      )}
+                      title={
+                        health === 'verde' ? 'Compensando ativamente' :
+                        health === 'amarelo' ? 'Saldo zerado — considere nova tese' :
+                        'Sem compensações recentes'
+                      }
+                    />
+                  );
+                })()}
+              </TableCell>
               <TableCell>
                 {c.hasAlertNaoProtocolado ? <AlertOctagon className="h-4 w-4 text-red-500" /> :
                  c.hasAlertAguardando ? <AlertTriangle className="h-4 w-4 text-orange-500" /> : null}
