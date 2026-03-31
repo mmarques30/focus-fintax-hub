@@ -75,12 +75,17 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "h-screen bg-sidebar flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
+        "h-screen flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden relative",
         open ? "w-[250px]" : "w-[60px]"
       )}
+      style={{
+        background: 'linear-gradient(180deg, #0a1564 0%, #071040 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+      }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent pointer-events-none" />
       {/* Logo */}
       <div className="flex items-center h-20 px-3 shrink-0">
         {open ? (
@@ -109,9 +114,9 @@ export function AppSidebar() {
                 <button
                   onClick={() => setConfigOpen(!configOpen)}
                   className={cn(
-                    "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap w-full",
+                    "flex items-center gap-3 h-9 rounded-xl px-3 text-sidebar-foreground transition-colors whitespace-nowrap w-full",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                      ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                       : "hover:bg-sidebar-accent/50"
                   )}
                 >
@@ -143,9 +148,9 @@ export function AppSidebar() {
                           key={child.url}
                           to={child.url}
                           className={cn(
-                            "flex items-center h-8 rounded-md pl-10 pr-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                            "flex items-center h-8 rounded-xl pl-10 pr-3 text-sidebar-foreground transition-colors whitespace-nowrap",
                             childActive
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                              ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                               : "hover:bg-sidebar-accent/50"
                           )}
                         >
@@ -167,9 +172,9 @@ export function AppSidebar() {
               key={item.title}
               to={item.url}
               className={cn(
-                "flex items-center gap-3 h-9 rounded-md px-3 text-sidebar-foreground transition-colors whitespace-nowrap",
+                "flex items-center gap-3 h-9 rounded-xl px-3 text-sidebar-foreground transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                  ? "bg-white/10 backdrop-blur-sm text-white font-semibold"
                   : "hover:bg-sidebar-accent/50"
               )}
             >
