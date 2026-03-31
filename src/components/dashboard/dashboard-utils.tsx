@@ -88,13 +88,12 @@ export const fontMono: React.CSSProperties = { fontFamily: "'DM Mono', monospace
 export const fontCondensed: React.CSSProperties = { fontFamily: "'Barlow Condensed', sans-serif" };
 export const fontBarlow: React.CSSProperties = { fontFamily: "'Barlow', sans-serif" };
 
-/* ─── anim delay style helper ─── */
-export const animDelay = (ms: number): React.CSSProperties => ({ '--anim-delay': `${ms}ms` } as React.CSSProperties);
-
 /* ─── KpiBox ─── */
-export function KpiBox({ label, value, sub, colorClass, trend, last }: { label: string; value: string; sub: string; colorClass?: string; trend?: number; last?: boolean }) {
+export function KpiBox({ label, value, sub, colorClass, trend, last, rawValue }: { label: string; value: string; sub: string; colorClass?: string; trend?: number; last?: boolean; rawValue?: number }) {
   const colorMap: Record<string, string> = { red: "text-dash-red", green: "text-dash-green", amber: "text-dash-amber" };
   const valColorClass = colorClass ? colorMap[colorClass] ?? "text-navy" : "text-navy";
+  const animatedNum = useCountUp(rawValue ?? 0);
+  const displayValue = rawValue !== undefined ? String(animatedNum) : value;
   return (
     <div className={`px-5 py-4 relative ${last ? "" : "border-r border-[rgba(10,21,100,0.10)]"}`}>
       {trend !== undefined && trend !== 0 && (
@@ -103,7 +102,7 @@ export function KpiBox({ label, value, sub, colorClass, trend, last }: { label: 
         </span>
       )}
       <div className="text-[10px] font-semibold tracking-[1.4px] uppercase text-ink-35 mb-[7px]">{label}</div>
-      <div className={`font-display text-[26px] font-bold leading-none ${valColorClass}`}>{value}</div>
+      <div className={`font-display text-[26px] font-bold leading-none ${valColorClass}`}>{displayValue}</div>
       <div className="text-[11px] text-ink-35 mt-1">{sub}</div>
     </div>
   );
