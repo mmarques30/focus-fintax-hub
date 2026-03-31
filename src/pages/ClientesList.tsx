@@ -462,6 +462,12 @@ export default function ClientesList() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImportCompensacoesModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={fetchAll}
+      />
     </div>
   );
 }
