@@ -1,21 +1,56 @@
 
 
-## Part 10 — Urgency Clients Strip: Cards Not a Grid
+## Part 11 — Loading Skeletons Per Section
 
 ### Summary
-Replace the single bordered container with a grid of cells with individual floating cards in a horizontal scrollable flex layout. Keep the header banner, change only the items area.
+Replace the single `loading` boolean with granular loading states (`kpiLoading`, `chartLoading`) and create dedicated skeleton components for each dashboard section. Sections render independently as their data arrives.
 
-### Changes — `src/components/dashboard/operacional/UrgencyClients.tsx`
+### Step 1 — Create skeleton components
 
-1. **Keep** the outer wrapper and header banner as-is (lines 14-20)
-2. **Replace** the grid div (lines 21-29) with a horizontal flex layout:
-   - `flex gap-3 overflow-x-auto pb-1 px-4 py-3` container
-   - Each client becomes an individual card: `flex-shrink-0 w-48 rounded-xl p-3` with gradient background, subtle red border, and shadow via inline style
-   - Hover: `hover:-translate-y-0.5` with `transition-all duration-200`
-   - Text: `text-xs font-bold` for empresa (truncated), `font-display text-xl font-bold text-dash-red` for saldo, `text-[10px]` for honorário
-3. **Remove** the `border-r` dividers between items (no longer needed — each card is independent)
-4. Continue using `compactCurrency` for formatting values
+**`src/components/dashboard/SkeletonKpi.tsx`**
+- 5-column grid of `card-base p-4 animate-pulse` divs
+- Three placeholder bars per card (label, value, sub)
+
+**`src/components/dashboard/SkeletonChart.tsx`**
+- Single `card-base p-6 animate-pulse` with a header bar and 6 vertical bars of varying height to mimic a bar chart
+
+**`src/components/dashboard/SkeletonTable.tsx`**
+- `card-base p-4 animate-pulse` with a header bar and 5 rows of 4 columns each
+
+### Step 2 — Split loading state in `src/pages/Dashboard.tsx`
+
+Replace `const [loading, setLoading] = useState(true)` with:
+```
+const [kpiLoading, setKpiLoading] = useState(true);
+const [chartLoading, setChartLoading] = useState(true);
+```
+
+In `fetchData`:
+- After the first `Promise.all` (lines 73-79) that fetches counts → call `setKpiLoading(false)`
+- At the end of fetchData (line 209) → call `setChartLoading(false)`
+- Remove `setLoading(false)`
+
+### Step 3 — Update render in `Dashboard.tsx`
+
+Remove the top-level `loading ?` ternary. Always render the active view. Pass `kpiLoading` and `chartLoading` as props to both `CommercialView` and `OperationalView`.
+
+### Step 4 — Update `CommercialView` and `OperationalView`
+
+Add `kpiLoading` and `chartLoading` to their Props interfaces. Wrap sections conditionally:
+
+```tsx
+// In CommercialView
+{kpiLoading ? <SkeletonKpi /> : <KpiStripComercial ... />}
+{chartLoading ? <SkeletonChart /> : <FunilComercial ... />}
+```
+
+Same pattern for OperationalView: KPI strip, ProjectionBand, ChartEvolucao, etc.
 
 ### Files modified
-1. `src/components/dashboard/operacional/UrgencyClients.tsx`
+1. `src/components/dashboard/SkeletonKpi.tsx` — new
+2. `src/components/dashboard/SkeletonChart.tsx` — new
+3. `src/components/dashboard/SkeletonTable.tsx` — new
+4. `src/pages/Dashboard.tsx` — split loading state, pass as props
+5. `src/components/dashboard/comercial/CommercialView.tsx` — accept loading props, conditional skeletons
+6. `src/components/dashboard/operacional/OperationalView.tsx` — accept loading props, conditional skeletons
 
