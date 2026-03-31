@@ -86,8 +86,8 @@ export default function Dashboard() {
     const clientesAtivos = clientesAtivosRes.count ?? 0;
     setComClientesAtivos(clientesAtivos);
 
-    const totalNonLost = pipelineRes.count ?? 0;
-    setComTaxaConversao(totalNonLost > 0 ? Math.round((clientesAtivos / totalNonLost) * 100) : 0);
+    const totalEver = totalEverRes.count ?? 0;
+    setComTaxaConversao(totalEver > 0 ? Math.min(Math.round((clientesAtivos / totalEver) * 100), 100) : 0);
 
     const { data: allLeads } = await supabase.from("leads").select("id, status_funil, segmento, origem, score_lead").not("status_funil", "in", "(perdido,nao_vai_fazer)");
     const activeLeads = allLeads ?? [];

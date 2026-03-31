@@ -22,7 +22,7 @@ export function KpiStripComercial({ comLeads, comNewWeek, trendDiff, comPotencia
     { label: "Novos esta semana", value: String(animNew), sub: "leads captados (7d)", colorClass: "text-navy", trend: trendDiff },
     { label: "Potencial total", value: compactCurrency(animPotencial), sub: "soma do potencial máx.", colorClass: "text-dash-red" },
     { label: "Contratos emitidos", value: String(animContratos), sub: "aguardando assinatura", colorClass: "text-dash-amber" },
-    { label: "Taxa de conversão", value: `${animConversao}%`, sub: "leads → clientes ativos", colorClass: "text-dash-green" },
+    { label: "Taxa de conversão", value: `${animConversao}%`, sub: "leads → clientes ativos", colorClass: comTaxaConversao > 50 ? "text-dash-green" : comTaxaConversao >= 20 ? "text-dash-amber" : "text-navy" },
   ];
 
   return (
