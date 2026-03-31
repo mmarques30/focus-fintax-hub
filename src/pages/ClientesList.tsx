@@ -126,7 +126,7 @@ export default function ClientesList() {
       </div>
 
       {/* Stats */}
-      <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
+      <div className="animate-slide-up delay-1 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
         <KpiBox label="Total clientes" value={String(totalClientes)} sub="cadastrados" />
         <KpiBox label="Compensando Fintax" value={String(totalCompensando)} sub="clientes ativos" />
         <KpiBox label="Crédito identificado" value={formatCurrencyBR(globalCredito)} sub="total identificado" colorClass="red" />
