@@ -13,7 +13,7 @@ interface Props {
 
 export function DashboardHeader({ profileName, role, canComercial, canOperacional, activeTab, switchTab }: Props) {
   return (
-    <div className="bg-white border-b border-[rgba(10,21,100,0.10)] sticky top-0 z-[100]">
+    <div className="sticky top-0 z-[100]">
       <div className="h-[52px] px-7 flex items-center justify-between">
         <div className="flex items-baseline">
           <span className="text-base font-bold text-navy">{greeting()}, {profileName}</span>
@@ -25,12 +25,14 @@ export function DashboardHeader({ profileName, role, canComercial, canOperaciona
         </div>
       </div>
       {canComercial && canOperacional && (
-        <div className="flex justify-center gap-2">
-          {[{ key: "comercial", label: "Visão Comercial" }, { key: "operacional", label: "Visão Operacional" }].map(t => (
-            <button key={t.key} onClick={() => switchTab(t.key)} className={`px-8 py-3 text-[13px] cursor-pointer bg-transparent border-none font-sans ${activeTab === t.key ? "font-semibold text-navy border-b-2 border-b-navy" : "font-medium text-ink-60 border-b-2 border-b-transparent"}`}>
-              {t.label}
-            </button>
-          ))}
+        <div className="flex justify-center pb-3">
+          <div className="bg-white/80 border border-[rgba(10,21,100,0.08)] rounded-lg px-1 py-1 flex gap-1">
+            {[{ key: "comercial", label: "Visão Comercial" }, { key: "operacional", label: "Visão Operacional" }].map(t => (
+              <button key={t.key} onClick={() => switchTab(t.key)} className={`px-6 py-1.5 text-[13px] cursor-pointer bg-transparent border-none rounded-md font-sans transition-colors ${activeTab === t.key ? "font-semibold text-navy" : "font-medium text-ink-60"}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
