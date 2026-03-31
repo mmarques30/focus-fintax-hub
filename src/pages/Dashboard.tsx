@@ -62,6 +62,7 @@ export default function Dashboard() {
   const [monthlyBars, setMonthlyBars] = useState<MonthBar[]>([]);
   const [topCompensado, setTopCompensado] = useState<ClientRank[]>([]);
   const [topSaldo, setTopSaldo] = useState<ClientRank[]>([]);
+  const [dataHealth, setDataHealth] = useState<{ compensacoes: number; processos: number; hasData: boolean } | null>(null);
 
   const fetchData = useCallback(async () => {
     const now = new Date();
