@@ -13,13 +13,15 @@ export interface AppNotification {
 export function useNotifications() {
   const { userRole } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const canSee = ["admin", "comercial", "pmo"].includes(userRole ?? "");
 
   useEffect(() => {
-    if (!canSee) return;
+    if (!canSee) { setLoading(false); return; }
 
     const fetchAlerts = async () => {
+      try {
       const alerts: AppNotification[] = [];
 
       // Alert 1: leads stuck in contrato_emitido > 3 days
