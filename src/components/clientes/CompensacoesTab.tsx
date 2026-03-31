@@ -194,7 +194,7 @@ Equipe Focus.`;
       </div>
 
       <Table>
-        <TableHeader>
+         <TableHeader>
           <TableRow>
             <TableHead>Mês Ref.</TableHead>
             <TableHead>Tese</TableHead>
@@ -203,6 +203,7 @@ Equipe Focus.`;
             <TableHead>Pagamento</TableHead>
             <TableHead>NF Serviço</TableHead>
             <TableHead>Obs.</TableHead>
+            <TableHead className="w-10"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
