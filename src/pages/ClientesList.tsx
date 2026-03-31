@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2 } from "lucide-react";
+import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
