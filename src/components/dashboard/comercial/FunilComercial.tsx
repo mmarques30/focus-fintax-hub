@@ -15,6 +15,8 @@ interface Props {
 }
 
 export function FunilComercial({ funnelData, maxFunnelCount, totalFunnelCount, totalFunnelPotencial, segmentoData, maxSegCount, origemData, navigate }: Props) {
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+
   return (
     <div className="card-base overflow-hidden">
       {/* Card header */}
@@ -29,17 +31,20 @@ export function FunilComercial({ funnelData, maxFunnelCount, totalFunnelCount, t
       {funnelData.map((f) => {
         const isContrato = f.stage === "contrato_emitido" && f.count > 0;
         const isCliente = f.stage === "cliente_ativo";
-        const rowBg = isContrato ? "var(--dash-amber-bg)" : "transparent";
         const suffix = isContrato ? " ⚠" : isCliente ? " ✓" : "";
 
         return (
           <div
             key={f.stage}
             onClick={() => navigate(f.stage === "cliente_ativo" ? "/clientes" : `/pipeline?etapa=${f.stage}`)}
-            className="flex items-center px-[18px] py-[9px] border-b border-[rgba(0,0,0,0.04)] cursor-pointer transition-colors duration-[120ms] min-w-0"
-            style={{ background: rowBg }}
-            onMouseEnter={e => { if (!isContrato) (e.currentTarget as HTMLElement).style.background = "var(--ink-06)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = rowBg; }}
+            className={cn(
+              "flex items-center px-[18px] py-[9px] cursor-pointer transition-all duration-150 rounded-xl mx-2 my-0.5 min-w-0",
+              isContrato
+                ? hoveredRow === f.stage ? "bg-[rgba(251,191,36,0.14)]" : "bg-[rgba(251,191,36,0.08)]"
+                : hoveredRow === f.stage ? "bg-[rgba(10,21,100,0.04)]" : "bg-transparent"
+            )}
+            onMouseEnter={() => setHoveredRow(f.stage)}
+            onMouseLeave={() => setHoveredRow(null)}
           >
             <div className="w-[5px] h-[26px] rounded-[3px] shrink-0 mr-3" style={{ background: f.color }} />
             <span className={`text-xs flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap pr-2 ${isContrato ? "font-bold text-dash-amber" : isCliente ? "font-semibold text-dash-green" : "font-medium text-ink"}`}>{f.label}{suffix}</span>
