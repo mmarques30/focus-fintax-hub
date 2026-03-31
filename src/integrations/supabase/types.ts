@@ -197,20 +197,6 @@ export type Database = {
             referencedRelation: "processos_teses"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_comp_cliente"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_comp_processo"
-            columns: ["processo_tese_id"]
-            isOneToOne: false
-            referencedRelation: "processos_teses"
-            referencedColumns: ["id"]
-          },
         ]
       }
       diagnosticos_leads: {
