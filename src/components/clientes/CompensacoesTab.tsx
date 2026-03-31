@@ -222,6 +222,40 @@ Equipe Focus.`;
                 <TableCell><Badge variant="outline" className={sp.color}>{sp.label}</Badge></TableCell>
                 <TableCell>{formatCurrencyBR(Number(c.valor_nf_servico || 0))}</TableCell>
                 <TableCell className="text-xs text-muted-foreground max-w-32 truncate">{c.observacao || "—"}</TableCell>
+                <TableCell>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. A compensação de{" "}
+                          <strong>{formatCurrencyBR(Number(c.valor_compensado || 0))}</strong> referente a{" "}
+                          <strong>{format(new Date(c.mes_referencia), "MMM/yyyy", { locale: ptBR })}</strong> será removida permanentemente.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            const { error } = await supabase.from("compensacoes_mensais").delete().eq("id", c.id);
+                            if (error) { toast.error("Erro ao excluir."); return; }
+                            toast.success("Compensação excluída.");
+                            logClienteHistorico(clienteId, "compensacao_removida", `Compensação removida: ${format(new Date(c.mes_referencia), "MMM/yyyy", { locale: ptBR })} — ${formatCurrencyBR(Number(c.valor_compensado || 0))}`);
+                            fetchData();
+                          }}
+                          className="bg-[#c8001e] hover:bg-[#a30019] text-white"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
             );
           })}
