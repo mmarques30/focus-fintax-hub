@@ -246,6 +246,43 @@ export default function ClienteDetail() {
             </Link>
           )}
         </div>
+
+        {/* Histórico Timeline */}
+        {historico.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Histórico</h3>
+            <ScrollArea className={historico.length > 5 ? "h-[200px]" : ""}>
+              <div className="space-y-2">
+                {historico.map((h: any) => {
+                  const dotColor =
+                    h.tipo === "compensacao_adicionada" ? "bg-emerald-500" :
+                    h.tipo === "status_mudado" ? "bg-amber-500" :
+                    h.tipo === "comunicado_enviado" ? "bg-blue-500" :
+                    "bg-muted-foreground";
+                  const Icon =
+                    h.tipo === "comunicado_enviado" ? Mail :
+                    h.tipo === "status_mudado" ? AlertTriangle :
+                    h.tipo === "compensacao_adicionada" ? FileText :
+                    Clock;
+                  return (
+                    <div key={h.id} className="flex gap-2 items-start">
+                      <div className="flex flex-col items-center mt-1">
+                        <div className={`h-2 w-2 rounded-full ${dotColor}`} />
+                        <div className="w-px h-full bg-border" />
+                      </div>
+                      <div className="min-w-0 pb-2">
+                        <p className="text-[11px] leading-tight text-foreground">{h.descricao}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(h.created_at), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
       </div>
 
       {/* Main */}
