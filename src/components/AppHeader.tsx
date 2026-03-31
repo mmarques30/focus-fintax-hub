@@ -26,7 +26,7 @@ export function AppHeader() {
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
               <Bell className="h-5 w-5" />
-              {notifications.length > 0 && (
+              {!notifLoading && notifications.length > 0 && (
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-dash-red" />
               )}
             </Button>
