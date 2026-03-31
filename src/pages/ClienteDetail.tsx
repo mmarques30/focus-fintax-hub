@@ -15,6 +15,8 @@ import { CompensacoesTab } from "@/components/clientes/CompensacoesTab";
 import { ResumoFinanceiroTab } from "@/components/clientes/ResumoFinanceiroTab";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { formatCurrencyBR } from "@/lib/clientes-constants";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertTitle } from "@/components/ui/alert-dialog";
