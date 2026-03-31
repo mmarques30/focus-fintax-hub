@@ -1,5 +1,5 @@
 import type { NavigateFunction } from "react-router-dom";
-import { animDelay, compactCurrency, type MonthBar, type ClientRank, MONTH_ABBR } from "../dashboard-utils";
+import { compactCurrency, type MonthBar, type ClientRank, MONTH_ABBR } from "../dashboard-utils";
 import { KpiStripOperacional } from "./KpiStripOperacional";
 import { ProjectionBand } from "./ProjectionBand";
 import { ChartEvolucao } from "./ChartEvolucao";
@@ -89,7 +89,7 @@ export function OperationalView({ opClientes, opTotalAtivos, opCompensado, opHon
         honFuturosSaldo={honFuturosSaldo} avgMensal={avgMensal} opSaldo={opSaldo} periodLabel={periodLabel}
       />
 
-      <div className="animate-dash-in grid grid-cols-[1.6fr_1fr] gap-3.5 mb-3.5" style={animDelay(140)}>
+      <div className="animate-slide-up delay-3 grid grid-cols-[1.6fr_1fr] gap-3.5 mb-3.5">
         <ChartEvolucao
           monthlyBars={monthlyBars} avgMensal={avgMensal} nextMonthLabel={nextMonthLabel}
           periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}

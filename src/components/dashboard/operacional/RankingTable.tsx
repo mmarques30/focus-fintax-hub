@@ -1,5 +1,5 @@
 import type { NavigateFunction } from "react-router-dom";
-import { animDelay, compactCurrency, fullCurrency, type ClientRank } from "../dashboard-utils";
+import { compactCurrency, fullCurrency, type ClientRank } from "../dashboard-utils";
 
 interface Props {
   fullRanking: ClientRank[];
@@ -9,7 +9,7 @@ interface Props {
 
 export function RankingTable({ fullRanking, numMonths, navigate }: Props) {
   return (
-    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden mb-3.5" style={animDelay(240)}>
+    <div className="animate-slide-up delay-5 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] overflow-hidden mb-3.5">
       <div className="px-[18px] pt-3 pb-2.5 border-b border-[rgba(10,21,100,0.10)] flex items-center justify-between">
         <div>
           <div className="text-[11px] font-bold tracking-[0.8px] uppercase text-navy">Ranking de compensações</div>

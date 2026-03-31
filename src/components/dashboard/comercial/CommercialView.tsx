@@ -1,6 +1,5 @@
 import type { NavigateFunction } from "react-router-dom";
 import type { FunnelRow, RecentLead } from "../dashboard-utils";
-import { animDelay } from "../dashboard-utils";
 import { KpiStripComercial } from "./KpiStripComercial";
 import { AlertasBanner } from "./AlertasBanner";
 import { FunilComercial } from "./FunilComercial";
@@ -41,7 +40,7 @@ export function CommercialView(props: Props) {
       />
       <AlertasBanner stalledLeads={props.stalledLeads} />
 
-      <div className="animate-dash-in grid grid-cols-[1fr_320px] gap-3.5 mb-3.5" style={animDelay(140)}>
+      <div className="animate-slide-up delay-3 grid grid-cols-[1fr_320px] gap-3.5 mb-3.5">
         <FunilComercial
           funnelData={props.funnelData} maxFunnelCount={props.maxFunnelCount}
           totalFunnelCount={props.totalFunnelCount} totalFunnelPotencial={props.totalFunnelPotencial}

@@ -146,7 +146,7 @@ export default function Pipeline() {
       </div>
 
       {/* Stats */}
-      <div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
+      <div className="animate-slide-up delay-1 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
         <KpiBox label="Leads ativos" value={String(activeLeads.length)} sub="excluindo perdidos" />
         <KpiBox label="Novos hoje" value={String(newToday)} sub="captados hoje" />
         <KpiBox label="Potencial total" value={compactCurrency(totalPotencial)} sub="soma do potencial máx." colorClass="green" />

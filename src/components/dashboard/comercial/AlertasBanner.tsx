@@ -1,5 +1,3 @@
-import { animDelay } from "../dashboard-utils";
-
 interface StalledLead {
   empresa: string;
   days: number;
@@ -14,7 +12,7 @@ export function AlertasBanner({ stalledLeads }: Props) {
   if (stalledLeads.length === 0) return null;
 
   return (
-    <div className="animate-dash-in bg-white border border-[rgba(180,83,9,0.2)] rounded-[10px] overflow-hidden mb-3.5" style={animDelay(90)}>
+    <div className="animate-slide-up delay-2 bg-white border border-[rgba(180,83,9,0.2)] rounded-[10px] overflow-hidden mb-3.5">
       <div className="px-[18px] py-2.5 bg-[rgba(251,191,36,0.12)] border-b border-[rgba(180,83,9,0.12)] flex items-center gap-2">
         <span className="w-[7px] h-[7px] rounded-full bg-dash-amber shrink-0" />
         <span className="text-[11px] font-bold tracking-[0.8px] uppercase text-dash-amber">

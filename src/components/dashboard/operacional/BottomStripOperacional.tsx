@@ -1,4 +1,4 @@
-import { animDelay, compactCurrency } from "../dashboard-utils";
+import { compactCurrency } from "../dashboard-utils";
 
 interface Props {
   opClientes: number;
@@ -23,7 +23,7 @@ export function BottomStripOperacional({ opClientes, opCompensado, opHonorarios,
   ];
 
   return (
-    <div className="animate-dash-in bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] px-6 py-[13px] flex items-center" style={animDelay(290)}>
+    <div className="animate-slide-up delay-5 bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] px-6 py-[13px] flex items-center">
       {items.map((item, i) => (
         <div key={i} className={`flex-1 text-center px-2 ${i < items.length - 1 ? "border-r border-[rgba(10,21,100,0.10)]" : ""}`}>
           <span className={`font-display text-[17px] font-bold block leading-[1.1] ${item.colorClass || "text-navy"}`}>{item.val}</span>
