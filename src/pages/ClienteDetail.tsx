@@ -257,6 +257,20 @@ export default function ClienteDetail() {
             <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <p className="text-xs">{cliente.compensacao_outro_escritorio || "—"}</p>
           </div>
+          <div className="relative">
+            <span className="text-muted-foreground text-xs">Observações:</span>
+            <textarea
+              value={cliente.observacoes || ""}
+              onChange={(e) => handleObsChange(e.target.value)}
+              className="w-full text-sm resize-none rounded-lg border border-border bg-background p-3 focus:outline-none focus:ring-1 focus:ring-ring min-h-[80px] mt-1"
+              placeholder="Observações internas sobre o cliente..."
+            />
+            <span className={cn(
+              "absolute bottom-2 right-3 text-[10px] text-emerald-600 transition-opacity duration-300",
+              obsSaved ? "opacity-100" : "opacity-0"
+            )}>
+              Salvo ✓
+            </span>
           <div>
             <span className="text-muted-foreground text-xs">Cadastrado em:</span>
             <p className="text-xs">{new Date(cliente.criado_em).toLocaleDateString("pt-BR")}</p>
