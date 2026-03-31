@@ -1,67 +1,42 @@
 
 
-## Part 12 — Empty States
+## FIX 1 — KPI Cards Full Width + Larger Typography
 
 ### Summary
-Create a reusable `EmptyState` component and use it in RankingTable, ChartEvolucao, and CompensacoesTab to replace plain text empty messages with a centered icon + title + subtitle layout.
+Update both KPI strip components to use larger card sizing: `gap-4`, `p-5`, `min-h-[110px]`, `text-[40px]` numbers, and `w-full` on the grid.
 
-### Step 1 — Create `src/components/EmptyState.tsx`
+### Step 1 — `src/components/dashboard/comercial/KpiStripComercial.tsx`
 
-```tsx
-import type { ReactNode } from "react";
-
-interface EmptyStateProps {
-  icon: ReactNode;
-  title: string;
-  subtitle?: string;
-}
-
-export function EmptyState({ icon, title, subtitle }: EmptyStateProps) {
-  return (
-    <div className="flex flex-col items-center justify-center py-10 text-center">
-      <div className="w-12 h-12 rounded-full bg-[rgba(10,21,100,0.06)] flex items-center justify-center mb-3">
-        {icon}
-      </div>
-      <p className="text-sm font-semibold text-[rgba(15,17,23,0.4)]">{title}</p>
-      {subtitle && <p className="text-xs text-[rgba(15,17,23,0.25)] mt-1">{subtitle}</p>}
-    </div>
-  );
-}
+**Line 29**: Change grid classes:
+```
+gap-3 mb-4  →  gap-4 mb-5 w-full
 ```
 
-### Step 2 — RankingTable (line 50-52)
-
-Replace the plain `<tr><td>` empty message with:
-```tsx
-<tr>
-  <td colSpan={8}>
-    <EmptyState icon={<BarChart3 size={20} />} title="Nenhuma compensação registrada" subtitle="Os dados aparecerão aqui conforme compensações forem lançadas." />
-  </td>
-</tr>
+**Line 31**: Change card classes:
 ```
-Import `EmptyState` and `BarChart3` from lucide-react.
-
-### Step 3 — ChartEvolucao (line 27)
-
-Replace the plain text empty div with:
-```tsx
-<EmptyState icon={<TrendingUp size={20} />} title="Nenhuma compensação registrada" subtitle="O gráfico de evolução aparecerá aqui." />
+card-base p-4 relative  →  card-base p-5 relative flex flex-col justify-between min-h-[110px]
 ```
 
-### Step 4 — CompensacoesTab (line 193)
-
-Replace the plain `TableCell` empty message with:
-```tsx
-<TableRow>
-  <TableCell colSpan={7}>
-    <EmptyState icon={<FileText size={20} />} title="Nenhuma compensação registrada" subtitle="Clique em + Nova Compensação para começar." />
-  </TableCell>
-</TableRow>
+**Line 37**: Label size:
 ```
+text-[9px] ... tracking-[1.4px]  →  text-[10px] ... tracking-[1.6px]
+```
+
+**Line 38**: Number size:
+```
+text-[28px]  →  text-[40px]
+```
+
+**Line 39**: Sub text:
+```
+text-[11px] ... mt-1  →  text-xs ... mt-1.5
+```
+
+### Step 2 — `src/components/dashboard/operacional/KpiStripOperacional.tsx`
+
+Apply identical changes to lines 32, 34, 40, 41, 42.
 
 ### Files modified
-1. `src/components/EmptyState.tsx` — new
-2. `src/components/dashboard/operacional/RankingTable.tsx` — use EmptyState
-3. `src/components/dashboard/operacional/ChartEvolucao.tsx` — use EmptyState
-4. `src/components/clientes/CompensacoesTab.tsx` — use EmptyState
+1. `src/components/dashboard/comercial/KpiStripComercial.tsx`
+2. `src/components/dashboard/operacional/KpiStripOperacional.tsx`
 
