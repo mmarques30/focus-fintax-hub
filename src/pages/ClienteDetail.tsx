@@ -33,6 +33,7 @@ export default function ClienteDetail() {
   const [historico, setHistorico] = useState<any[]>([]);
   const obsDebounce = useRef<NodeJS.Timeout>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [obsSaved, setObsSaved] = useState(false);
 
   const fetchHistorico = useCallback(async () => {
     if (!id) return;
