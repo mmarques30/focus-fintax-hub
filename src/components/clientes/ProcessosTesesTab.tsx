@@ -10,6 +10,7 @@ import { Pencil, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { ProcessoFormModal } from "./ProcessoFormModal";
 import { formatCurrencyBR, getStatusContratoConfig, getStatusProcessoConfig, STATUS_PROCESSO } from "@/lib/clientes-constants";
+import { logClienteHistorico } from "@/lib/cliente-historico";
 
 interface Props {
   clienteId: string;
