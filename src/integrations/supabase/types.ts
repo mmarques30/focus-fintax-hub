@@ -161,6 +161,20 @@ export type Database = {
             referencedRelation: "processos_teses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_comp_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_comp_processo"
+            columns: ["processo_tese_id"]
+            isOneToOne: false
+            referencedRelation: "processos_teses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       diagnosticos_leads: {
@@ -400,6 +414,13 @@ export type Database = {
           valor_honorario?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_processos_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "processos_teses_cliente_id_fkey"
             columns: ["cliente_id"]
