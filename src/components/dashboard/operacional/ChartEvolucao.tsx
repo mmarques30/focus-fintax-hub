@@ -1,5 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import { TrendingUp } from "lucide-react";
 import { MonthBar, compactCurrency, fullCurrency } from "../dashboard-utils";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Props {
   monthlyBars: MonthBar[];
