@@ -265,7 +265,7 @@ Equipe Focus.`;
             <TableRow>
               <TableCell colSpan={3} className="font-medium">Total</TableCell>
               <TableCell className="font-bold">{formatCurrencyBR(totalFiltered)}</TableCell>
-              <TableCell colSpan={3}></TableCell>
+              <TableCell colSpan={4}></TableCell>
             </TableRow>
           </TableFooter>
         )}
