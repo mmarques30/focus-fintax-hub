@@ -1,25 +1,46 @@
 
 
-## IMPROVEMENT 1 — KPI Strip em ClientesList com dados reais
+## IMPROVEMENT 2 — Notificações Funcionais no Header
 
 ### Situação Atual
-A KPI strip (linhas 141-167) já usa dados calculados de `allStats`, mas tem 5 cards com labels genéricos e grid `grid-cols-5`. Os dados já são reais (vindos de processos e compensações).
+`AppHeader.tsx` já tem lógica de notificações inline (leads parados em `contrato_emitido` > 3 dias). Funciona, mas é monolítica e suporta apenas 1 tipo de alerta.
 
-### Mudanças em `src/pages/ClientesList.tsx`
+### Problema com a proposta do usuário
+A tabela `clientes` **não tem** colunas `total_credito_identificado` nem `total_compensado` — esses valores são calculados via joins com `processos_teses` e `compensacoes_mensais`. O alerta de "saldo zerado" precisa de uma abordagem diferente.
 
-Substituir o bloco de 5 KPIs (linhas 141-167) por 4 KPIs conforme spec do usuário:
+### Mudanças
 
-| # | Label | Valor | Sub | Cor |
-|---|-------|-------|-----|-----|
-| 1 | Total de clientes | `clientes.length` | na carteira | navy |
-| 2 | Compensando ativamente | `allStats.filter(c => c.totalCompensado > 0).length` | com dados reais | green |
-| 3 | Total compensado | `globalCompensado` (formatCurrencyBR) | acumulado carteira | green |
-| 4 | Saldo a compensar | `globalCredito - globalCompensado` (formatCurrencyBR) | potencial restante | red |
+**1. Criar `src/hooks/useNotifications.ts`**
 
-- Grid muda de `grid-cols-5` para `grid-cols-2 sm:grid-cols-4`
-- Remove o card "Crédito identificado" (redundante com saldo)
-- Mantém variáveis existentes (`totalCompensando`, `globalCompensado`, `globalCredito`)
+Hook extraído com 2 tipos de alerta:
+
+| Tipo | Query | Condição |
+|------|-------|----------|
+| `warning` — Lead parado | `leads` where `status_funil = 'contrato_emitido'` e `status_funil_atualizado_em < 3 dias atrás` | Já funciona |
+| `info` — Saldo zerado | Para cada cliente: soma `valor_credito` de `processos_teses` e soma `valor_compensado` de `compensacoes_mensais`. Se compensado >= crédito e crédito > 0 → alerta | Requer 2 queries adicionais |
+
+Interface:
+```typescript
+interface Notification {
+  id: string;
+  type: 'warning' | 'info';
+  title: string;
+  subtitle: string;
+  href: string;
+}
+```
+
+- Refresh a cada 5 minutos (não 1 min como atual)
+- Gated por `canSeeNotifications` (admin, comercial, pmo)
+
+**2. Atualizar `src/components/AppHeader.tsx`**
+
+- Remover lógica inline de fetch
+- Usar `useNotifications()` hook
+- Renderizar notificações com ícone de tipo (warning = amber dot, info = blue dot)
+- `navigate(n.href)` ao clicar (em vez de sempre `/pipeline`)
 
 ### Arquivos modificados
-1. `src/pages/ClientesList.tsx` — substituir bloco KPI (linhas 141-167)
+1. `src/hooks/useNotifications.ts` — novo hook
+2. `src/components/AppHeader.tsx` — consumir hook, remover lógica inline
 
