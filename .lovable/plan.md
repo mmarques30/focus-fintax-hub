@@ -1,42 +1,42 @@
 
 
-## Part 8 — Table Refinements
+## Part 9 — Sidebar Polish
 
 ### Summary
-Update the base shadcn table components to remove borders, add subtle hover, and support zebra striping. Then update the custom RankingTable (which uses raw `<table>` elements) to match.
+Add gradient background, glass border glow, and refined active-item styling to the sidebar.
 
-### Step 1 — Update `src/components/ui/table.tsx` (base components)
+### Changes — `src/components/AppSidebar.tsx`
 
-**TableHeader** (line 15): Remove `[&_tr]:border-b`, keep it clean — the TableHead cells will carry the bottom border.
+**1. Outer `<div>` (line 76-80)**: Add `relative` to className, replace `bg-sidebar` with inline style for gradient + border:
 
-**TableHead** (lines 44-55): Replace current classes with:
+```tsx
+<div
+  className={cn(
+    "h-screen flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden relative",
+    open ? "w-[250px]" : "w-[60px]"
+  )}
+  style={{
+    background: 'linear-gradient(180deg, #0a1564 0%, #071040 100%)',
+    borderRight: '1px solid rgba(255,255,255,0.06)',
+  }}
+  onMouseEnter={() => setOpen(true)}
+  onMouseLeave={() => setOpen(false)}
+>
 ```
-text-[9px] font-bold uppercase tracking-[1.4px] text-[rgba(15,17,23,0.35)] border-b border-[rgba(10,21,100,0.08)] bg-transparent py-3 px-4 text-left align-middle [&:has([role=checkbox])]:pr-0
+
+**2. Right-side glow line** — Add immediately inside the outer div (after opening tag, before Logo section):
+
+```tsx
+<div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent pointer-events-none" />
 ```
 
-**TableRow** (lines 33-41): Replace `border-b` with `border-0`, update hover:
-```
-border-0 transition-colors duration-100 data-[state=selected]:bg-muted hover:bg-[rgba(10,21,100,0.025)]
-```
+**3. Active menu item styling** — Replace `bg-sidebar-accent text-sidebar-accent-foreground font-semibold` with `bg-white/10 backdrop-blur-sm text-white font-semibold` in three places:
+- Parent button active state (line 114)
+- Child NavLink active state (line 148)
+- Top-level NavLink active state (line 172)
 
-### Step 2 — Update `src/components/dashboard/operacional/RankingTable.tsx`
-
-- **Header row `<th>` elements** (line 23): Remove `bg-[rgba(15,17,23,0.05)]`, use `bg-transparent border-b border-[rgba(10,21,100,0.08)]`
-- **Body rows `<tr>` elements** (line 32): Remove `hover:bg-[rgba(15,17,23,0.05)]`, add zebra striping via index: `i % 2 === 0 ? "bg-[rgba(10,21,100,0.012)]" : ""`; hover → `hover:bg-[rgba(10,21,100,0.025)]`
-- **Body cells `<td>` elements** (lines 33-45): Remove `border-b border-[rgba(0,0,0,0.04)]` from all `<td>` classes
-
-### Step 3 — Update `src/components/pipeline/PipelineList.tsx`
-
-- **Table wrapper** (line 106): Remove `border` from `<div className="border rounded-lg overflow-hidden">`
-- **SortHeader** (line 69): Update TableHead class to include the new header styling while keeping `cursor-pointer select-none hover:text-foreground`
-- **Body rows** (line 132): Add zebra striping using the index from `paged.map`; change to use index parameter and conditional class
-
-### Step 4 — Other shadcn table consumers
-
-Pages using `<Table>` with default styling (Benchmarks.tsx, UserManagement.tsx, ClienteDetail.tsx) will automatically inherit the base changes from Step 1. Their custom `TableHead` classes (e.g. `font-semibold uppercase tracking-wider text-xs`) will merge with the new defaults via `cn()`.
+Change `rounded-md` to `rounded-xl` on those same active items.
 
 ### Files modified
-1. `src/components/ui/table.tsx` — base TableHead, TableRow, TableHeader defaults
-2. `src/components/dashboard/operacional/RankingTable.tsx` — transparent header, zebra rows, no cell borders
-3. `src/components/pipeline/PipelineList.tsx` — remove wrapper border, zebra rows
+1. `src/components/AppSidebar.tsx`
 
