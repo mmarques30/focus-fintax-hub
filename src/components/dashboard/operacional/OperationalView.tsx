@@ -103,7 +103,7 @@ export function OperationalView({ kpiLoading, chartLoading, opClientes, opTotalA
             honFuturosSaldo={honFuturosSaldo} avgMensal={avgMensal} opSaldo={opSaldo} periodLabel={periodLabel}
           />
 
-          <div className="animate-slide-up delay-3 grid grid-cols-[1.6fr_1fr] gap-3.5 mb-3.5">
+          <div className="animate-slide-up delay-3 grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 mb-4">
             <ChartEvolucao
               monthlyBars={monthlyBars} avgMensal={avgMensal} nextMonthLabel={nextMonthLabel}
               periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}

@@ -29,7 +29,7 @@ export function KpiStripOperacional({ opClientes, opTotalAtivos, opCompensado, o
   ];
 
   return (
-    <div className="animate-slide-up delay-1 grid grid-cols-5 gap-4 mb-5 w-full">
+    <div className="animate-slide-up delay-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-5 w-full">
       {kpis.map((kpi, i) => (
         <div key={i} className="card-base p-5 relative flex flex-col justify-between min-h-[110px]">
           {kpi.trend !== undefined && kpi.trend !== 0 && (

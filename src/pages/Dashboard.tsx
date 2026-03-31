@@ -239,7 +239,7 @@ export default function Dashboard() {
         switchTab={switchTab}
       />
 
-      <div className="px-7 pt-[18px] pb-9 max-w-[1400px] mx-auto">
+      <div className="px-7 pt-[18px] pb-9 w-full">
         {activeTab === "comercial" ? (
           <CommercialView
             kpiLoading={kpiLoading} chartLoading={chartLoading}
