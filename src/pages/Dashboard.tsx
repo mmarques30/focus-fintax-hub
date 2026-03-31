@@ -208,7 +208,7 @@ export default function Dashboard() {
     setTopCompensado([...rankings].sort((a, b) => b.compensado - a.compensado).slice(0, 8));
     setTopSaldo([...rankings].sort((a, b) => b.saldo - a.saldo).filter(r => r.saldo > 0).slice(0, 8));
 
-    setLoading(false);
+    setChartLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
