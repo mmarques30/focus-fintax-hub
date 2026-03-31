@@ -1,4 +1,5 @@
 import React from "react";
+import { useCountUp } from "@/hooks/useCountUp";
 import { SEGMENTO_LABELS, getScoreLabel, daysSince } from "@/lib/pipeline-constants";
 
 /* ─── helpers ─── */
