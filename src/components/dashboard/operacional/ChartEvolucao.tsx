@@ -26,7 +26,7 @@ export function ChartEvolucao({ monthlyBars, avgMensal, nextMonthLabel, periodLa
       </div>
 
       {monthlyBars.length === 0 ? (
-        <div className="px-[18px] py-10 text-center text-xs text-ink-35">Nenhuma compensação registrada.</div>
+        <EmptyState icon={<TrendingUp size={20} className="text-ink-35" />} title="Nenhuma compensação registrada" subtitle="O gráfico de evolução aparecerá aqui." />
       ) : (
         <>
           <div className="px-[18px] pt-2.5 h-40">
