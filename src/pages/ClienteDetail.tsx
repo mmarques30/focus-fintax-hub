@@ -256,7 +256,7 @@ export default function ClienteDetail() {
                 <TabsContent value="compensacoes"><CompensacoesTab clienteId={id!} cliente={cliente} onTotalChange={setCompensacoesTotal} /></TabsContent>
               )}
               {tabs.some((t) => t.value === "resumo") && (
-                <TabsContent value="resumo"><ResumoFinanceiroTab clienteId={id!} /></TabsContent>
+                <TabsContent value="resumo"><ResumoFinanceiroTab clienteId={id!} cliente={cliente} /></TabsContent>
               )}
             </Tabs>
           );

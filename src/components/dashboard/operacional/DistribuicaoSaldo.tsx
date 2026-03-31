@@ -1,4 +1,5 @@
 import { compactCurrency } from "../dashboard-utils";
+import { AlertTriangle } from "lucide-react";
 
 interface DistBand {
   label: string;
@@ -41,7 +42,7 @@ export function DistribuicaoSaldo({ opClientes, distBands, maxDistCount, prazoSa
       {/* Strategic callout */}
       {prazoSaldo > 0 && prazoSaldo < 9 && (
         <div className="mx-3.5 mb-3.5 bg-[rgba(200,0,30,0.04)] border border-[rgba(200,0,30,0.15)] rounded-lg px-3 py-2.5">
-          <div className="text-[10px] font-bold tracking-[1px] uppercase text-dash-red mb-1">⚠ Atenção estratégica</div>
+          <div className="text-[10px] font-bold tracking-[1px] uppercase text-dash-red mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Atenção estratégica</div>
           <div className="text-[11px] text-ink-60 leading-[1.5]">
             Ao ritmo atual, o saldo identificado se esgota em <strong className="text-dash-red">{prazoSaldo.toFixed(1)} meses</strong>. Para manter a receita, é preciso onboardar novos clientes ou levantar novas teses para a carteira atual.
           </div>
