@@ -34,7 +34,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(resolveDefault);
   const switchTab = (t: string) => { setActiveTab(t); localStorage.setItem("dash_tab", t); };
 
-  const [loading, setLoading] = useState(true);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
 
   // Commercial state
   const [comLeads, setComLeads] = useState(0);
