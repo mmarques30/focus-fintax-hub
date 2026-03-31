@@ -496,9 +496,14 @@ Equipe Focus.`;
                 <div className="rounded border bg-muted/20 p-3 max-h-[300px] overflow-auto">
                   <pre className="whitespace-pre-wrap text-xs font-mono">{fullWhatsMessage}</pre>
                 </div>
-                <Button className="w-full gap-2 text-white" style={{ background: "#25D366" }} onClick={handleCopy}>
-                  <Copy className="h-4 w-4" /> Copiar mensagem
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 gap-2 text-white" style={{ background: "#25D366" }} onClick={handleCopy}>
+                    <Copy className="h-4 w-4" /> Copiar mensagem
+                  </Button>
+                  <Button variant="outline" className="flex-1 gap-2" onClick={handleEmail}>
+                    <Mail className="h-4 w-4" /> Enviar por E-mail
+                  </Button>
+                </div>
               </>
             )}
 
