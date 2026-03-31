@@ -1,104 +1,90 @@
 
 
-## PART 3 — Visual Consistency Fixes
+## PART 4 — Animations (discrete, professional)
 
 ### Summary
-Standardize KPI strips, page headers, and table hover states across all pages to match the dashboard design system.
+Replace the current `animate-dash-in` + `animDelay()` pattern with a cleaner `animate-slide-up` + `delay-N` system. Add a `useCountUp` hook for KPI number animations. Apply across all dashboard components and Pipeline/Clientes KPI strips.
 
-### 1. Table hover state — `src/components/ui/table.tsx` (line 37)
+### Step 1 — CSS (`src/index.css`)
 
-Change `TableRow` default hover from `hover:bg-muted/50` to `hover:bg-[rgba(10,21,100,0.03)]`.
-
-### 2. Pipeline KPI strip — `src/pages/Pipeline.tsx` (lines 149-188)
-
-Replace the 4 separate `<Card>` KPI cards with a single dashboard-style KPI strip:
-```
-<div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-4 overflow-hidden">
-  <KpiBox label="Leads ativos" value={...} sub="excluindo perdidos" />
-  <KpiBox label="Novos hoje" value={...} sub="captados hoje" />
-  <KpiBox label="Potencial total" value={...} sub="soma do potencial máx." colorClass="green" />
-  <KpiBox label="Sem contato >1d" value={...} sub="leads parados" colorClass="red" last />
-</div>
-```
-Import `KpiBox` and `compactCurrency` from `@/components/dashboard/dashboard-utils`. Remove `Card/CardContent` imports and icon imports (`Users, TrendingUp, AlertTriangle, Sparkles`) if no longer used.
-
-### 3. Pipeline header — `src/pages/Pipeline.tsx` (lines 116-121)
-
-Replace:
-```
-<h1 className="text-2xl font-bold text-foreground">Pipeline de Leads ...</h1>
-```
-With:
-```
-<h1 className="font-display text-xl font-bold text-navy">Pipeline de Leads</h1>
-<p className="text-xs text-muted-foreground uppercase tracking-widest">gerenciamento de leads e oportunidades</p>
+Replace the existing `fu` keyframe and add delay utilities:
+```css
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.delay-1 { animation-delay: 40ms; }
+.delay-2 { animation-delay: 80ms; }
+.delay-3 { animation-delay: 120ms; }
+.delay-4 { animation-delay: 160ms; }
+.delay-5 { animation-delay: 200ms; }
 ```
 
-### 4. ClientesList header — `src/pages/ClientesList.tsx` (lines 111-127)
+Remove the old `fu` keyframe.
 
-Replace the Building2 icon + h1 + Badge pattern with:
-```
-<div>
-  <h1 className="font-display text-xl font-bold text-navy">Clientes Ativos</h1>
-  <p className="text-xs text-muted-foreground uppercase tracking-widest">carteira de clientes e compensações</p>
-</div>
-```
-Keep action buttons right-aligned.
+### Step 2 — Tailwind config (`tailwind.config.ts`)
 
-### 5. ClientesList KPI strip — `src/pages/ClientesList.tsx` (lines 130-136)
+Remove `dash-in` animation entry (no longer needed since we use plain CSS classes now).
 
-Replace 5 separate `<Card>` components with a single dashboard-style strip:
-```
-<div className="bg-white border border-[rgba(10,21,100,0.10)] rounded-[10px] grid grid-cols-5 overflow-hidden">
-  <KpiBox label="Total clientes" value={...} sub="cadastrados" />
-  <KpiBox label="Compensando Fintax" value={...} sub="clientes ativos" />
-  <KpiBox label="Crédito identificado" value={...} sub="total identificado" colorClass="red" />
-  <KpiBox label="Já compensado" value={...} sub="realizado" colorClass="green" />
-  <KpiBox label="Saldo restante" value={...} sub="disponível" colorClass="red" last />
-</div>
+### Step 3 — Remove `animDelay` from `dashboard-utils.tsx`
+
+Delete the `animDelay` helper function. It's no longer needed.
+
+### Step 4 — Create `useCountUp` hook (`src/hooks/useCountUp.ts`)
+
+```ts
+function useCountUp(target: number, duration = 800) {
+  // ease-out cubic count-up from 0 to target
+}
 ```
 
-### 6. UserManagement header — `src/pages/UserManagement.tsx` (lines 236-240)
+### Step 5 — Update `KpiBox` in `dashboard-utils.tsx`
 
-Replace:
-```
-<h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
-<p className="text-body-text text-sm mt-1">...</p>
-```
-With:
-```
-<h1 className="font-display text-xl font-bold text-navy">Gestão de Usuários</h1>
-<p className="text-xs text-muted-foreground uppercase tracking-widest">permissões e acessos do sistema</p>
-```
-Also update the non-admin view header (line 222).
+Add optional `animate` prop. When true, use `useCountUp` for the numeric value display. The `KpiBox` will accept both `value: string` (formatted) and `rawValue?: number` for count-up.
 
-### 7. Benchmarks header — `src/pages/Benchmarks.tsx` (lines 143-146)
+### Step 6 — Replace animations in all 10 dashboard components
 
-Replace with:
-```
-<h1 className="font-display text-xl font-bold text-navy">Benchmarks de Teses</h1>
-<p className="text-xs text-muted-foreground uppercase tracking-widest">percentuais históricos para estimativas</p>
-```
-Also update non-admin view (line 130).
+| Component | Old | New |
+|-----------|-----|-----|
+| `KpiStripComercial` | `animate-dash-in` + `animDelay(40)` | `animate-slide-up delay-1` |
+| `AlertasBanner` | `animate-dash-in` + `animDelay(90)` | `animate-slide-up delay-2` |
+| `CommercialView` main grid | `animate-dash-in` + `animDelay(140)` | `animate-slide-up delay-3` |
+| `BottomStripComercial` | `animate-dash-in` + `animDelay(190)` | `animate-slide-up delay-4` |
+| `KpiStripOperacional` | `animate-dash-in` + `animDelay(40)` | `animate-slide-up delay-1` |
+| `ProjectionBand` | `animate-dash-in` + `animDelay(90)` | `animate-slide-up delay-2` |
+| `OperationalView` main grid | `animate-dash-in` + `animDelay(140)` | `animate-slide-up delay-3` |
+| `UrgencyClients` | `animate-dash-in` + `animDelay(190)` | `animate-slide-up delay-4` |
+| `RankingTable` | `animate-dash-in` + `animDelay(240)` | `animate-slide-up delay-5` |
+| `BottomStripOperacional` | `animate-dash-in` + `animDelay(290)` | `animate-slide-up delay-5` |
 
-### 8. MotorConfig header — `src/pages/MotorConfig.tsx` (lines 269-274)
+Remove all `style={animDelay(...)}` props — replaced by `delay-N` classes.
 
-Replace with:
-```
-<h1 className="font-display text-xl font-bold text-navy">Motor de Cálculo</h1>
-<p className="text-xs text-muted-foreground uppercase tracking-widest">teses, percentuais e cobertura por perfil</p>
-```
+### Step 7 — Apply count-up to KPI values
+
+In `KpiStripComercial` and `KpiStripOperacional`, pass `rawValue` to `KpiBox` for numeric KPIs so count-up animates on mount. Currency values use `useCountUp` on the raw number then format the animated value.
+
+### Step 8 — Pipeline & Clientes KPI strips
+
+Add `animate-slide-up delay-1` to the KPI strip wrapper in `Pipeline.tsx` and `ClientesList.tsx`.
 
 ### Files modified
-1. `src/components/ui/table.tsx` — hover state
-2. `src/pages/Pipeline.tsx` — KPI strip + header
-3. `src/pages/ClientesList.tsx` — KPI strip + header
-4. `src/pages/UserManagement.tsx` — header
-5. `src/pages/Benchmarks.tsx` — header
-6. `src/pages/MotorConfig.tsx` — header
-
-### Preserved
-- All data logic, queries, state — untouched
-- Functional behavior — identical
-- Only visual/structural changes to match dashboard design system
+1. `src/index.css` — new keyframe + delay utilities, remove old `fu`
+2. `tailwind.config.ts` — remove `dash-in` animation
+3. `src/hooks/useCountUp.ts` — new hook
+4. `src/components/dashboard/dashboard-utils.tsx` — remove `animDelay`, update `KpiBox` with count-up
+5. `src/components/dashboard/comercial/KpiStripComercial.tsx`
+6. `src/components/dashboard/comercial/AlertasBanner.tsx`
+7. `src/components/dashboard/comercial/CommercialView.tsx`
+8. `src/components/dashboard/comercial/BottomStripComercial.tsx`
+9. `src/components/dashboard/operacional/KpiStripOperacional.tsx`
+10. `src/components/dashboard/operacional/ProjectionBand.tsx`
+11. `src/components/dashboard/operacional/OperationalView.tsx`
+12. `src/components/dashboard/operacional/UrgencyClients.tsx`
+13. `src/components/dashboard/operacional/RankingTable.tsx`
+14. `src/components/dashboard/operacional/BottomStripOperacional.tsx`
+15. `src/pages/Pipeline.tsx`
+16. `src/pages/ClientesList.tsx`
 
