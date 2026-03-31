@@ -215,6 +215,26 @@ export default function ClientesList() {
               <TableCell>{formatCurrencyBR(c.totalCompensado)}</TableCell>
               <TableCell>{formatCurrencyBR(c.saldo)}</TableCell>
               <TableCell>
+                {(() => {
+                  const health = c.saldo <= 0 ? 'amarelo' : (c.totalCredito > 0 && (c.totalCompensado / c.totalCredito) < 0.05) ? 'vermelho' : 'verde';
+                  return (
+                    <div
+                      className={cn(
+                        "w-2.5 h-2.5 rounded-full mx-auto",
+                        health === 'verde' && "bg-dash-green",
+                        health === 'amarelo' && "bg-dash-amber",
+                        health === 'vermelho' && "bg-dash-red"
+                      )}
+                      title={
+                        health === 'verde' ? 'Compensando ativamente' :
+                        health === 'amarelo' ? 'Saldo zerado — considere nova tese' :
+                        'Sem compensações recentes'
+                      }
+                    />
+                  );
+                })()}
+              </TableCell>
+              <TableCell>
                 {c.hasAlertNaoProtocolado ? <AlertOctagon className="h-4 w-4 text-red-500" /> :
                  c.hasAlertAguardando ? <AlertTriangle className="h-4 w-4 text-orange-500" /> : null}
               </TableCell>
