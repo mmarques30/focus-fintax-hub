@@ -69,7 +69,7 @@ export default function ClientesList() {
   // Global stats
   const allStats = clientes.map((c) => ({ ...c, ...getClienteStats(c.id) }));
   const totalClientes = clientes.length;
-  const totalCompensando = clientes.filter((c) => c.compensando_fintax).length;
+  const totalCompensando = allStats.filter((c) => c.totalCompensado > 0).length;
   const globalCredito = allStats.reduce((s, c) => s + c.totalCredito, 0);
   const globalCompensado = allStats.reduce((s, c) => s + c.totalCompensado, 0);
 
