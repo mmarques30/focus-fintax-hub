@@ -271,6 +271,7 @@ export default function ClienteDetail() {
             )}>
               Salvo ✓
             </span>
+          </div>
           <div>
             <span className="text-muted-foreground text-xs">Cadastrado em:</span>
             <p className="text-xs">{new Date(cliente.criado_em).toLocaleDateString("pt-BR")}</p>
