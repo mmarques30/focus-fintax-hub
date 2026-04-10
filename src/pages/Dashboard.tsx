@@ -90,7 +90,7 @@ export default function Dashboard() {
     const totalEver = totalEverRes.count ?? 0;
     setComTaxaConversao(totalEver > 0 ? Math.min(Math.round((clientesAtivos / totalEver) * 100), 100) : 0);
 
-    const { data: allLeads } = await supabase.from("leads").select("id, status_funil, segmento, origem, score_lead").not("status_funil", "in", "(perdido,nao_vai_fazer)");
+    const { data: allLeads } = await supabase.from("leads").select("id, status_funil, segmento, origem, score_lead").not("status_funil", "in", "(perdido,nao_vai_fazer)").limit(5000);
     const activeLeads = allLeads ?? [];
     const activeIds = activeLeads.map(l => l.id);
 
@@ -158,9 +158,9 @@ export default function Dashboard() {
 
     // ═══ OPERATIONAL TAB DATA ═══
     const [clientesRes, allCompRes, allProcRes, totalAtivosRes] = await Promise.all([
-      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("status", "ativo"),
-      supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id"),
-      supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario"),
+      supabase.from("clientes").select("id, empresa", { count: "exact" }).eq("status", "ativo").limit(5000),
+      supabase.from("compensacoes_mensais").select("valor_compensado, valor_nf_servico, mes_referencia, cliente_id").limit(5000),
+      supabase.from("processos_teses").select("id, cliente_id, valor_credito, percentual_honorario, valor_honorario").limit(5000),
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
     ]);
     const clientes = clientesRes.data ?? [];
