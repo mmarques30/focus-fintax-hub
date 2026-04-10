@@ -19,6 +19,7 @@ import ClientesList from "@/pages/ClientesList";
 import ClienteDetail from "@/pages/ClienteDetail";
 import Diagnostico from "@/pages/Diagnostico";
 import MotorConfig from "@/pages/MotorConfig";
+import Intimacoes from "@/pages/Intimacoes";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                       <Route path="/leads/:id/relatorio" element={<LeadReport />} />
                       <Route path="/clientes" element={<ClientesList />} />
                       <Route path="/clientes/:id" element={<ClienteDetail />} />
+                      <Route path="/intimacoes" element={<Intimacoes />} />
                       <Route path="/benchmarks" element={<Benchmarks />} />
                       <Route path="/configuracoes/motor" element={<MotorConfig />} />
                       <Route path="/usuarios" element={<UserManagement />} />
