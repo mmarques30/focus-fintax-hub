@@ -63,6 +63,8 @@ export default function Dashboard() {
   const [topCompensado, setTopCompensado] = useState<ClientRank[]>([]);
   const [topSaldo, setTopSaldo] = useState<ClientRank[]>([]);
   const [dataHealth, setDataHealth] = useState<{ compensacoes: number; processos: number; hasData: boolean } | null>(null);
+  const [intimacoesPendentes, setIntimacoesPendentes] = useState(0);
+  const [intimacoesVencendo, setIntimacoesVencendo] = useState(0);
 
   const fetchData = useCallback(async () => {
     const now = new Date();
@@ -211,6 +213,12 @@ export default function Dashboard() {
     setTopCompensado([...rankings].sort((a, b) => b.compensado - a.compensado).slice(0, 8));
     setTopSaldo([...rankings].sort((a, b) => b.saldo - a.saldo).filter(r => r.saldo > 0).slice(0, 8));
 
+    // ═══ INTIMAÇÕES COUNTS ═══
+    const { data: intimData } = await supabase.from("intimacoes").select("id, status, prazo_vencimento").in("status", ["pendente", "informado_aline", "em_andamento"]);
+    setIntimacoesPendentes(intimData?.length ?? 0);
+    const in15 = new Date(now.getTime() + 15 * 86400000).toISOString().slice(0, 10);
+    setIntimacoesVencendo(intimData?.filter(i => i.prazo_vencimento && i.prazo_vencimento <= in15).length ?? 0);
+
     setChartLoading(false);
   }, []);
 
@@ -285,6 +293,7 @@ export default function Dashboard() {
             opClientes={opClientes} opTotalAtivos={opTotalAtivos} opCompensado={opCompensado} opHonorarios={opHonorarios}
             opSaldo={opSaldo} opEconomia={opEconomia} monthlyBars={monthlyBars}
             topCompensado={topCompensado} topSaldo={topSaldo} navigate={navigate}
+            intimacoesPendentes={intimacoesPendentes} intimacoesVencendo={intimacoesVencendo}
           />
         )}
       </div>
