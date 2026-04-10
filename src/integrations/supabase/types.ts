@@ -254,6 +254,62 @@ export type Database = {
           },
         ]
       }
+      intimacoes: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          criado_por: string | null
+          data_intimacao: string | null
+          empresa_nome: string
+          id: string
+          motivo: string
+          observacoes: string | null
+          prazo_dias: number | null
+          prazo_vencimento: string | null
+          proximo_passo: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_intimacao?: string | null
+          empresa_nome: string
+          id?: string
+          motivo: string
+          observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_vencimento?: string | null
+          proximo_passo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_intimacao?: string | null
+          empresa_nome?: string
+          id?: string
+          motivo?: string
+          observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_vencimento?: string | null
+          proximo_passo?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intimacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_historico: {
         Row: {
           anotacao: string | null
