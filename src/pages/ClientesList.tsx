@@ -190,6 +190,7 @@ export default function ClientesList() {
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <Table>
          <TableHeader>
           <TableRow>
@@ -276,8 +277,13 @@ export default function ClientesList() {
             >
               Anterior
             </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
+            {(() => {
+              const half = 2;
+              let start = Math.max(1, currentPage - half);
+              let end = Math.min(totalPages, start + 4);
+              start = Math.max(1, end - 4);
+              return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+            })().map((page) => {
               return (
                 <button
                   key={page}

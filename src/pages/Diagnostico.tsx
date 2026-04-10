@@ -34,7 +34,7 @@ interface DiagnosticoData {
   } | null;
 }
 
-const SEGMENTO_LABELS: Record<string, string> = {
+const SEGMENTO_LABELS_DIAG: Record<string, string> = {
   supermercado: "Supermercado",
   pet: "PET",
   materiais_construcao: "Materiais de Construção",
