@@ -262,6 +262,7 @@ export default function ClientesList() {
           ))}
         </TableBody>
       </Table>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
