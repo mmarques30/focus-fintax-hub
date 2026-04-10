@@ -39,9 +39,9 @@ export default function ClientesList() {
   const ITEMS_PER_PAGE = 25;
   const fetchAll = async () => {
     const [{ data: c }, { data: p }, { data: comp }] = await Promise.all([
-      supabase.from("clientes").select("*").order("criado_em", { ascending: false }),
-      supabase.from("processos_teses").select("id, cliente_id, valor_credito, status_contrato, status_processo, criado_em, atualizado_em, tese, nome_exibicao"),
-      supabase.from("compensacoes_mensais").select("cliente_id, valor_compensado, processo_tese_id"),
+      supabase.from("clientes").select("*").order("criado_em", { ascending: false }).limit(5000),
+      supabase.from("processos_teses").select("id, cliente_id, valor_credito, status_contrato, status_processo, criado_em, atualizado_em, tese, nome_exibicao").limit(5000),
+      supabase.from("compensacoes_mensais").select("cliente_id, valor_compensado, processo_tese_id").limit(5000),
     ]);
     setClientes(c || []);
     setProcessos(p || []);
