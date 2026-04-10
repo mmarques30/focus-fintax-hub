@@ -1,4 +1,4 @@
-import type { NavigateFunction } from "react-router-dom";
+import { Link, type NavigateFunction } from "react-router-dom";
 import { compactCurrency, type MonthBar, type ClientRank, MONTH_ABBR } from "../dashboard-utils";
 import { SkeletonKpi } from "../SkeletonKpi";
 import { SkeletonChart } from "../SkeletonChart";
@@ -24,9 +24,11 @@ interface Props {
   topCompensado: ClientRank[];
   topSaldo: ClientRank[];
   navigate: NavigateFunction;
+  intimacoesPendentes: number;
+  intimacoesVencendo: number;
 }
 
-export function OperationalView({ kpiLoading, chartLoading, opClientes, opTotalAtivos, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate }: Props) {
+export function OperationalView({ kpiLoading, chartLoading, opClientes, opTotalAtivos, opCompensado, opHonorarios, opSaldo, opEconomia, monthlyBars, topCompensado, topSaldo, navigate, intimacoesPendentes, intimacoesVencendo }: Props) {
   // Projections
   const numMonths = monthlyBars.length || 1;
   const avgMensal = opCompensado / numMonths;
@@ -89,6 +91,25 @@ export function OperationalView({ kpiLoading, chartLoading, opClientes, opTotalA
           opHonorarios={opHonorarios} opEconomia={opEconomia} opSaldo={opSaldo}
           periodLabel={periodLabel} trendPct={trendPct} taxaHon={taxaHon}
         />
+      )}
+
+      {intimacoesPendentes > 0 && (
+        <div className="flex items-center justify-between px-5 py-3 rounded-xl border border-destructive/15 bg-destructive/[0.04] mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-destructive" />
+            <span className="text-sm font-semibold text-foreground">
+              {intimacoesPendentes} intimações fiscais pendentes
+            </span>
+            {intimacoesVencendo > 0 && (
+              <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                {intimacoesVencendo} vencem em 15 dias
+              </span>
+            )}
+          </div>
+          <Link to="/intimacoes" className="text-xs font-bold text-destructive hover:underline">
+            Ver todas →
+          </Link>
+        </div>
       )}
 
       {chartLoading ? (
