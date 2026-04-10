@@ -1,23 +1,26 @@
 
 
-## Plano — Badge de Intimações no sidebar do ClienteDetail
+## Plano — Alerta de Intimações no Dashboard Operacional
 
-### O que será feito
-Adicionar um badge de alerta no sidebar do detalhe do cliente mostrando quantas intimações pendentes existem vinculadas a esse cliente (por `cliente_id` ou por `empresa_nome`).
+### Abordagem
+Buscar contagens de intimações pendentes e vencendo no `Dashboard.tsx` (junto com os dados operacionais) e passar como props para `OperationalView`, que renderiza a faixa de alerta entre o KPI strip e o restante do conteúdo.
 
-### Correção inclusa
-- Linha 286: remover o label duplicado "Comp. outro escritório" (bug visual já mapeado)
+### Alterações
 
-### Alterações em `src/pages/ClienteDetail.tsx`
+**1. `src/pages/Dashboard.tsx`**
+- Adicionar estado: `intimacoesPendentes` e `intimacoesVencendo`
+- No `fetchData`, após dados operacionais, buscar da tabela `intimacoes`:
+  - Pendentes: status IN (pendente, informado_aline, em_andamento)
+  - Vencendo em 15 dias: prazo_vencimento <= hoje+15 e status não concluído/cancelado
+- Passar as duas contagens como props para `OperationalView`
 
-1. **Adicionar query de intimações** — após o fetch do cliente, buscar intimações com `.or(`cliente_id.eq.${id},empresa_nome.ilike.${cliente.empresa}`)` e contar as pendentes (status in pendente, informado_aline, em_andamento)
-
-2. **Renderizar badge** — entre o botão "Importar dados Laratex" (linha 269) e o bloco de dados (linha 271), inserir o componente de alerta vermelho com link para `/intimacoes`, conforme especificado
-
-3. **Remover label duplicado** — deletar a linha 286 (`<span>Comp. outro escritório:</span>` duplicada)
+**2. `src/components/dashboard/operacional/OperationalView.tsx`**
+- Adicionar props `intimacoesPendentes` e `intimacoesVencendo`
+- Renderizar a faixa de alerta (conforme JSX especificado) entre o KPI strip e o bloco de loading/conteúdo, usando `Link` do react-router em vez de `<a>`
 
 ### Arquivos modificados
 | Arquivo | Ação |
 |---------|------|
-| `src/pages/ClienteDetail.tsx` | Editar (add intimações query + badge + fix label duplicado) |
+| `src/pages/Dashboard.tsx` | Editar (fetch + estado + props) |
+| `src/components/dashboard/operacional/OperationalView.tsx` | Editar (props + render alerta) |
 
