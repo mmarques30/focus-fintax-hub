@@ -78,7 +78,15 @@ export type Database = {
           valor_anterior?: Json | null
           valor_novo?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_cliente_historico_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clientes: {
         Row: {
@@ -275,6 +283,13 @@ export type Database = {
           para_etapa?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_lead_historico_lead"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lead_historico_lead_id_fkey"
             columns: ["lead_id"]

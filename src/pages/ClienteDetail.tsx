@@ -72,6 +72,7 @@ export default function ClienteDetail() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
   const [importing, setImporting] = useState(false);
+  const [tabKey, setTabKey] = useState(0);
 
   useEffect(() => {
     if (userRole === "comercial") {
@@ -89,7 +90,8 @@ export default function ClienteDetail() {
 
   const updateField = async (field: string, value: any) => {
     setCliente((prev: any) => ({ ...prev, [field]: value }));
-    await supabase.from("clientes").update({ [field]: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
+    const updateData: Record<string, any> = { [field]: value, atualizado_em: new Date().toISOString() };
+    await supabase.from("clientes").update(updateData as any).eq("id", id!);
   };
 
   const handleObsChange = (value: string) => {
@@ -198,8 +200,10 @@ export default function ClienteDetail() {
       setLatatexOpen(false);
       setCsvData([]);
       setCsvHeaders([]);
-      // Reload page data
-      window.location.reload();
+      // Refresh data without full page reload
+      fetchHistorico();
+      setTabKey((k) => k + 1);
+      setCliente((prev: any) => ({ ...prev, atualizado_em: new Date().toISOString() }));
     } catch (err: any) {
       toast.error("Erro na importação: " + (err.message || err));
     } finally {
@@ -353,7 +357,7 @@ export default function ClienteDetail() {
           if (tabs.length === 0) return <p className="text-muted-foreground text-sm">Nenhuma aba disponível.</p>;
           const defaultVal = tabs[0].value;
           return (
-            <Tabs defaultValue={defaultVal}>
+            <Tabs key={tabKey} defaultValue={defaultVal}>
               <TabsList>
                 {tabs.map((t) => <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>)}
               </TabsList>

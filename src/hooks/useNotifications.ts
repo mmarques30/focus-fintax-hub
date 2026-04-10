@@ -48,7 +48,8 @@ export function useNotifications() {
       // Alert 2: clients with saldo zerado (fully compensated)
       const { data: clientes } = await supabase
         .from("clientes")
-        .select("id, empresa");
+        .select("id, empresa")
+        .limit(5000);
 
       if (clientes && clientes.length > 0) {
         const clienteIds = clientes.map((c) => c.id);

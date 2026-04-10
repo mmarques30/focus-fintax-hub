@@ -146,7 +146,7 @@ export default function Pipeline() {
       </div>
 
       {/* Stats */}
-      <div className="animate-slide-up delay-1 grid grid-cols-4 gap-3">
+      <div className="animate-slide-up delay-1 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="card-base p-4">
           <p className="text-[9px] font-bold uppercase tracking-[1.4px] text-ink-35 mb-2">Leads ativos</p>
           <p className="font-display text-[28px] font-bold leading-none text-navy">{activeLeads.length}</p>

@@ -34,7 +34,7 @@ interface DiagnosticoData {
   } | null;
 }
 
-const SEGMENTO_LABELS: Record<string, string> = {
+const SEGMENTO_LABELS_DIAG: Record<string, string> = {
   supermercado: "Supermercado",
   pet: "PET",
   materiais_construcao: "Materiais de Construção",
@@ -320,7 +320,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
       const empresa = lead.empresa.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
       pdf.save(`diagnostico-${empresa}.pdf`);
     } catch (err) {
-      console.error('PDF generation error:', err);
+      if (import.meta.env.DEV) console.error('PDF generation error:', err);
       // Fallback to print
       window.print();
     } finally {
@@ -338,7 +338,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
   );
   const whatsappUrl = `https://wa.me/5521999999999?text=${whatsappMsg}`;
-  const segLabel = SEGMENTO_LABELS[lead.segmento] || lead.segmento;
+  const segLabel = SEGMENTO_LABELS_DIAG[lead.segmento] || lead.segmento;
   const heroImg = NICHE_IMAGES[lead.segmento] || NICHE_IMAGES.outros;
   const reportDate = relatorio?.criado_em ? new Date(relatorio.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 

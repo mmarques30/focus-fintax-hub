@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
+import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle, Check } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditLead } from "@/lib/role-permissions";
@@ -43,6 +44,8 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   const [showException, setShowException] = useState(false);
   const [exceptionReason, setExceptionReason] = useState("");
   const [exceptionSaving, setExceptionSaving] = useState(false);
+  const [showLostConfirm, setShowLostConfirm] = useState(false);
+  const [obsSaved, setObsSaved] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
@@ -79,10 +82,15 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
 
   const handleObsChange = useCallback((value: string) => {
     setObs(value);
+    setObsSaved(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       if (!lead) return;
-      await supabase.from("leads").update({ observacoes: value }).eq("id", lead.id);
+      const { error } = await supabase.from("leads").update({ observacoes: value }).eq("id", lead.id);
+      if (!error) {
+        setObsSaved(true);
+        setTimeout(() => setObsSaved(false), 2000);
+      }
     }, 1000);
   }, [lead]);
 
@@ -100,11 +108,12 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   };
 
   const handleMarkLost = async () => {
-    if (!lead || !confirm("Marcar este lead como perdido?")) return;
+    if (!lead) return;
     const oldStage = lead.status_funil;
     await supabase.from("leads").update({ status_funil: "perdido", status_funil_atualizado_em: new Date().toISOString() }).eq("id", lead.id);
     await supabase.from("lead_historico").insert({ lead_id: lead.id, de_etapa: oldStage, para_etapa: "perdido", criado_por: user?.id });
     toast.success("Lead marcado como perdido");
+    setShowLostConfirm(false);
     onRefresh();
     onClose();
   };
@@ -230,7 +239,10 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                   )}
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Observações internas</Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Observações internas</Label>
+                      {obsSaved && <span className="text-[10px] text-emerald-600 flex items-center gap-0.5"><Check className="h-3 w-3" /> Salvo</span>}
+                    </div>
                     <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." disabled={isFullReadOnly} />
                   </div>
                 </TabsContent>
@@ -344,7 +356,7 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                       <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={() => setShowLostConfirm(true)}>
                     <XCircle className="h-4 w-4 mr-1" /> Perdido
                   </Button>
                 </div>
@@ -353,6 +365,23 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={showLostConfirm} onOpenChange={setShowLostConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como perdido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este lead será movido para a coluna "Perdido". Essa ação pode ser revertida manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkLost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ConvertClientModal lead={showConvert ? lead : null} onClose={() => setShowConvert(false)} onRefresh={() => { onRefresh(); onClose(); }} />
     </>
