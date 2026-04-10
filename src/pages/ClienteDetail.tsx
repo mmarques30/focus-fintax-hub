@@ -357,7 +357,7 @@ export default function ClienteDetail() {
           if (tabs.length === 0) return <p className="text-muted-foreground text-sm">Nenhuma aba disponível.</p>;
           const defaultVal = tabs[0].value;
           return (
-            <Tabs defaultValue={defaultVal}>
+            <Tabs key={tabKey} defaultValue={defaultVal}>
               <TabsList>
                 {tabs.map((t) => <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>)}
               </TabsList>
