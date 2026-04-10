@@ -73,6 +73,21 @@ export default function ClienteDetail() {
   const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
   const [importing, setImporting] = useState(false);
   const [tabKey, setTabKey] = useState(0);
+  const [intimacoesPendentes, setIntimacoesPendentes] = useState(0);
+
+  useEffect(() => {
+    if (!cliente?.empresa || !id) return;
+    supabase
+      .from("intimacoes")
+      .select("id, status")
+      .or(`cliente_id.eq.${id},empresa_nome.ilike.${cliente.empresa}`)
+      .then(({ data }) => {
+        const pendentes = (data || []).filter((i: any) =>
+          ["pendente", "informado_aline", "em_andamento"].includes(i.status)
+        ).length;
+        setIntimacoesPendentes(pendentes);
+      });
+  }, [id, cliente?.empresa]);
 
   useEffect(() => {
     if (userRole === "comercial") {
@@ -268,6 +283,15 @@ export default function ClienteDetail() {
           <Upload className="h-4 w-4" /> Importar dados Laratex
         </Button>
 
+        {intimacoesPendentes > 0 && (
+          <Link to="/intimacoes" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/5 border border-destructive/15 hover:bg-destructive/10 transition-colors">
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+            <span className="text-xs font-semibold text-destructive">
+              {intimacoesPendentes} {intimacoesPendentes === 1 ? "intimação pendente" : "intimações pendentes"}
+            </span>
+          </Link>
+        )}
+
         <div className="space-y-3 text-sm">
           <div><span className="text-muted-foreground">CNPJ:</span> {cliente.cnpj}</div>
           <div><span className="text-muted-foreground">Regime:</span> {cliente.regime_tributario || "—"}</div>
@@ -282,7 +306,6 @@ export default function ClienteDetail() {
             ) : "—"}
           </div>
           <div>
-            <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <p className="text-xs">{cliente.compensacao_outro_escritorio || "—"}</p>
           </div>
