@@ -82,10 +82,15 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
 
   const handleObsChange = useCallback((value: string) => {
     setObs(value);
+    setObsSaved(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       if (!lead) return;
-      await supabase.from("leads").update({ observacoes: value }).eq("id", lead.id);
+      const { error } = await supabase.from("leads").update({ observacoes: value }).eq("id", lead.id);
+      if (!error) {
+        setObsSaved(true);
+        setTimeout(() => setObsSaved(false), 2000);
+      }
     }, 1000);
   }, [lead]);
 
@@ -103,11 +108,12 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   };
 
   const handleMarkLost = async () => {
-    if (!lead || !confirm("Marcar este lead como perdido?")) return;
+    if (!lead) return;
     const oldStage = lead.status_funil;
     await supabase.from("leads").update({ status_funil: "perdido", status_funil_atualizado_em: new Date().toISOString() }).eq("id", lead.id);
     await supabase.from("lead_historico").insert({ lead_id: lead.id, de_etapa: oldStage, para_etapa: "perdido", criado_por: user?.id });
     toast.success("Lead marcado como perdido");
+    setShowLostConfirm(false);
     onRefresh();
     onClose();
   };
