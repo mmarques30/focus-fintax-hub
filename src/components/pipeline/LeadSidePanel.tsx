@@ -239,7 +239,10 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                   )}
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Observações internas</Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Observações internas</Label>
+                      {obsSaved && <span className="text-[10px] text-emerald-600 flex items-center gap-0.5"><Check className="h-3 w-3" /> Salvo</span>}
+                    </div>
                     <Textarea value={obs} onChange={(e) => handleObsChange(e.target.value)} rows={4} placeholder="Notas internas..." disabled={isFullReadOnly} />
                   </div>
                 </TabsContent>
@@ -353,7 +356,7 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
                       <AlertTriangle className="h-4 w-4 mr-1" /> Exceção
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={handleMarkLost}>
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={() => setShowLostConfirm(true)}>
                     <XCircle className="h-4 w-4 mr-1" /> Perdido
                   </Button>
                 </div>
