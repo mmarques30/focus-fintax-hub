@@ -41,9 +41,10 @@ export function ProcessosTesesTab({ clienteId, compensacoesTotal }: Props) {
     setProcessos((prev) => prev.map((p) => p.id === id ? { ...p, [field]: value } : p));
     if (debounceTimers.current[id]) clearTimeout(debounceTimers.current[id]);
     debounceTimers.current[id] = setTimeout(async () => {
+      const updateData: Record<string, any> = { [field]: value, atualizado_em: new Date().toISOString() };
       const { error } = await supabase
         .from("processos_teses")
-        .update({ [field]: value, atualizado_em: new Date().toISOString() })
+        .update(updateData as any)
         .eq("id", id);
       if (error) toast.error("Erro ao salvar.");
       else fetchProcessos();

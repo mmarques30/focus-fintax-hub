@@ -169,11 +169,6 @@ Equipe Focus.`;
 
   return (
     <div className="space-y-4">
-      {import.meta.env.DEV && !loading && compensacoes.length === 0 && processos.length === 0 && (
-        <div className="text-xs bg-yellow-50 border border-yellow-200 rounded p-2 mb-3">
-          Debug: cliente_id usado = {clienteId} — sem compensações ou processos encontrados
-        </div>
-      )}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Select value={filterTese} onValueChange={setFilterTese}>
           <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por tese" /></SelectTrigger>

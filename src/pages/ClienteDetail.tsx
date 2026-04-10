@@ -89,7 +89,8 @@ export default function ClienteDetail() {
 
   const updateField = async (field: string, value: any) => {
     setCliente((prev: any) => ({ ...prev, [field]: value }));
-    await supabase.from("clientes").update({ [field]: value, atualizado_em: new Date().toISOString() }).eq("id", id!);
+    const updateData: Record<string, any> = { [field]: value, atualizado_em: new Date().toISOString() };
+    await supabase.from("clientes").update(updateData as any).eq("id", id!);
   };
 
   const handleObsChange = (value: string) => {
@@ -198,8 +199,9 @@ export default function ClienteDetail() {
       setLatatexOpen(false);
       setCsvData([]);
       setCsvHeaders([]);
-      // Reload page data
-      window.location.reload();
+      // Refresh data without full page reload
+      fetchHistorico();
+      setCliente((prev: any) => ({ ...prev, atualizado_em: new Date().toISOString() }));
     } catch (err: any) {
       toast.error("Erro na importação: " + (err.message || err));
     } finally {

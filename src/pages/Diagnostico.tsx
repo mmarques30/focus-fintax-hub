@@ -320,7 +320,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
       const empresa = lead.empresa.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
       pdf.save(`diagnostico-${empresa}.pdf`);
     } catch (err) {
-      console.error('PDF generation error:', err);
+      if (import.meta.env.DEV) console.error('PDF generation error:', err);
       // Fallback to print
       window.print();
     } finally {
