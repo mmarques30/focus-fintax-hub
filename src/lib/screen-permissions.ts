@@ -35,6 +35,7 @@ export const SCREENS: ScreenDef[] = [
       { key: "clientes.resumo", label: "Resumo Financeiro", defaultRoles: ["admin", "pmo", "gestor_tributario"], defaultReadOnlyRoles: ["comercial"] },
     ],
   },
+  { key: "intimacoes", label: "Intimações", route: "/intimacoes", defaultRoles: ["admin", "pmo", "gestor_tributario"], defaultReadOnlyRoles: ["comercial"] },
   { key: "motor_calculo", label: "Motor de Cálculo", route: "/configuracoes/motor", defaultRoles: ["admin", "pmo"], defaultReadOnlyRoles: [] },
   { key: "benchmarks", label: "Benchmarks e Teses", route: "/benchmarks", defaultRoles: ["admin"], defaultReadOnlyRoles: [] },
   { key: "usuarios", label: "Gestão de Usuários", route: "/usuarios", defaultRoles: ["admin", "pmo"], defaultReadOnlyRoles: [] },
