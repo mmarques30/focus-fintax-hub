@@ -338,7 +338,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
   );
   const whatsappUrl = `https://wa.me/5521999999999?text=${whatsappMsg}`;
-  const segLabel = SEGMENTO_LABELS[lead.segmento] || lead.segmento;
+  const segLabel = SEGMENTO_LABELS_DIAG[lead.segmento] || lead.segmento;
   const heroImg = NICHE_IMAGES[lead.segmento] || NICHE_IMAGES.outros;
   const reportDate = relatorio?.criado_em ? new Date(relatorio.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
