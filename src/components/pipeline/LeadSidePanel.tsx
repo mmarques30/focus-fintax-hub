@@ -366,6 +366,23 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
         </SheetContent>
       </Sheet>
 
+      <AlertDialog open={showLostConfirm} onOpenChange={setShowLostConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como perdido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este lead será movido para a coluna "Perdido". Essa ação pode ser revertida manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkLost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ConvertClientModal lead={showConvert ? lead : null} onClose={() => setShowConvert(false)} onRefresh={() => { onRefresh(); onClose(); }} />
     </>
   );
