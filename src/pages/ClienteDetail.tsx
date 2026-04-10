@@ -212,7 +212,21 @@ export default function ClienteDetail() {
   };
 
   if (loading || !cliente) {
-    return <div className="flex items-center justify-center h-full"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex h-full gap-0 min-h-0">
+        <div className="w-[260px] border-r bg-muted/30 p-4 space-y-4">
+          <div className="h-8 w-24 bg-muted animate-pulse rounded-md" />
+          <div className="h-6 w-40 bg-muted animate-pulse rounded-md" />
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => <div key={i} className="h-4 w-full bg-muted animate-pulse rounded" />)}
+          </div>
+        </div>
+        <div className="flex-1 p-6 space-y-4">
+          <div className="h-10 w-64 bg-muted animate-pulse rounded-md" />
+          <div className="h-64 w-full bg-muted animate-pulse rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   const whatsappLink = cliente.whatsapp
@@ -267,12 +281,8 @@ export default function ClienteDetail() {
               </a>
             ) : "—"}
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Switch checked={!!cliente.compensando_fintax} onCheckedChange={(v) => updateField("compensando_fintax", v)} />
-            <Label className="text-xs">Compensando Fintax</Label>
-          </div>
-          <p className="text-[10px] text-muted-foreground -mt-2">Marcação interna — filtros baseados em dados reais de compensação.</p>
           <div>
+            <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <p className="text-xs">{cliente.compensacao_outro_escritorio || "—"}</p>
           </div>

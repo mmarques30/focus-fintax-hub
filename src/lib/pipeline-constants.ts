@@ -42,6 +42,14 @@ export const SEGMENTO_LABELS: Record<string, string> = {
   outros: "Outros",
 };
 
+export const FATURAMENTO_MIDPOINTS: Record<string, number> = {
+  ate_500k: 250_000,
+  "500k_2m": 1_250_000,
+  "2m_5m": 3_500_000,
+  "5m_15m": 10_000_000,
+  acima_15m: 20_000_000,
+};
+
 export const SCORE_CONFIG: Record<string, { label: string; color: string; min: number }> = {
   A: { label: "A", color: "bg-red-500 text-white", min: 80 },
   B: { label: "B", color: "bg-orange-500 text-white", min: 60 },

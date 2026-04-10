@@ -34,21 +34,8 @@ interface DiagnosticoData {
   } | null;
 }
 
-const SEGMENTO_LABELS_DIAG: Record<string, string> = {
-  supermercado: "Supermercado",
-  pet: "PET",
-  materiais_construcao: "Materiais de Construção",
-  farmacia: "Farmácia",
-  outros: "Outros",
-};
+import { SEGMENTO_LABELS, FATURAMENTO_MIDPOINTS } from "@/lib/pipeline-constants";
 
-const FATURAMENTO_MIDPOINTS: Record<string, number> = {
-  ate_500k: 250_000,
-  "500k_2m": 1_250_000,
-  "2m_5m": 3_500_000,
-  "5m_15m": 10_000_000,
-  acima_15m: 20_000_000,
-};
 
 const NICHE_IMAGES: Record<string, string> = {
   supermercado: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=1200&q=80&auto=format&fit=crop",
@@ -338,7 +325,7 @@ function DiagnosticoContent({ lead, teses, minTotal, maxTotal, maxTese, multipli
     `Olá! Acabei de receber o diagnóstico tributário da Focus FinTax para ${lead.empresa}. O potencial estimado de recuperação é de ${formatValue(minTotal)} a ${formatValue(maxTotal)}. Gostaria de agendar a análise completa.`
   );
   const whatsappUrl = `https://wa.me/5521999999999?text=${whatsappMsg}`;
-  const segLabel = SEGMENTO_LABELS_DIAG[lead.segmento] || lead.segmento;
+  const segLabel = SEGMENTO_LABELS[lead.segmento] || lead.segmento;
   const heroImg = NICHE_IMAGES[lead.segmento] || NICHE_IMAGES.outros;
   const reportDate = relatorio?.criado_em ? new Date(relatorio.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
