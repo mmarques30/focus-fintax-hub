@@ -72,6 +72,7 @@ export default function ClienteDetail() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [columnMap, setColumnMap] = useState<Record<string, string>>({ tese: "", valor_credito: "", mes_referencia: "", valor_compensado: "" });
   const [importing, setImporting] = useState(false);
+  const [tabKey, setTabKey] = useState(0);
 
   useEffect(() => {
     if (userRole === "comercial") {
@@ -201,6 +202,7 @@ export default function ClienteDetail() {
       setCsvHeaders([]);
       // Refresh data without full page reload
       fetchHistorico();
+      setTabKey((k) => k + 1);
       setCliente((prev: any) => ({ ...prev, atualizado_em: new Date().toISOString() }));
     } catch (err: any) {
       toast.error("Erro na importação: " + (err.message || err));
