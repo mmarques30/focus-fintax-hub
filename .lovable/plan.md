@@ -1,81 +1,71 @@
 
 
-## Criar tabela `intimacoes` — Ajustes necessários
+## Plano — Módulo de Intimações (Tela Completa)
 
-O SQL enviado precisa de 3 adaptações para funcionar corretamente neste projeto:
-
-### 1. RLS policies usam função inexistente
-O SQL usa `get_my_role()` que **não existe** no banco. O projeto usa `has_role(auth.uid(), 'role'::app_role)`. As policies serão reescritas com o padrão correto.
-
-### 2. CHECK constraint → validation trigger
-Conforme guidelines do projeto, CHECK constraints causam problemas com restauração de backups. O `CHECK (status IN (...))` será substituído por um trigger de validação.
-
-### 3. Coluna gerada `prazo_vencimento`
-A coluna `GENERATED ALWAYS AS (data_intimacao + prazo_dias) STORED` é válida no Postgres, mas precisa que ambas as colunas de entrada sejam NOT NULL para funcionar de forma útil. Vou manter como está (aceita nulos, retorna null quando inputs são null).
+A tabela `intimacoes` e os 29 registros já existem no banco. Este plano cria a tela de gestão e integra no sistema.
 
 ---
 
-### Migration SQL final
+### 1. Registrar screen permission
+**Arquivo:** `src/lib/screen-permissions.ts`
+- Adicionar entry `{ key: "intimacoes", label: "Intimações", route: "/intimacoes", defaultRoles: ["admin", "pmo", "gestor_tributario"], defaultReadOnlyRoles: ["comercial"] }` entre `clientes` e `motor_calculo`
+- Adicionar mapeamento em `routeToScreenKey`: `if (path.startsWith("/intimacoes")) return "intimacoes";`
 
-```sql
--- Tabela intimacoes
-CREATE TABLE IF NOT EXISTS public.intimacoes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  cliente_id uuid REFERENCES public.clientes(id) ON DELETE CASCADE,
-  empresa_nome text NOT NULL,
-  data_intimacao date,
-  motivo text NOT NULL,
-  prazo_dias int DEFAULT 75,
-  prazo_vencimento date GENERATED ALWAYS AS (data_intimacao + prazo_dias) STORED,
-  status text NOT NULL DEFAULT 'pendente',
-  proximo_passo text,
-  observacoes text,
-  criado_por uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+### 2. Adicionar no sidebar
+**Arquivo:** `src/components/AppSidebar.tsx`
+- Novo item no array `menuItems` entre "Clientes" e "Configurações":
+  `{ title: "Intimações", url: "/intimacoes", icon: AlertTriangle, screenKey: "intimacoes" }`
 
--- Validation trigger (substitui CHECK constraint)
-CREATE OR REPLACE FUNCTION public.validate_intimacao_status()
-RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
-BEGIN
-  IF NEW.status NOT IN ('pendente','informado_aline','retificacao_feita','em_andamento','concluido','cancelado') THEN
-    RAISE EXCEPTION 'Status inválido: %', NEW.status;
-  END IF;
-  RETURN NEW;
-END;
-$$;
+### 3. Adicionar rota
+**Arquivo:** `src/App.tsx`
+- Import + Route: `<Route path="/intimacoes" element={<Intimacoes />} />`
 
-CREATE TRIGGER trg_validate_intimacao_status
-  BEFORE INSERT OR UPDATE ON public.intimacoes
-  FOR EACH ROW EXECUTE FUNCTION public.validate_intimacao_status();
+### 4. Criar página `/intimacoes`
+**Arquivo:** `src/pages/Intimacoes.tsx`
 
--- updated_at trigger
-CREATE TRIGGER trg_intimacoes_updated_at
-  BEFORE UPDATE ON public.intimacoes
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+Seguindo o padrão visual de Pipeline e ClientesList:
 
--- RLS
-ALTER TABLE public.intimacoes ENABLE ROW LEVEL SECURITY;
+- **Header**: Título "Controle de Intimações" + subtítulo + botões "Nova Intimação" e "Exportar Excel"
+- **KPI strip** (4 cards, `grid-cols-2 md:grid-cols-4`):
+  - Total de intimações
+  - Pendentes (pendente + informado_aline + em_andamento) — amber
+  - Vencendo em 15 dias (prazo_vencimento <= hoje+15 e status não concluído/cancelado) — red
+  - Concluídas (retificacao_feita + concluido) — green
+- **Filtros**: busca texto (empresa_nome) + select status + date range (data_intimacao)
+- **Tabela**: Empresa, Data Intimação, Motivo, Prazo, Vencimento, Dias Restantes, Status, Próximo Passo, Ações
+  - Dias Restantes: pill colorida (red ≤15, amber ≤30, green >30, gray se concluído)
+  - Status: badges coloridos conforme especificação
+  - Ações: Editar (Dialog) + Excluir (AlertDialog)
+- **Loading**: SkeletonKpi + SkeletonTable
+- **Exportar Excel**: gera XLSX client-side com dados filtrados
 
-CREATE POLICY "intimacoes_admin_pmo_gestor" ON public.intimacoes
-  FOR ALL TO authenticated
-  USING (has_role(auth.uid(), 'admin'::app_role) 
-      OR has_role(auth.uid(), 'pmo'::app_role) 
-      OR has_role(auth.uid(), 'gestor_tributario'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role) 
-           OR has_role(auth.uid(), 'pmo'::app_role) 
-           OR has_role(auth.uid(), 'gestor_tributario'::app_role));
+### 5. Criar modal de criação/edição
+**Arquivo:** `src/components/intimacoes/IntimacaoFormModal.tsx`
 
-CREATE POLICY "intimacoes_comercial_read" ON public.intimacoes
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'comercial'::app_role));
-```
+Dialog com campos:
+- Empresa (text, required)
+- Data da Intimação (DatePicker)
+- Motivo (text, required)
+- Prazo em dias (number, default 75)
+- Status (select com 6 opções)
+- Próximo Passo (text)
+- Observações (textarea)
+- Link para cliente (select buscando de `clientes`)
 
-### Após a migration
+Validação com Zod. Insert/update via supabase client.
 
-Nenhuma tela ou componente de UI será criado neste momento — apenas a estrutura do banco. Se quiser, posso criar a tela de gestão de intimações na sequência.
+### 6. Exportar Excel
+- Usar biblioteca `xlsx` (SheetJS) já disponível ou instalar se necessário
+- Botão gera arquivo `.xlsx` com os dados filtrados da tabela
 
-### Arquivos modificados
-1. Nova migration SQL (via migration tool)
+---
+
+### Arquivos criados/modificados
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/Intimacoes.tsx` | Criar |
+| `src/components/intimacoes/IntimacaoFormModal.tsx` | Criar |
+| `src/lib/screen-permissions.ts` | Editar |
+| `src/components/AppSidebar.tsx` | Editar |
+| `src/App.tsx` | Editar |
 
