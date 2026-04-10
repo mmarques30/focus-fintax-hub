@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle } from "lucide-react";
+import { ExternalLink, MessageCircle, Pencil, UserCheck, XCircle, ArrowRight, AlertTriangle, Check } from "lucide-react";
 import { PIPELINE_STAGES, STAGE_COLORS, SEGMENTO_LABELS, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditLead } from "@/lib/role-permissions";
@@ -43,6 +44,8 @@ export function LeadSidePanel({ lead, onClose, onRefresh }: Props) {
   const [showException, setShowException] = useState(false);
   const [exceptionReason, setExceptionReason] = useState("");
   const [exceptionSaving, setExceptionSaving] = useState(false);
+  const [showLostConfirm, setShowLostConfirm] = useState(false);
+  const [obsSaved, setObsSaved] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
