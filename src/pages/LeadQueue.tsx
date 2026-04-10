@@ -142,8 +142,10 @@ export default function LeadQueue() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full" />
+            <div className="space-y-3 py-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-muted animate-pulse rounded-md" />
+              ))}
             </div>
           ) : (
             <div className="overflow-x-auto">

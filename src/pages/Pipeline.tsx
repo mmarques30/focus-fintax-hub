@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { PipelineKanban } from "@/components/pipeline/PipelineKanban";
 import { PipelineList } from "@/components/pipeline/PipelineList";
 import { LeadFormModal } from "@/components/pipeline/LeadFormModal";
 import { LeadSidePanel } from "@/components/pipeline/LeadSidePanel";
+import { SkeletonKpi } from "@/components/dashboard/SkeletonKpi";
+import { SkeletonTable } from "@/components/dashboard/SkeletonTable";
 
 export interface PipelineLead {
   id: string;
@@ -46,7 +48,7 @@ export default function Pipeline() {
 
   const [exceptionLeadIds, setExceptionLeadIds] = useState<Set<string>>(new Set());
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     const [leadsRes, histRes] = await Promise.all([
       supabase
         .from("leads")
@@ -65,7 +67,7 @@ export default function Pipeline() {
     setLeads((leadsRes.data as any) || []);
     setExceptionLeadIds(new Set(histRes.data?.map((h) => h.lead_id) || []));
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchLeads();
@@ -78,7 +80,7 @@ export default function Pipeline() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [fetchLeads]);
 
   const activeLeads = useMemo(
     () => leads.filter((l) => l.status_funil !== "perdido" && l.status_funil !== "nao_vai_fazer"),
@@ -171,7 +173,10 @@ export default function Pipeline() {
 
       {/* View */}
       {loading ? (
-        <div className="text-center py-20 text-muted-foreground">Carregando...</div>
+        <div className="space-y-4">
+          <SkeletonKpi />
+          <SkeletonTable />
+        </div>
       ) : view === "kanban" ? (
         <PipelineKanban leads={leads} onLeadClick={setSelectedLeadId} onRefresh={fetchLeads} exceptionLeadIds={exceptionLeadIds} />
       ) : (
