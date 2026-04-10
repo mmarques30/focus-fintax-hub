@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, CheckCircle2, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload } from "lucide-react";
+import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { ImportCompensacoesModal } from "@/components/clientes/ImportCompensacoesModal";
@@ -17,6 +17,7 @@ import { formatCurrencyBR } from "@/lib/clientes-constants";
 import { SEGMENTO_LABELS } from "@/lib/pipeline-constants";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function ClientesList() {
   const navigate = useNavigate();
@@ -197,7 +198,7 @@ export default function ClientesList() {
             <TableHead>Empresa</TableHead>
             <TableHead>CNPJ</TableHead>
             <TableHead>Segmento</TableHead>
-            <TableHead>Fintax</TableHead>
+            <TableHead>Teses</TableHead>
             <TableHead>Teses</TableHead>
             <TableHead>Crédito</TableHead>
             <TableHead>Compensado</TableHead>
@@ -212,13 +213,13 @@ export default function ClientesList() {
              <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
            ) : paginated.length === 0 ? (
              <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
-          ) : paginated.map((c) => (
-            <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)} title={isComercial ? "Acesso restrito ao time operacional" : ""}>
-              <TableCell className="font-medium">{c.empresa}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">{c.cnpj}</TableCell>
-              <TableCell className="text-sm">{SEGMENTO_LABELS[c.segmento] || c.segmento || "—"}</TableCell>
-              <TableCell>{c.compensando_fintax ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <span className="text-muted-foreground">—</span>}</TableCell>
-              <TableCell>{c.tesesAtivas}</TableCell>
+           ) : paginated.map((c) => {
+            const row = (
+             <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)}>
+               <TableCell className="font-medium">{c.empresa}</TableCell>
+               <TableCell className="text-sm text-muted-foreground">{c.cnpj}</TableCell>
+               <TableCell className="text-sm">{SEGMENTO_LABELS[c.segmento] || c.segmento || "—"}</TableCell>
+               <TableCell>{c.tesesAtivas}</TableCell>
               <TableCell>{formatCurrencyBR(c.totalCredito)}</TableCell>
               <TableCell>{formatCurrencyBR(c.totalCompensado)}</TableCell>
               <TableCell>{formatCurrencyBR(c.saldo)}</TableCell>
@@ -258,9 +259,20 @@ export default function ClientesList() {
                   </div>
                 </TableCell>
               )}
-            </TableRow>
-          ))}
-        </TableBody>
+             </TableRow>
+            );
+            if (isComercial) {
+              return (
+                <TooltipProvider key={c.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>{row}</TooltipTrigger>
+                    <TooltipContent>Acesso restrito ao time operacional</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            }
+            return row;
+           })}
       </Table>
       </div>
 

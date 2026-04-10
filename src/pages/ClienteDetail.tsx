@@ -267,12 +267,8 @@ export default function ClienteDetail() {
               </a>
             ) : "—"}
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Switch checked={!!cliente.compensando_fintax} onCheckedChange={(v) => updateField("compensando_fintax", v)} />
-            <Label className="text-xs">Compensando Fintax</Label>
-          </div>
-          <p className="text-[10px] text-muted-foreground -mt-2">Marcação interna — filtros baseados em dados reais de compensação.</p>
           <div>
+            <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <span className="text-muted-foreground text-xs">Comp. outro escritório:</span>
             <p className="text-xs">{cliente.compensacao_outro_escritorio || "—"}</p>
           </div>
