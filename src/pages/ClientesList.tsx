@@ -273,6 +273,7 @@ export default function ClientesList() {
             }
             return row;
            })}
+        </TableBody>
       </Table>
       </div>
 
