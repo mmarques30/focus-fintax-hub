@@ -105,7 +105,22 @@ export default function ClientesList() {
   const reportClientes = [...allStats].sort((a, b) => b.totalCredito - a.totalCredito);
   const reportDate = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
-  const exportClientesSimples = () => {
+  // Breakdown por tese
+  const teseBreakdown = (() => {
+    const assinados = processos.filter((p) => p.status_contrato === "assinado");
+    const map: Record<string, { nome: string; clientes: Set<string>; identificado: number; compensado: number }> = {};
+    assinados.forEach((p) => {
+      const key = p.tese || p.nome_exibicao;
+      if (!map[key]) map[key] = { nome: p.nome_exibicao || p.tese, clientes: new Set(), identificado: 0, compensado: 0 };
+      map[key].clientes.add(p.cliente_id);
+      map[key].identificado += Number(p.valor_credito || 0);
+      map[key].compensado += compensacoes
+        .filter((c) => c.processo_tese_id === p.id)
+        .reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
+    });
+    return Object.values(map).sort((a, b) => b.identificado - a.identificado);
+  })();
+
     const rows = filtered.map((c) => {
       const pct = c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) : 0;
       return {
