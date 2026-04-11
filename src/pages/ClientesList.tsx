@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload } from "lucide-react";
+import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload, Download, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import * as XLSX from "xlsx";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ClienteFormModal } from "@/components/clientes/ClienteFormModal";
 import { ImportCompensacoesModal } from "@/components/clientes/ImportCompensacoesModal";
@@ -112,13 +114,64 @@ export default function ClientesList() {
       if (!map[key]) map[key] = { nome: p.nome_exibicao || p.tese, clientes: new Set(), identificado: 0, compensado: 0 };
       map[key].clientes.add(p.cliente_id);
       map[key].identificado += Number(p.valor_credito || 0);
-      // sum compensações for this processo
       map[key].compensado += compensacoes
         .filter((c) => c.processo_tese_id === p.id)
         .reduce((s, c) => s + Number(c.valor_compensado || 0), 0);
     });
     return Object.values(map).sort((a, b) => b.identificado - a.identificado);
   })();
+
+  const exportClientesSimples = () => {
+    const rows = filtered.map((c) => {
+      const pct = c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) : 0;
+      return {
+        Empresa: c.empresa,
+        CNPJ: c.cnpj,
+        Segmento: SEGMENTO_LABELS[c.segmento] || c.segmento || "",
+        "Teses Ativas": c.tesesAtivas,
+        "Crédito Identificado": c.totalCredito,
+        Compensado: c.totalCompensado,
+        Saldo: c.saldo,
+        "% Recuperado": pct / 100,
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    XLSX.writeFile(wb, `clientes_visao_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const exportClientesPorTese = () => {
+    // Sheet 1 - Por Cliente
+    const clienteRows = reportClientes.map((c) => ({
+      Empresa: c.empresa,
+      CNPJ: c.cnpj,
+      "Teses Ativas": c.tesesAtivas,
+      Identificado: c.totalCredito,
+      Compensado: c.totalCompensado,
+      Saldo: c.saldo,
+      "% Recuperado": c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) / 100 : 0,
+    }));
+    const ws1 = XLSX.utils.json_to_sheet(clienteRows);
+    ws1["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+
+    // Sheet 2 - Por Tese
+    const teseRows = teseBreakdown.map((t) => ({
+      Tese: t.nome,
+      Clientes: t.clientes.size,
+      Identificado: t.identificado,
+      Compensado: t.compensado,
+      Saldo: t.identificado - t.compensado,
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(teseRows);
+    ws2["!cols"] = [{ wch: 30 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, "Por Cliente");
+    XLSX.utils.book_append_sheet(wb, ws2, "Por Tese");
+    XLSX.writeFile(wb, `clientes_por_tese_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -135,9 +188,27 @@ export default function ClientesList() {
             </Button>
           )}
           {!isComercial && (
-            <Button variant="outline" onClick={() => setReportOpen(true)}>
-              <FileText className="h-4 w-4 mr-1" /> Relatório da Carteira
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar
+                  <ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setReportOpen(true)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Relatório da Carteira
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportClientesSimples}>
+                  Visão geral (por cliente)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportClientesPorTese}>
+                  Detalhado por tese
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {!isComercial && (
             <Button onClick={() => setModalOpen(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar cliente</Button>
