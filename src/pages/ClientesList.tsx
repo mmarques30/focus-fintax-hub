@@ -121,6 +121,7 @@ export default function ClientesList() {
     return Object.values(map).sort((a, b) => b.identificado - a.identificado);
   })();
 
+  const exportClientesSimples = () => {
     const rows = filtered.map((c) => {
       const pct = c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) : 0;
       return {
