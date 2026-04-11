@@ -1,26 +1,28 @@
 
 
-## Plano — Alerta de Intimações no Dashboard Operacional
+## Plano — Exportar Excel na lista de Clientes
 
-### Abordagem
-Buscar contagens de intimações pendentes e vencendo no `Dashboard.tsx` (junto com os dados operacionais) e passar como props para `OperationalView`, que renderiza a faixa de alerta entre o KPI strip e o restante do conteúdo.
+Adicionar dropdown de exportação Excel na página `/clientes` com duas opções: visão geral (por cliente) e detalhado por tese.
 
-### Alterações
+### Alterações em `src/pages/ClientesList.tsx`
 
-**1. `src/pages/Dashboard.tsx`**
-- Adicionar estado: `intimacoesPendentes` e `intimacoesVencendo`
-- No `fetchData`, após dados operacionais, buscar da tabela `intimacoes`:
-  - Pendentes: status IN (pendente, informado_aline, em_andamento)
-  - Vencendo em 15 dias: prazo_vencimento <= hoje+15 e status não concluído/cancelado
-- Passar as duas contagens como props para `OperationalView`
+**1. Imports** — adicionar `Download, ChevronDown` do lucide-react, `DropdownMenu` components, e `* as XLSX from "xlsx"`
 
-**2. `src/components/dashboard/operacional/OperationalView.tsx`**
-- Adicionar props `intimacoesPendentes` e `intimacoesVencendo`
-- Renderizar a faixa de alerta (conforme JSX especificado) entre o KPI strip e o bloco de loading/conteúdo, usando `Link` do react-router em vez de `<a>`
+**2. Funções de exportação** — criar duas funções dentro do componente:
+
+- `exportClientesSimples()`: gera XLSX com colunas Empresa, CNPJ, Segmento, Teses Ativas, Crédito Identificado, Compensado, Saldo, % Recuperado — usando os dados de `filtered` (respeitando filtros ativos)
+
+- `exportClientesPorTese()`: gera XLSX com duas abas:
+  - Aba "Por Cliente": mesma visão do relatório por cliente
+  - Aba "Por Tese": dados do `teseBreakdown` com colunas Tese, Clientes, Identificado, Compensado, Saldo
+
+**3. UI** — substituir o botão "Relatório da Carteira" (linha 138-141) por um dropdown com 3 opções:
+  - "Relatório da Carteira" (abre o modal existente)
+  - "Exportar visão geral" (chama `exportClientesSimples`)
+  - "Exportar por tese" (chama `exportClientesPorTese`)
 
 ### Arquivos modificados
 | Arquivo | Ação |
 |---------|------|
-| `src/pages/Dashboard.tsx` | Editar (fetch + estado + props) |
-| `src/components/dashboard/operacional/OperationalView.tsx` | Editar (props + render alerta) |
+| `src/pages/ClientesList.tsx` | Editar (imports + funções export + dropdown UI) |
 
