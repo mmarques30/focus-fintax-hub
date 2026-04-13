@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload, Download, ChevronDown } from "lucide-react";
+import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload, Download, ChevronDown, Building2 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import * as XLSX from "xlsx";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -294,9 +295,9 @@ export default function ClientesList() {
                <EmptyState
                  icon={<Building2 className="w-5 h-5 text-[rgba(10,21,100,0.3)]" />}
                  title="Nenhum cliente encontrado"
-                 subtitle={searchQuery ? `Sem resultados para "${searchQuery}"` : "Cadastre o primeiro cliente para começar"}
-                 action={!searchQuery ? (
-                   <button onClick={(e) => { e.stopPropagation(); setShowModal(true); }} className="text-xs font-bold text-[#0a1564] hover:underline mt-1">
+                 subtitle={search ? `Sem resultados para "${search}"` : "Cadastre o primeiro cliente para começar"}
+                 action={!search ? (
+                   <button onClick={(e) => { e.stopPropagation(); setModalOpen(true); }} className="text-xs font-bold text-[#0a1564] hover:underline mt-1">
                      Cadastrar cliente →
                    </button>
                  ) : undefined}
