@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronRight, ChevronDown } from "lucide-react";
+import { AlertTriangle, ChevronRight, ChevronDown, Users } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { PIPELINE_STAGES, STAGE_MERGE_MAP, SEGMENTO_COLORS, SEGMENTO_LABELS, SCORE_CONFIG, getScoreLabel, formatCurrency, daysSince } from "@/lib/pipeline-constants";
 import type { PipelineLead } from "@/pages/Pipeline";
 import { useAuth } from "@/hooks/useAuth";
@@ -136,6 +137,13 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
                     )}
 
                     <div className="flex-1 flex flex-col gap-2 min-h-[60px] overflow-y-auto">
+                      {stageLeads.length === 0 && (
+                        <EmptyState
+                          icon={<Users className="w-5 h-5 text-[rgba(10,21,100,0.3)]" />}
+                          title="Nenhum lead nesta etapa"
+                          subtitle="Arraste leads para cá ou adicione um novo"
+                        />
+                      )}
                       {stageLeads.map((lead, index) => (
                         <LeadCard key={lead.id} lead={lead} index={index} onClick={() => onLeadClick(lead.id)} isException={exceptionLeadIds.has(lead.id)} userRole={userRole} isDragDisabled={!dragEnabled || !canEditLead(userRole, lead.status_funil)} />
                       ))}

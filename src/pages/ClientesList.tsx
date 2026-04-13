@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload, Download, ChevronDown } from "lucide-react";
+import { Plus, AlertTriangle, AlertOctagon, FileText, Printer, Pencil, Trash2, Upload, Download, ChevronDown, Building2 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import * as XLSX from "xlsx";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -290,7 +291,18 @@ export default function ClientesList() {
           {loading ? (
              <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
            ) : paginated.length === 0 ? (
-             <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
+             <TableRow><TableCell colSpan={!isComercial ? 11 : 10}>
+               <EmptyState
+                 icon={<Building2 className="w-5 h-5 text-[rgba(10,21,100,0.3)]" />}
+                 title="Nenhum cliente encontrado"
+                 subtitle={search ? `Sem resultados para "${search}"` : "Cadastre o primeiro cliente para começar"}
+                 action={!search ? (
+                   <button onClick={(e) => { e.stopPropagation(); setModalOpen(true); }} className="text-xs font-bold text-[#0a1564] hover:underline mt-1">
+                     Cadastrar cliente →
+                   </button>
+                 ) : undefined}
+               />
+             </TableCell></TableRow>
            ) : paginated.map((c) => {
             const row = (
              <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)}>
