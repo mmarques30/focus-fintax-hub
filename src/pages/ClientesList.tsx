@@ -290,7 +290,18 @@ export default function ClientesList() {
           {loading ? (
              <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
            ) : paginated.length === 0 ? (
-             <TableRow><TableCell colSpan={!isComercial ? 11 : 10} className="text-center text-muted-foreground">Nenhum cliente encontrado.</TableCell></TableRow>
+             <TableRow><TableCell colSpan={!isComercial ? 11 : 10}>
+               <EmptyState
+                 icon={<Building2 className="w-5 h-5 text-[rgba(10,21,100,0.3)]" />}
+                 title="Nenhum cliente encontrado"
+                 subtitle={searchQuery ? `Sem resultados para "${searchQuery}"` : "Cadastre o primeiro cliente para começar"}
+                 action={!searchQuery ? (
+                   <button onClick={(e) => { e.stopPropagation(); setShowModal(true); }} className="text-xs font-bold text-[#0a1564] hover:underline mt-1">
+                     Cadastrar cliente →
+                   </button>
+                 ) : undefined}
+               />
+             </TableCell></TableRow>
            ) : paginated.map((c) => {
             const row = (
              <TableRow key={c.id} className={`${isComercial ? "cursor-default" : "cursor-pointer"} hover:bg-muted/50`} onClick={() => !isComercial && navigate(`/clientes/${c.id}`)}>

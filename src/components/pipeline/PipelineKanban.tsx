@@ -136,6 +136,13 @@ export function PipelineKanban({ leads, onLeadClick, onRefresh, exceptionLeadIds
                     )}
 
                     <div className="flex-1 flex flex-col gap-2 min-h-[60px] overflow-y-auto">
+                      {stageLeads.length === 0 && (
+                        <EmptyState
+                          icon={<Users className="w-5 h-5 text-[rgba(10,21,100,0.3)]" />}
+                          title="Nenhum lead nesta etapa"
+                          subtitle="Arraste leads para cá ou adicione um novo"
+                        />
+                      )}
                       {stageLeads.map((lead, index) => (
                         <LeadCard key={lead.id} lead={lead} index={index} onClick={() => onLeadClick(lead.id)} isException={exceptionLeadIds.has(lead.id)} userRole={userRole} isDragDisabled={!dragEnabled || !canEditLead(userRole, lead.status_funil)} />
                       ))}
