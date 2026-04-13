@@ -25,6 +25,7 @@ export const SCREENS: ScreenDef[] = [
     ],
   },
   { key: "pipeline", label: "Pipeline de Leads", route: "/pipeline", defaultRoles: ["admin", "pmo", "comercial"], defaultReadOnlyRoles: ["gestor_tributario"] },
+  { key: "fila_leads", label: "Fila de Leads", route: "/leads", defaultRoles: ["admin", "pmo", "comercial"], defaultReadOnlyRoles: ["gestor_tributario"] },
   {
     key: "clientes", label: "Clientes", route: "/clientes",
     defaultRoles: ["admin", "pmo", "gestor_tributario"],
