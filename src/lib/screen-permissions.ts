@@ -73,6 +73,7 @@ export function routeToScreenKey(path: string): string | null {
   if (path.startsWith("/configuracoes")) return "motor_calculo";
   if (path.startsWith("/benchmarks")) return "benchmarks";
   if (path.startsWith("/pipeline")) return "pipeline";
+  if (path.startsWith("/leads")) return "fila_leads";
   if (path.startsWith("/clientes")) return "clientes";
   if (path.startsWith("/intimacoes")) return "intimacoes";
   if (path.startsWith("/usuarios")) return "usuarios";

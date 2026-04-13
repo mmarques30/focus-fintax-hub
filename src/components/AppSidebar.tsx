@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Users, LogOut, UserPlus, Building2, Settings, Lock, ChevronDown, Menu, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, UserPlus, Building2, Settings, Lock, ChevronDown, Menu, AlertTriangle, Inbox } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ interface SubMenuItem {
 const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, screenKey: "dashboard" },
   { title: "Pipeline de Leads", url: "/pipeline", icon: UserPlus, screenKey: "pipeline" },
+  { title: "Fila de Leads", url: "/leads", icon: Inbox, screenKey: "fila_leads" },
   { title: "Clientes", url: "/clientes", icon: Building2, screenKey: "clientes" },
   { title: "Intimações", url: "/intimacoes", icon: AlertTriangle, screenKey: "intimacoes" },
   {

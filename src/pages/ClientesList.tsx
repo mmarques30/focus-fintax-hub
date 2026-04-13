@@ -278,7 +278,6 @@ export default function ClientesList() {
             <TableHead>CNPJ</TableHead>
             <TableHead>Segmento</TableHead>
             <TableHead>Teses</TableHead>
-            <TableHead>Teses</TableHead>
             <TableHead>Crédito</TableHead>
             <TableHead>Compensado</TableHead>
             <TableHead>Saldo</TableHead>
