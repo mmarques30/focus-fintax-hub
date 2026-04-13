@@ -121,56 +121,64 @@ export default function ClientesList() {
     return Object.values(map).sort((a, b) => b.identificado - a.identificado);
   })();
 
-  const exportClientesSimples = () => {
-    const rows = filtered.map((c) => {
-      const pct = c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) : 0;
-      return {
-        Empresa: c.empresa,
-        CNPJ: c.cnpj,
-        Segmento: SEGMENTO_LABELS[c.segmento] || c.segmento || "",
-        "Teses Ativas": c.tesesAtivas,
-        "Crédito Identificado": c.totalCredito,
-        Compensado: c.totalCompensado,
-        Saldo: c.saldo,
-        "% Recuperado": pct / 100,
-      };
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-    XLSX.writeFile(wb, `clientes_visao_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const getClienteHealth = (c: any) => {
+    if (c.saldo <= 0) return 'amarelo';
+    if (c.totalCredito > 0 && (c.totalCompensado / c.totalCredito) < 0.05) return 'vermelho';
+    return 'verde';
   };
 
-  const exportClientesPorTese = () => {
-    // Sheet 1 - Por Cliente
-    const clienteRows = reportClientes.map((c) => ({
-      Empresa: c.empresa,
-      CNPJ: c.cnpj,
-      "Teses Ativas": c.tesesAtivas,
-      Identificado: c.totalCredito,
-      Compensado: c.totalCompensado,
-      Saldo: c.saldo,
-      "% Recuperado": c.totalCredito > 0 ? Math.round((c.totalCompensado / c.totalCredito) * 100) / 100 : 0,
+  const exportClientesSimples = () => {
+    const rows = filtered.map((c) => ({
+      'Empresa': c.empresa,
+      'CNPJ': c.cnpj ?? '',
+      'Segmento': SEGMENTO_LABELS[c.segmento] || c.segmento || '',
+      'Regime': c.regime_tributario ?? '',
+      'Status': c.compensando_fintax ? 'Compensando' : 'Contrato',
+      'Crédito Identificado (R$)': c.totalCredito ?? 0,
+      'Total Compensado (R$)': c.totalCompensado ?? 0,
+      'Saldo Restante (R$)': Math.max(0, (c.totalCredito ?? 0) - (c.totalCompensado ?? 0)),
+      '% Utilizado': c.totalCredito > 0
+        ? `${Math.round((c.totalCompensado / c.totalCredito) * 100)}%`
+        : '0%',
+      'Saúde': getClienteHealth(c) === 'verde' ? 'Ativo' : getClienteHealth(c) === 'amarelo' ? 'Saldo Zerado' : 'Inativo',
     }));
-    const ws1 = XLSX.utils.json_to_sheet(clienteRows);
-    ws1["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-
-    // Sheet 2 - Por Tese
-    const teseRows = teseBreakdown.map((t) => ({
-      Tese: t.nome,
-      Clientes: t.clientes.size,
-      Identificado: t.identificado,
-      Compensado: t.compensado,
-      Saldo: t.identificado - t.compensado,
-    }));
-    const ws2 = XLSX.utils.json_to_sheet(teseRows);
-    ws2["!cols"] = [{ wch: 30 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 35 }, { wch: 20 }, { wch: 16 }, { wch: 14 },
+      { wch: 14 }, { wch: 22 }, { wch: 20 }, { wch: 18 }, { wch: 12 }, { wch: 14 }
+    ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws1, "Por Cliente");
-    XLSX.utils.book_append_sheet(wb, ws2, "Por Tese");
-    XLSX.writeFile(wb, `clientes_por_tese_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+    XLSX.writeFile(wb, `FocusFinTax_Clientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const exportClientesPorTese = async () => {
+    const { data: processosData } = await supabase
+      .from('processos_teses')
+      .select('*, clientes(empresa, cnpj, segmento)')
+      .order('criado_em', { ascending: false });
+
+    const rows = (processosData || []).map((p: any) => ({
+      'Empresa': p.clientes?.empresa ?? '',
+      'CNPJ': p.clientes?.cnpj ?? '',
+      'Segmento': p.clientes?.segmento ?? '',
+      'Tese': p.nome_exibicao ?? '',
+      'Status Contrato': p.status_contrato ?? '',
+      'Status Processo': p.status_processo ?? '',
+      'Crédito Identificado (R$)': p.valor_credito ?? 0,
+      'Honorários (%)': p.percentual_honorario ? `${(p.percentual_honorario * 100).toFixed(1)}%` : '',
+      'Valor Honorários (R$)': p.valor_honorario ?? 0,
+      'Observação': p.observacao ?? '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 35 }, { wch: 20 }, { wch: 16 }, { wch: 40 },
+      { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 30 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Processos por Tese');
+    XLSX.writeFile(wb, `FocusFinTax_Teses_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   return (

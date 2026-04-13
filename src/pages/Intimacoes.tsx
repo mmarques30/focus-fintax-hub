@@ -94,20 +94,24 @@ export default function Intimacoes() {
 
   const exportExcel = () => {
     const rows = filtered.map((i) => ({
-      Empresa: i.empresa_nome,
-      "Data Intimação": i.data_intimacao ? format(parseISO(i.data_intimacao), "dd/MM/yyyy") : "",
-      Motivo: i.motivo,
-      "Prazo (dias)": i.prazo_dias,
-      Vencimento: i.prazo_vencimento ? format(parseISO(i.prazo_vencimento), "dd/MM/yyyy") : "",
-      "Dias Restantes": diasRestantes(i.prazo_vencimento, i.status) ?? "",
-      Status: STATUS_MAP[i.status]?.label ?? i.status,
-      "Próximo Passo": i.proximo_passo ?? "",
-      Observações: i.observacoes ?? "",
+      'Empresa': i.empresa_nome,
+      'Data da Intimação': i.data_intimacao ? format(parseISO(i.data_intimacao), "dd/MM/yyyy") : "",
+      'Motivo': i.motivo,
+      'Prazo (dias)': i.prazo_dias,
+      'Vencimento': i.prazo_vencimento ? format(parseISO(i.prazo_vencimento), "dd/MM/yyyy") : "",
+      'Dias Restantes': diasRestantes(i.prazo_vencimento, i.status) ?? "",
+      'Status': STATUS_MAP[i.status]?.label ?? i.status,
+      'Próximo Passo': i.proximo_passo ?? "",
+      'Observações': i.observacoes ?? "",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 35 }, { wch: 18 }, { wch: 40 }, { wch: 12 },
+      { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 35 }, { wch: 35 }
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Intimações");
-    XLSX.writeFile(wb, `intimacoes_${format(new Date(), "yyyyMMdd")}.xlsx`);
+    XLSX.writeFile(wb, `FocusFinTax_Intimacoes_${format(new Date(), "yyyyMMdd")}.xlsx`);
     toast.success("Excel exportado");
   };
 
