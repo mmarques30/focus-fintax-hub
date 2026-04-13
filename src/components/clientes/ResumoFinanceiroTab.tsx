@@ -80,7 +80,43 @@ export function ResumoFinanceiroTab({ clienteId, cliente }: Props) {
       </div>
 
       {/* EXPORT BUTTON */}
-      <div className="flex justify-end print:hidden">
+      <div className="flex justify-end gap-2 print:hidden">
+        <button
+          onClick={() => {
+            const rows = compensacoes.map((c) => ({
+              'Competência': c.mes_referencia
+                ? new Date(c.mes_referencia).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                : '',
+              'Tese': c.processos_teses?.nome_exibicao ?? '',
+              'Tributo': c.tributo || c.observacao || '',
+              'Valor Compensado (R$)': Number(c.valor_compensado || 0),
+              'Honorários (R$)': Number(c.valor_nf_servico || 0),
+              'Economia Líquida (R$)': Number(c.valor_compensado || 0) - Number(c.valor_nf_servico || 0),
+              'Status Pagamento': c.status_pagamento === 'pago' ? 'Pago' : 'Pendente',
+            }));
+            rows.push({
+              'Competência': 'TOTAL',
+              'Tese': '',
+              'Tributo': '',
+              'Valor Compensado (R$)': totalCompensado,
+              'Honorários (R$)': totalHonorarios,
+              'Economia Líquida (R$)': economiaLiquida,
+              'Status Pagamento': '',
+            });
+            const ws = XLSX.utils.json_to_sheet(rows);
+            ws['!cols'] = [
+              { wch: 20 }, { wch: 40 }, { wch: 16 },
+              { wch: 22 }, { wch: 18 }, { wch: 22 }, { wch: 16 }
+            ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Compensações');
+            XLSX.writeFile(wb, `${cliente?.empresa || 'Cliente'}_Compensacoes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+          }}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border border-[var(--dash-border)] bg-white hover:bg-[rgba(10,21,100,0.03)] transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Exportar Excel
+        </button>
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border border-[var(--dash-border)] bg-white hover:bg-[rgba(10,21,100,0.03)] transition-colors"
