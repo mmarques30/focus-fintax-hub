@@ -5,7 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
-import { FileDown, TrendingUp, BarChart3 } from "lucide-react";
+import { FileDown, TrendingUp, BarChart3, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface Props {
   clienteId: string;
